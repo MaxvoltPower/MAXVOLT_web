@@ -22,7 +22,7 @@
         <span></span>
         <span></span>
         <span></span>
-      </a>
+      </button>
 
       <nav>
         <ul>
@@ -37,7 +37,7 @@
       <div class="header-right">
         <button class="whatsapp-btn" onclick="openWhatsapp()">
           💬 WhatsApp
-        </a>
+        </button>
         <a href="../index.html#quotation" class="btn btn-secondary">Get a Quote</a>
       </div>
     </div>
@@ -101,7 +101,7 @@
         </select>
       </div>
 
-      <button type="button" class="btn btn-primary btn-full" onclick="alert('Thank you! Please contact MAXVOLT via WhatsApp for detailed UPS recommendation.'); openWhatsapp(encodeURIComponent('Hi MAXVOLT, I need a UPS for my ' + document.getElementById('ups-type').value + '. Devices: ' + Array.from(document.querySelectorAll('.ups-device-check:checked')).map(c => c.value).join(', ') + '. Backup time needed: ' + document.getElementById('ups-backup').value + ' minutes. Please recommend.'));">Get Recommendation</a>
+      <button type="button" class="btn btn-primary btn-full" onclick="alert('Thank you! Please contact MAXVOLT via WhatsApp for detailed UPS recommendation.'); openWhatsapp(encodeURIComponent('Hi MAXVOLT, I need a UPS for my ' + document.getElementById('ups-type').value + '. Devices: ' + Array.from(document.querySelectorAll('.ups-device-check:checked')).map(c => c.value).join(', ') + '. Backup time needed: ' + document.getElementById('ups-backup').value + ' minutes. Please recommend.'));">Get Recommendation</button>
     </form>
   </section>
 
@@ -171,7 +171,7 @@
     <div style="background: #003366; color: white; padding: 40px; border-radius: 8px; text-align: center;">
       <h3 style="color: white; margin-bottom: 12px;">Protect Your Equipment Today</h3>
       <p style="margin-bottom: 20px;">Talk to MAXVOLT experts for the perfect UPS solution for your needs.</p>
-      <button class="btn btn-secondary" onclick="openWhatsapp(encodeURIComponent('Hi MAXVOLT, I need a UPS for my office setup. Please help me choose the right model.'))">💬 Ask on WhatsApp</a>
+      <button class="btn btn-secondary" onclick="openWhatsapp(encodeURIComponent('Hi MAXVOLT, I need a UPS for my office setup. Please help me choose the right model.'))">💬 Ask on WhatsApp</button>
     </div>
   </section>
 
@@ -208,7 +208,7 @@
       <div class="footer-section">
         <h3>Contact</h3>
         <p style="font-size: 0.95rem; margin-bottom: 12px;">📧 maxvolt.power@gmail.com</p>
-        <button class="btn btn-secondary btn-small" onclick="openWhatsapp()">💬 WhatsApp</a>
+        <button class="btn btn-secondary btn-small" onclick="openWhatsapp()">💬 WhatsApp</button>
       </div>
     </div>
 
@@ -225,4 +225,3 @@
   </script>
 </body>
 </html>
-
