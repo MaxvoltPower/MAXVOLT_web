@@ -10,13 +10,16 @@ const CONFIG = {
   phone: '+91 7595941311'
 };
 
+// Compute base path once at module scope so all functions can use it.
+// On /products/*.html pages we need "../" to reach /data/, /assets/, etc.
+// On root pages (index.html, product-detail.html) we need "".
+const basePath = window.location.pathname.includes('/products/') ? '../' : '';
+
 // Load products from JSON
 let allProducts = {};
 
 async function loadProducts() {
   try {
-    // Detect if we're in /products/ subfolder
-    const basePath = window.location.pathname.includes('/products/') ? '../' : '';
     const response = await fetch(basePath + 'data/products.json');
     allProducts = await response.json();
   } catch (error) {
@@ -324,7 +327,7 @@ function loadProductDetail() {
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; max-width: 1200px; margin: 0 auto;">
         <div>
           <div class="product-image" style="height: 400px; border-radius: 8px; margin-bottom: 20px;">
-            ${product.image ? `<img src="/assets/images/${product.image}" alt="${product.model}" style="width: 100%; height: 100%; object-fit: cover;">` : '🔋'}
+            ${product.image ? `<img src="${basePath}assets/images/${product.image}" alt="${product.model}" style="width: 100%; height: 100%; object-fit: cover;">` : '🔋'}
           </div>
         </div>
         <div>
@@ -355,13 +358,13 @@ function loadProductDetail() {
 
           <div style="display: flex; gap: 12px; margin-bottom: 24px;">
             <button class="btn btn-primary btn-full" data-whatsapp="${product.id}">💬 Ask on WhatsApp</button>
-            <a href="/index.html#quotation" class="btn btn-outline btn-full">📋 Get Quote</a>
+            <a href="${basePath}index.html#quotation" class="btn btn-outline btn-full">📋 Get Quote</a>
           </div>
 
           <div style="background: #f5f5f5; padding: 16px; border-radius: 8px;">
             <h4 style="margin-bottom: 12px;">Not Sure?</h4>
             <p style="margin-bottom: 12px;">Talk to our MAXVOLT experts. We'll recommend the right product based on your actual requirement.</p>
-            <a href="/index.html#quotation" class="btn btn-secondary" style="display: inline-block;">Get Expert Help</a>
+            <a href="${basePath}index.html#quotation" class="btn btn-secondary" style="display: inline-block;">Get Expert Help</a>
           </div>
         </div>
       </div>
@@ -434,7 +437,7 @@ function setupCalculator() {
             </div>
           </div>
           <p style="color: #666; margin-bottom: 16px; font-size: 0.95rem;">This is an estimated recommendation. For precise sizing, please contact our experts.</p>
-          <a href="/index.html#quotation" class="btn btn-primary">Get Personalized Quote</a>
+          <a href="${basePath}index.html#quotation" class="btn btn-primary">Get Personalized Quote</a>
         </div>
       `;
     }
