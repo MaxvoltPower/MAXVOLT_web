@@ -243,6 +243,41 @@ section { padding: var(--space-16) 0; }
 .surface h1, .surface h2, .surface h3, .surface h4 { color: var(--text); }
 .surface p, .surface li, .surface span { color: var(--text-muted); }
 
+/* ---------- BREADCRUMB ---------- */
+.breadcrumb {
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
+  padding: var(--space-5) 0;
+}
+
+.breadcrumb .container {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+}
+
+.breadcrumb a {
+  color: var(--accent);
+  font-weight: 500;
+  transition: color var(--transition);
+}
+
+.breadcrumb a:hover {
+  color: var(--secondary-light);
+}
+
+.breadcrumb-sep {
+  color: var(--text-subtle);
+  user-select: none;
+}
+
+.breadcrumb-current {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
 /* ---------- BUTTONS ---------- */
 .btn {
   display: inline-flex;
@@ -1317,4 +1352,12 @@ section[style*="background:#003366"] .btn-outline,
 section[style*="background: #003366"] .btn-outline {
   color: #fff;
   border-color: #fff;
+}
+
+.wa-icon {
+  width: 1.1em;
+  height: 1.1em;
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: -0.15em;
 }
