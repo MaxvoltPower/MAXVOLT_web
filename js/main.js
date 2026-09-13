@@ -2,6 +2,16 @@
 // MAXVOLT - JavaScript
 // ============================================
 
+// Force scroll to top on page load/refresh (but respect #anchors)
+if ('scrollRestoration' in history) {
+  history.scrollRestoration = 'manual';
+}
+window.addEventListener('load', () => {
+  if (!window.location.hash) {
+    window.scrollTo(0, 0);
+  }
+});
+
 // Configuration
 const CONFIG = {
   whatsappNumber: '917595941311',
@@ -34,11 +44,21 @@ document.addEventListener('DOMContentLoaded', () => {
   setupFormHandlers();
   setupProductFilters();
   setupScrollToTop();
+  updateCopyrightYear();
 });
 
 // ============================================
 // NAVIGATION
 // ============================================
+
+// Auto-update copyright year
+function updateCopyrightYear() {
+  const yearEls = document.querySelectorAll('.copyright-year');
+  const currentYear = new Date().getFullYear();
+  yearEls.forEach(el => {
+    el.textContent = currentYear;
+  });
+}
 
 function setupNavigation() {
   const hamburger = document.querySelector('.hamburger');
