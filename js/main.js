@@ -458,6 +458,10 @@ function setupCalculator() {
           </div>
           <p style="color: #666; margin-bottom: 16px; font-size: 0.95rem;">This is an estimated recommendation. For precise sizing, please contact our experts.</p>
           <a href="${basePath}index.html#quotation" class="btn btn-primary">Get Personalized Quote</a>
+          <button class="btn btn-secondary" style="margin-left:8px;"
+            onclick="openWhatsapp(encodeURIComponent('Hi MAXVOLT, based on the calculator: ${totalLoad}W load, recommended ${inverterVA}VA inverter and ${batteryCapacity} battery. Please send me a quote.'))">
+            💬 Send via WhatsApp
+          </button>
         </div>
       `;
     }

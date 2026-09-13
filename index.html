@@ -187,49 +187,71 @@
       <p>Tell us what you need to power, and we'll recommend a suitable inverter and battery combination.</p>
     </div>
 
-    <form id="requirement-calculator" style="max-width:700px;margin:0 auto;">
-      <div class="surface">
-        <h4 style="margin-bottom:20px;">What do you want to power?</h4>
+    <form id="requirement-calculator" class="calc-form">
+      <div class="surface calc-surface">
+        <h4 class="calc-title">What do you want to power?</h4>
 
-        <div class="form-group">
-          <label for="calc-fans">Number of Fans:</label>
-          <input type="number" id="calc-fans" min="0" max="10" value="2">
+        <!-- Row 1: Number inputs side by side -->
+        <div class="calc-grid">
+          <div class="form-group calc-field">
+            <label for="calc-fans">Number of Fans</label>
+            <input type="number" id="calc-fans" min="0" max="10" value="2">
+          </div>
+
+          <div class="form-group calc-field">
+            <label for="calc-lights">Number of Lights</label>
+            <input type="number" id="calc-lights" min="0" max="20" value="5">
+          </div>
         </div>
 
-        <div class="form-group">
-          <label for="calc-lights">Number of Lights:</label>
-          <input type="number" id="calc-lights" min="0" max="20" value="5">
+        <!-- Divider -->
+        <div class="calc-divider">
+          <span>Appliances</span>
         </div>
 
-        <div class="form-group">
+        <!-- Row 2: Checkboxes as a 2x2 grid -->
+        <div class="calc-checkbox-grid">
           <label class="checkbox-row" for="calc-tv">
             <input type="checkbox" id="calc-tv">
-            <span>TV</span>
+            <span class="checkbox-label">
+              <span class="checkbox-icon">📺</span>
+              <span>TV</span>
+            </span>
           </label>
-        </div>
 
-        <div class="form-group">
           <label class="checkbox-row" for="calc-fridge">
             <input type="checkbox" id="calc-fridge">
-            <span>Refrigerator</span>
+            <span class="checkbox-label">
+              <span class="checkbox-icon">🧊</span>
+              <span>Refrigerator</span>
+            </span>
           </label>
-        </div>
 
-        <div class="form-group">
           <label class="checkbox-row" for="calc-router">
             <input type="checkbox" id="calc-router">
-            <span>Wi-Fi Router</span>
+            <span class="checkbox-label">
+              <span class="checkbox-icon">📶</span>
+              <span>Wi-Fi Router</span>
+            </span>
           </label>
-        </div>
 
-        <div class="form-group">
           <label class="checkbox-row" for="calc-computer">
             <input type="checkbox" id="calc-computer">
-            <span>Computer / Laptop</span>
+            <span class="checkbox-label">
+              <span class="checkbox-icon">💻</span>
+              <span>Computer / Laptop</span>
+            </span>
           </label>
         </div>
 
-        <button type="submit" class="btn btn-primary btn-full" style="margin-top:20px;">Calculate Recommendation</button>
+        <button type="submit" class="btn btn-primary btn-full calc-submit">
+          ⚡ Calculate My Recommendation
+        </button>
+
+        <p class="calc-note">
+          <span class="calc-note-icon">🔒</span>
+          No spam. We'll only contact you with your recommendation.
+        </p>
       </div>
     </form>
 
