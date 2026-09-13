@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="E-bike batteries in Kolkata. AMPTEK, UPLUS. 12V, configurable for 48V, 60V, 72V systems. Genuine products.">
+  <meta name="keywords" content="e-bike battery, electric bike, 12V, 48V, 60V, 72V, AMPTEK, UPLUS">
+  <title>E-Bike Batteries | MAXVOLT - Kolkata</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <script src="../js/main.js" defer></script>
+</head>
+<body data-category="ebikeBatteries">
+  <!-- HEADER -->
+  <header>
+    <div class="header-content container">
+      <a href="../index.html" class="logo">
+        <div class="logo-icon">⚡</div>
+        MAXVOLT
+      </a>
+      
+      <button class="hamburger" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </a>
+
+      <nav>
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../index.html#products">Products</a></li>
+          <li><a href="../index.html#why-maxvolt">Why MAXVOLT</a></li>
+          <li><a href="../index.html#about">About</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+        </ul>
+      </nav>
+
+      <div class="header-right">
+        <button class="whatsapp-btn" onclick="openWhatsapp()">
+          💬 WhatsApp
+        </a>
+        <a href="../index.html#quotation" class="btn btn-secondary">Get a Quote</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- PAGE HEADER -->
+  <section style="background: linear-gradient(135deg, #001f3f 0%, #003366 100%); color: white; padding: 40px 20px; text-align: center;">
+    <div class="container">
+      <h1 style="color: white; margin-bottom: 12px;">🚲 E-Bike Batteries</h1>
+      <p>High-performance battery sets for electric two-wheelers. Configurable for your voltage requirement.</p>
+    </div>
+  </section>
+
+  <!-- FIND YOUR BATTERY SECTION -->
+  <section class="light-bg container">
+    <div class="section-header">
+      <h2>Find My E-Bike Battery</h2>
+      <p>Tell us your e-bike specifications and we'll recommend the right battery set</p>
+    </div>
+
+    <form style="max-width: 600px; margin: 0 auto; background: white; padding: 32px; border-radius: 8px;">
+      <div class="form-group">
+        <label for="ebike-voltage">System Voltage Requirement *</label>
+        <select id="ebike-voltage" required>
+          <option value="">Select voltage</option>
+          <option value="48V">48V (4 × 12V batteries)</option>
+          <option value="60V">60V (5 × 12V batteries)</option>
+          <option value="72V">72V (6 × 12V batteries)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="ebike-range">Desired Range (km)</label>
+        <input type="number" id="ebike-range" placeholder="e.g., 80">
+      </div>
+
+      <div class="form-group">
+        <label for="ebike-usage">Usage Pattern</label>
+        <select id="ebike-usage">
+          <option value="">Select...</option>
+          <option value="daily-commute">Daily Commute (20-40 km)</option>
+          <option value="frequent">Frequent Use (40+ km)</option>
+          <option value="occasional">Occasional Use</option>
+        </select>
+      </div>
+
+      <button type="button" class="btn btn-primary btn-full" onclick="alert('Thank you! Please contact MAXVOLT via WhatsApp with these details for personalized recommendation.'); openWhatsapp(encodeURIComponent('Hi MAXVOLT, I need an e-bike battery set for ' + document.getElementById('ebike-voltage').value + ' system. Desired range: ' + document.getElementById('ebike-range').value + 'km. Usage: ' + document.getElementById('ebike-usage').value + '. Please recommend the right battery.'));">Get Recommendation</a>
+    </form>
+  </section>
+
+  <!-- PRODUCTS -->
+  <section class="container">
+    <div class="section-header">
+      <h2>E-Bike Battery Sets</h2>
+    </div>
+    <div class="product-grid" id="products-container">
+      <!-- Products loaded via JavaScript -->
+    </div>
+  </section>
+
+  <!-- INFO SECTION -->
+  <section class="light-bg container">
+    <div style="background: white; padding: 40px; border-radius: 8px;">
+      <h3 style="color: #003366; margin-bottom: 20px;">Understanding E-Bike Batteries</h3>
+      
+      <h4 style="color: #003366; margin: 24px 0 12px;">Voltage Configuration</h4>
+      <p style="margin-bottom: 16px;">E-bike batteries are sold as 12V units that are connected in series to achieve higher voltages:</p>
+      <ul style="margin-left: 20px; margin-bottom: 20px;">
+        <li><strong>48V System:</strong> 4 × 12V batteries = 48V (most common for e-bikes)</li>
+        <li><strong>60V System:</strong> 5 × 12V batteries = 60V (higher power e-bikes)</li>
+        <li><strong>72V System:</strong> 6 × 12V batteries = 72V (high-performance e-bikes)</li>
+      </ul>
+
+      <h4 style="color: #003366; margin: 24px 0 12px;">Capacity & Range</h4>
+      <p style="margin-bottom: 16px;">Battery capacity (Ah) determines how far you can ride:</p>
+      <ul style="margin-left: 20px; margin-bottom: 20px;">
+        <li><strong>24Ah:</strong> 60-80 km range (casual users)</li>
+        <li><strong>28Ah:</strong> 80-100 km range (daily commuters)</li>
+        <li><strong>33Ah+:</strong> 100+ km range (frequent users, hilly terrain)</li>
+      </ul>
+
+      <div style="background: #fff3e0; padding: 16px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #f57c00;">
+        <strong>💡 Note:</strong> Actual range depends on terrain, rider weight, speed, and weather conditions. MAXVOLT can help you choose the right capacity for your typical usage.
+      </div>
+
+      <h4 style="color: #003366; margin: 24px 0 12px;">Popular Brands</h4>
+      <ul style="margin-left: 20px; margin-bottom: 20px;">
+        <li><strong>AMPTEK:</strong> Indian brand, reliable performance, good after-sales support</li>
+        <li><strong>UPLUS:</strong> Competitive pricing, suitable for casual riders</li>
+      </ul>
+
+      <h4 style="color: #003366; margin: 24px 0 12px;">Care & Maintenance</h4>
+      <ul style="margin-left: 20px; margin-bottom: 0;">
+        <li>Charge your battery after each use to maintain health</li>
+        <li>Avoid over-charging or completely draining the battery</li>
+        <li>Store in cool, dry place when not in use</li>
+        <li>Regular maintenance extends battery life by 20-30%</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- CTA SECTION -->
+  <section class="container">
+    <div style="background: #003366; color: white; padding: 40px; border-radius: 8px; text-align: center;">
+      <h3 style="color: white; margin-bottom: 12px;">Ready to Power Your E-Bike?</h3>
+      <p style="margin-bottom: 20px;">Get a customized battery set recommendation from MAXVOLT experts.</p>
+      <button class="btn btn-secondary" onclick="openWhatsapp(encodeURIComponent('Hi MAXVOLT, I need an e-bike battery. Please help me choose the right one.'))">💬 Ask on WhatsApp</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-content">
+      <div class="footer-section">
+        <div class="logo" style="color: white;">
+          <div class="logo-icon" style="background: white; color: #003366;">⚡</div>
+          MAXVOLT
+        </div>
+        <p class="footer-tagline">⚡ TRUSTED POWER ALWAYS</p>
+      </div>
+
+      <div class="footer-section">
+        <h3>Products</h3>
+        <ul>
+          <li><a href="home-inverter-batteries.html">Home Batteries</a></li>
+          <li><a href="car-batteries.html">Car Batteries</a></li>
+          <li><a href="toto-erickshaw.html">TOTO / E-Rickshaw</a></li>
+          <li><a href="ebike-batteries.html">E-Bike Batteries</a></li>
+          <li><a href="ups.html">UPS Systems</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-section">
+        <h3>Support</h3>
+        <ul>
+          <li><a href="../index.html#quotation">Get a Quote</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-section">
+        <h3>Contact</h3>
+        <p style="font-size: 0.95rem; margin-bottom: 12px;">📧 maxvolt.power@gmail.com</p>
+        <button class="btn btn-secondary btn-small" onclick="openWhatsapp()">💬 WhatsApp</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; 2024 MAXVOLT. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadProducts();
+      displayProducts(allProducts.ebikeBatteries, 'products-container');
+    });
+  </script>
+</body>
+</html>
+

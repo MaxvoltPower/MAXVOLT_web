@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="UPS systems in Kolkata. APC, Microtek. Backup power for computers, offices, workstations. Genuine products, professional support.">
+  <meta name="keywords" content="UPS, uninterruptible power supply, desktop UPS, office UPS, APC, Microtek">
+  <title>UPS Systems | MAXVOLT - Kolkata</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <script src="../js/main.js" defer></script>
+</head>
+<body data-category="ups">
+  <!-- HEADER -->
+  <header>
+    <div class="header-content container">
+      <a href="../index.html" class="logo">
+        <div class="logo-icon">⚡</div>
+        MAXVOLT
+      </a>
+      
+      <button class="hamburger" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </a>
+
+      <nav>
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../index.html#products">Products</a></li>
+          <li><a href="../index.html#why-maxvolt">Why MAXVOLT</a></li>
+          <li><a href="../index.html#about">About</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+        </ul>
+      </nav>
+
+      <div class="header-right">
+        <button class="whatsapp-btn" onclick="openWhatsapp()">
+          💬 WhatsApp
+        </a>
+        <a href="../index.html#quotation" class="btn btn-secondary">Get a Quote</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- PAGE HEADER -->
+  <section style="background: linear-gradient(135deg, #001f3f 0%, #003366 100%); color: white; padding: 40px 20px; text-align: center;">
+    <div class="container">
+      <h1 style="color: white; margin-bottom: 12px;">💻 UPS Systems</h1>
+      <p>Uninterruptible power supply for computers, offices, and workstations. Protect your data and productivity.</p>
+    </div>
+  </section>
+
+  <!-- FIND YOUR UPS SECTION -->
+  <section class="light-bg container">
+    <div class="section-header">
+      <h2>Find the Right UPS for You</h2>
+      <p>Tell us what you need to protect and we'll recommend suitable UPS models</p>
+    </div>
+
+    <form style="max-width: 600px; margin: 0 auto; background: white; padding: 32px; border-radius: 8px;">
+      <div class="form-group">
+        <label for="ups-devices">What do you want to protect?</label>
+        <div style="display: grid; gap: 12px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: normal;">
+            <input type="checkbox" class="ups-device-check" value="desktop"> Desktop PC
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: normal;">
+            <input type="checkbox" class="ups-device-check" value="monitor"> Monitor
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: normal;">
+            <input type="checkbox" class="ups-device-check" value="router"> Router / WiFi
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: normal;">
+            <input type="checkbox" class="ups-device-check" value="printer"> Printer
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: normal;">
+            <input type="checkbox" class="ups-device-check" value="servers"> Small Servers / NAS
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="ups-backup">Required Backup Time</label>
+        <select id="ups-backup">
+          <option value="">Select...</option>
+          <option value="5-10">5-10 minutes (save & shutdown)</option>
+          <option value="15-30">15-30 minutes (continue working briefly)</option>
+          <option value="30plus">30+ minutes (longer working time)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="ups-type">Environment</label>
+        <select id="ups-type">
+          <option value="">Select...</option>
+          <option value="home">Home office</option>
+          <option value="small-office">Small office</option>
+          <option value="workstation">Workstation</option>
+          <option value="server-room">Server room</option>
+        </select>
+      </div>
+
+      <button type="button" class="btn btn-primary btn-full" onclick="alert('Thank you! Please contact MAXVOLT via WhatsApp for detailed UPS recommendation.'); openWhatsapp(encodeURIComponent('Hi MAXVOLT, I need a UPS for my ' + document.getElementById('ups-type').value + '. Devices: ' + Array.from(document.querySelectorAll('.ups-device-check:checked')).map(c => c.value).join(', ') + '. Backup time needed: ' + document.getElementById('ups-backup').value + ' minutes. Please recommend.'));">Get Recommendation</a>
+    </form>
+  </section>
+
+  <!-- PRODUCTS -->
+  <section class="container">
+    <div class="section-header">
+      <h2>UPS Systems</h2>
+    </div>
+    <div class="product-grid" id="products-container">
+      <!-- Products loaded via JavaScript -->
+    </div>
+  </section>
+
+  <!-- INFO SECTION -->
+  <section class="light-bg container">
+    <div style="background: white; padding: 40px; border-radius: 8px;">
+      <h3 style="color: #003366; margin-bottom: 20px;">Understanding UPS Systems</h3>
+      
+      <h4 style="color: #003366; margin: 24px 0 12px;">What is a UPS?</h4>
+      <p style="margin-bottom: 16px;">A UPS (Uninterruptible Power Supply) is a device that provides instant backup power when the main electricity supply fails. It gives you time to save your work and safely shut down your computer.</p>
+
+      <h4 style="color: #003366; margin: 24px 0 12px;">Key Specifications</h4>
+      <ul style="margin-left: 20px; margin-bottom: 20px;">
+        <li><strong>VA Rating:</strong> Measured in Volt-Amperes (VA). Higher VA = more devices supported. 600-1100VA typical for home/office</li>
+        <li><strong>Runtime:</strong> How long UPS can power your devices. Typically 10-20 minutes depending on load</li>
+        <li><strong>Waveform:</strong> Simulated Sine or Pure Sine. Pure Sine is better for sensitive electronics</li>
+        <li><strong>Battery Backup Time:</strong> Time between power failure and complete battery drain</li>
+      </ul>
+
+      <h4 style="color: #003366; margin: 24px 0 12px;">Choosing the Right UPS</h4>
+      
+      <div style="background: #f0f0f0; padding: 16px; border-radius: 6px; margin-bottom: 16px;">
+        <strong>600-800VA</strong>
+        <p style="margin-top: 8px; color: #666;">Desktop PC + Monitor + Router. Runtime: 10-15 minutes. Good for basic protection and safe shutdown.</p>
+      </div>
+
+      <div style="background: #f0f0f0; padding: 16px; border-radius: 6px; margin-bottom: 16px;">
+        <strong>1000-1100VA</strong>
+        <p style="margin-top: 8px; color: #666;">Office workstation, multiple devices, or server. Runtime: 15-20 minutes. Better for extended work during outage.</p>
+      </div>
+
+      <div style="background: #f0f0f0; padding: 16px; border-radius: 6px; margin-bottom: 16px;">
+        <strong>1600VA+</strong>
+        <p style="margin-top: 8px; color: #666;">Small server rooms, multiple workstations, or mission-critical systems. Professional-grade protection.</p>
+      </div>
+
+      <h4 style="color: #003366; margin: 24px 0 12px;">Popular Brands</h4>
+      <ul style="margin-left: 20px; margin-bottom: 20px;">
+        <li><strong>APC:</strong> Industry leader, reliable, available in India</li>
+        <li><strong>Microtek:</strong> Indian brand, affordable, good customer support</li>
+      </ul>
+
+      <div style="background: #e8f5e9; padding: 16px; border-radius: 6px; border-left: 4px solid #27ae60;">
+        <strong>✓ Benefits of UPS</strong>
+        <ul style="margin-left: 20px; margin-top: 8px; margin-bottom: 0;">
+          <li>Protects your important data from loss</li>
+          <li>Prevents hardware damage from sudden shutdowns</li>
+          <li>Gives you time for safe shutdown</li>
+          <li>Provides peace of mind during power cuts</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA SECTION -->
+  <section class="container">
+    <div style="background: #003366; color: white; padding: 40px; border-radius: 8px; text-align: center;">
+      <h3 style="color: white; margin-bottom: 12px;">Protect Your Equipment Today</h3>
+      <p style="margin-bottom: 20px;">Talk to MAXVOLT experts for the perfect UPS solution for your needs.</p>
+      <button class="btn btn-secondary" onclick="openWhatsapp(encodeURIComponent('Hi MAXVOLT, I need a UPS for my office setup. Please help me choose the right model.'))">💬 Ask on WhatsApp</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-content">
+      <div class="footer-section">
+        <div class="logo" style="color: white;">
+          <div class="logo-icon" style="background: white; color: #003366;">⚡</div>
+          MAXVOLT
+        </div>
+        <p class="footer-tagline">⚡ TRUSTED POWER ALWAYS</p>
+      </div>
+
+      <div class="footer-section">
+        <h3>Products</h3>
+        <ul>
+          <li><a href="home-inverter-batteries.html">Home Batteries</a></li>
+          <li><a href="car-batteries.html">Car Batteries</a></li>
+          <li><a href="toto-erickshaw.html">TOTO / E-Rickshaw</a></li>
+          <li><a href="ebike-batteries.html">E-Bike Batteries</a></li>
+          <li><a href="ups.html">UPS Systems</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-section">
+        <h3>Support</h3>
+        <ul>
+          <li><a href="../index.html#quotation">Get a Quote</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-section">
+        <h3>Contact</h3>
+        <p style="font-size: 0.95rem; margin-bottom: 12px;">📧 maxvolt.power@gmail.com</p>
+        <button class="btn btn-secondary btn-small" onclick="openWhatsapp()">💬 WhatsApp</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; 2024 MAXVOLT. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadProducts();
+      displayProducts(allProducts.ups, 'products-container');
+    });
+  </script>
+</body>
+</html>
+

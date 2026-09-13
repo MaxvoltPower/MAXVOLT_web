@@ -1,0 +1,179 @@
+{
+  "businessInfo": {
+    "name": "MAXVOLT",
+    "tagline": "TRUSTED POWER ALWAYS",
+    "description": "Genuine power and battery solutions for homes, vehicles and businesses",
+    "address": "Kolkata, West Bengal, India",
+    "email": "maxvolt.power@gmail.com",
+    "phone": "+91 98765 43210",
+    "whatsappNumber": "919876543210"
+  },
+
+  "social": {
+    "whatsapp": "919876543210",
+    "instagram": "",
+    "facebook": "",
+    "linkedin": ""
+  },
+
+  "website": {
+    "title": "MAXVOLT - Trusted Power Solutions in Kolkata",
+    "description": "Home inverter batteries, car batteries, TOTO batteries, e-bike batteries, and UPS systems",
+    "keywords": "battery, inverter, power solutions, Kolkata",
+    "url": "https://maxvoltbatteries.in"
+  },
+
+  "serviceArea": {
+    "primary": "Kolkata, West Bengal",
+    "nearby": ["South Kolkata", "North Kolkata", "East Kolkata", "West Kolkata"],
+    "deliveryTime": "24-48 hours"
+  },
+
+  "features": {
+    "enableBlog": false,
+    "enableShop": false,
+    "enableLiveChat": false,
+    "enablePhoneSupport": true,
+    "enableWhatsAppSupport": true,
+    "enableEmailSupport": true
+  },
+
+  "businessHours": {
+    "monday": "9:00 AM - 7:00 PM",
+    "tuesday": "9:00 AM - 7:00 PM",
+    "wednesday": "9:00 AM - 7:00 PM",
+    "thursday": "9:00 AM - 7:00 PM",
+    "friday": "9:00 AM - 7:00 PM",
+    "saturday": "9:00 AM - 5:00 PM",
+    "sunday": "Closed"
+  },
+
+  "brands": [
+    {
+      "name": "Exide",
+      "category": ["home-inverter", "car-battery", "toto"],
+      "description": "Reliable and trusted power solutions"
+    },
+    {
+      "name": "Luminous",
+      "category": ["home-inverter", "toto"],
+      "description": "Premium backup power systems"
+    },
+    {
+      "name": "Amaron",
+      "category": ["home-inverter", "car-battery"],
+      "description": "High-performance batteries"
+    },
+    {
+      "name": "Eastman",
+      "category": ["toto"],
+      "description": "Heavy-duty e-rickshaw solutions"
+    },
+    {
+      "name": "APC",
+      "category": ["ups"],
+      "description": "Industry-leading UPS systems"
+    },
+    {
+      "name": "Microtek",
+      "category": ["ups"],
+      "description": "Affordable UPS solutions"
+    },
+    {
+      "name": "AMPTEK",
+      "category": ["ebike"],
+      "description": "E-bike battery sets"
+    },
+    {
+      "name": "UPLUS",
+      "category": ["ebike"],
+      "description": "High-performance e-bike batteries"
+    }
+  ],
+
+  "categories": [
+    {
+      "id": "home-inverter",
+      "name": "Home Inverter & Battery",
+      "icon": "🏠",
+      "url": "/products/home-inverter-batteries.html",
+      "description": "Reliable backup power for homes and small businesses"
+    },
+    {
+      "id": "car-battery",
+      "name": "Car Batteries",
+      "icon": "🚗",
+      "url": "/products/car-batteries.html",
+      "description": "Reliable starting power for cars and commercial vehicles"
+    },
+    {
+      "id": "toto",
+      "name": "TOTO / E-Rickshaw",
+      "icon": "🛺",
+      "url": "/products/toto-erickshaw.html",
+      "description": "Heavy-duty battery solutions for electric rickshaws"
+    },
+    {
+      "id": "ebike",
+      "name": "E-Bike Batteries",
+      "icon": "🚲",
+      "url": "/products/ebike-batteries.html",
+      "description": "Battery solutions for electric two-wheelers"
+    },
+    {
+      "id": "ups",
+      "name": "UPS Systems",
+      "icon": "💻",
+      "url": "/products/ups.html",
+      "description": "Backup power and protection for PCs, offices and businesses"
+    }
+  ],
+
+  "services": [
+    "Battery Selection & Consultation",
+    "Professional Installation",
+    "Warranty Support & Claims",
+    "Battery Maintenance Guidance",
+    "Product Delivery",
+    "After-Sales Support"
+  ],
+
+  "testimonials": [
+    {
+      "name": "Rajesh Kumar",
+      "location": "South Kolkata",
+      "text": "MAXVOLT helped me choose the right inverter battery. Professional service and transparent pricing. Highly recommended!",
+      "rating": 5
+    },
+    {
+      "name": "Priya Singh",
+      "location": "East Kolkata",
+      "text": "Great customer support on WhatsApp. They answered all my questions about car batteries. Installation was quick and professional.",
+      "rating": 5
+    }
+  ],
+
+  "seo": {
+    "metaDescription": "Genuine power solutions in Kolkata - Home inverter batteries, car batteries, e-bike batteries, TOTO batteries, and UPS systems. Trusted by thousands. Get a quote today.",
+    "metaKeywords": "battery kolkata, inverter battery, car battery, power solutions, ups, e-bike battery",
+    "localBusinessStructuredData": true,
+    "googleAnalyticsId": "GA_MEASUREMENT_ID",
+    "googleSearchConsoleId": "google-site-verification-code"
+  },
+
+  "forms": {
+    "enableCaptcha": false,
+    "formspreeId": "YOUR_FORMSPREE_ID",
+    "successMessage": "Thank you! We will contact you within 24 hours.",
+    "errorMessage": "There was an error. Please try again or contact us directly."
+  },
+
+  "colors": {
+    "primary": "#003366",
+    "secondary": "#ff6b00",
+    "accent": "#0099cc",
+    "success": "#27ae60",
+    "warning": "#f57c00",
+    "danger": "#c2185b"
+  }
+}

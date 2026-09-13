@@ -1,0 +1,65 @@
+<svg viewBox="0 0 1200 900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .battery-dark { fill: #001a4d; }
+      .battery-red { fill: #c41e3a; }
+      .battery-gold { fill: #d4a537; }
+      .text-dark { fill: #001a4d; font-family: Arial, Helvetica, sans-serif; font-weight: bold; }
+      .text-gold { fill: #d4a537; font-family: Arial, Helvetica, sans-serif; font-weight: bold; }
+    </style>
+  </defs>
+  
+  <!-- Battery Top Bar -->
+  <g id="battery-top">
+    <!-- Left terminal (negative) -->
+    <rect x="240" y="120" width="65" height="50" rx="10" class="battery-dark"/>
+    <rect x="220" y="80" width="100" height="45" rx="8" class="battery-dark"/>
+    <rect x="245" y="45" width="50" height="40" rx="6" class="battery-dark"/>
+    
+    <!-- Main battery bar -->
+    <rect x="260" y="175" width="680" height="90" rx="30" class="battery-dark"/>
+    
+    <!-- Center indicator dot -->
+    <circle cx="600" cy="220" r="12" fill="white"/>
+    
+    <!-- Right terminal (positive - RED) -->
+    <rect x="895" y="120" width="65" height="50" rx="10" class="battery-red"/>
+    <rect x="880" y="80" width="100" height="45" rx="8" class="battery-red"/>
+    <rect x="905" y="45" width="50" height="40" rx="6" class="battery-red"/>
+  </g>
+  
+  <!-- Battery Case with M and Lightning -->
+  <g id="battery-case">
+    <!-- Left vertical bar -->
+    <rect x="280" y="290" width="70" height="360" rx="12" class="battery-dark"/>
+    
+    <!-- Right vertical bar -->
+    <rect x="850" y="290" width="70" height="360" rx="12" class="battery-dark"/>
+    
+    <!-- M Shape Lines (left part going down) -->
+    <line x1="315" y1="290" x2="390" y2="390" stroke="#001a4d" stroke-width="60" stroke-linecap="round"/>
+    
+    <!-- M Shape Lines (middle going up - the checkmark) -->
+    <line x1="390" y1="390" x2="480" y2="280" stroke="#001a4d" stroke-width="60" stroke-linecap="round"/>
+    
+    <!-- M Shape Lines (right part) -->
+    <line x1="480" y1="280" x2="555" y2="360" stroke="#001a4d" stroke-width="60" stroke-linecap="round"/>
+    
+    <!-- Lightning Bolt - GOLD/YELLOW -->
+    <!-- Upper part of lightning -->
+    <polygon points="560,320 630,280 600,380 680,340 620,480 560,440" class="battery-gold"/>
+    
+    <!-- Alternative lightning bolt -->
+    <path d="M 620 280 L 680 340 L 600 410 L 670 500 L 560 420 L 600 500 Z" class="battery-gold"/>
+  </g>
+  
+  <!-- Text: MAXVOLT -->
+  <text x="600" y="750" font-size="180" font-weight="bold" text-anchor="middle" class="text-dark">MAX<tspan class="text-gold">VOLT</tspan></text>
+  
+  <!-- Decorative lines -->
+  <line x1="200" y1="800" x2="380" y2="800" stroke="#d4a537" stroke-width="8" stroke-linecap="round"/>
+  <line x1="820" y1="800" x2="1000" y2="800" stroke="#d4a537" stroke-width="8" stroke-linecap="round"/>
+  
+  <!-- Tagline -->
+  <text x="600" y="850" font-size="32" text-anchor="middle" class="text-dark" letter-spacing="2">TRUSTED POWER ALWAYS</text>
+</svg>

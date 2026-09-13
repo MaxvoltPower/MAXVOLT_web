@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Car batteries in Kolkata. Exide, Amaron. Find the right battery for your car model. Genuine products, professional guidance.">
+  <meta name="keywords" content="car battery, automotive battery, Exide, Amaron, left terminal, right terminal">
+  <title>Car Batteries | MAXVOLT - Kolkata</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <script src="../js/main.js" defer></script>
+</head>
+<body data-category="carBatteries">
+  <!-- HEADER -->
+  <header>
+    <div class="header-content container">
+      <a href="../index.html" class="logo">
+        <div class="logo-icon">⚡</div>
+        MAXVOLT
+      </a>
+      
+      <button class="hamburger" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </a>
+
+      <nav>
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../index.html#products">Products</a></li>
+          <li><a href="../index.html#why-maxvolt">Why MAXVOLT</a></li>
+          <li><a href="../index.html#about">About</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+        </ul>
+      </nav>
+
+      <div class="header-right">
+        <button class="whatsapp-btn" onclick="openWhatsapp()">
+          💬 WhatsApp
+        </a>
+        <a href="../index.html#quotation" class="btn btn-secondary">Get a Quote</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- PAGE HEADER -->
+  <section style="background: linear-gradient(135deg, #001f3f 0%, #003366 100%); color: white; padding: 40px 20px; text-align: center;">
+    <div class="container">
+      <h1 style="color: white; margin-bottom: 12px;">🚗 Car Batteries</h1>
+      <p>Genuine car batteries for reliable starting power. Delivered across Kolkata.</p>
+    </div>
+  </section>
+
+  <!-- FIND YOUR BATTERY SECTION -->
+  <section class="light-bg container">
+    <div class="section-header">
+      <h2>Find the Battery for Your Car</h2>
+      <p>Tell us your car details and we'll recommend the right battery</p>
+    </div>
+
+    <form style="max-width: 600px; margin: 0 auto; background: white; padding: 32px; border-radius: 8px;">
+      <div class="form-group">
+        <label for="car-brand">Car Brand</label>
+        <select id="car-brand">
+          <option value="">Select your car brand</option>
+          <option value="Maruti">Maruti Suzuki</option>
+          <option value="Hyundai">Hyundai</option>
+          <option value="Tata">Tata</option>
+          <option value="Honda">Honda</option>
+          <option value="Toyota">Toyota</option>
+          <option value="Mahindra">Mahindra</option>
+          <option value="Force">Force</option>
+          <option value="Renault">Renault</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="car-model">Car Model</label>
+        <input type="text" id="car-model" placeholder="e.g., Swift, i20, Creta">
+      </div>
+
+      <div class="form-group">
+        <label for="car-year">Year of Manufacture</label>
+        <input type="number" id="car-year" min="1990" max="2030" placeholder="e.g., 2020">
+      </div>
+
+      <p style="font-size: 0.9rem; color: #666; margin-bottom: 16px;">We'll confirm the exact battery model for your car.</p>
+      <button type="button" class="btn btn-primary btn-full" onclick="alert('Thank you! Please contact MAXVOLT via WhatsApp with your car details for personalized recommendation.'); openWhatsapp(encodeURIComponent('Hi MAXVOLT, I need a car battery for my ' + document.getElementById('car-brand').value + ' ' + document.getElementById('car-model').value + '. Please help me find the right one.'));">Get Recommendation</a>
+    </form>
+  </section>
+
+  <!-- FILTERS -->
+  <section class="container" style="padding: 30px 20px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; max-width: 600px; margin: 0 auto;">
+      <div class="form-group" style="margin-bottom: 0;">
+        <label for="filter-brand" style="display: block; margin-bottom: 6px; font-size: 0.9rem;">Filter by Brand</label>
+        <select id="filter-brand">
+          <option value="all">All Brands</option>
+          <option value="Exide">Exide</option>
+          <option value="Amaron">Amaron</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 0;">
+        <label for="filter-type" style="display: block; margin-bottom: 6px; font-size: 0.9rem;">Filter by Terminal</label>
+        <select id="filter-type">
+          <option value="all">All Terminals</option>
+          <option value="Left">Left Terminal</option>
+          <option value="Right">Right Terminal</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRODUCTS -->
+  <section class="container">
+    <div class="product-grid" id="products-container">
+      <!-- Products loaded via JavaScript -->
+    </div>
+  </section>
+
+  <!-- INFO SECTION -->
+  <section class="light-bg container">
+    <div style="background: white; padding: 40px; border-radius: 8px;">
+      <h3 style="color: #003366; margin-bottom: 20px;">Important Information About Car Batteries</h3>
+      
+      <h4 style="color: #003366; margin: 24px 0 12px;">Terminal Position (LEFT / RIGHT)</h4>
+      <p style="margin-bottom: 16px;">The terminal position (where the cables attach) is critical. It must match your car's battery connector location.</p>
+      <ul style="margin-left: 20px; margin-bottom: 20px;">
+        <li><strong>LEFT Terminal:</strong> Positive terminal on left side (common in Maruti, Hyundai, Renault)</li>
+        <li><strong>RIGHT Terminal:</strong> Positive terminal on right side (common in Toyota, Mahindra)</li>
+      </ul>
+
+      <div style="background: #fff3e0; padding: 16px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #f57c00;">
+        <strong>⚠️ Important:</strong> Using the wrong terminal position can cause serious electrical issues. Always confirm the terminal position before purchase.
+      </div>
+
+      <h4 style="color: #003366; margin: 24px 0 12px;">Standard Car Battery Specifications</h4>
+      <p style="margin-bottom: 12px;">Most cars use 12V batteries with capacity around 40-50Ah. The specific model depends on your vehicle requirements.</p>
+
+      <h4 style="color: #003366; margin: 24px 0 12px;">Why Choose MAXVOLT</h4>
+      <ul style="margin-left: 20px; margin-bottom: 0;">
+        <li>We help you find the exact right battery for your car model</li>
+        <li>Only genuine branded batteries (Exide, Amaron)</li>
+        <li>Professional installation support available</li>
+        <li>Warranty assistance for peace of mind</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- CTA SECTION -->
+  <section class="container">
+    <div style="background: #003366; color: white; padding: 40px; border-radius: 8px; text-align: center;">
+      <h3 style="color: white; margin-bottom: 12px;">Still Not Sure?</h3>
+      <p style="margin-bottom: 20px;">Contact MAXVOLT via WhatsApp with your car model and we'll provide expert guidance.</p>
+      <button class="btn btn-secondary" onclick="openWhatsapp(encodeURIComponent('Hi MAXVOLT, I need help selecting a car battery. Please assist me.'))">💬 Ask on WhatsApp</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-content">
+      <div class="footer-section">
+        <div class="logo" style="color: white;">
+          <div class="logo-icon" style="background: white; color: #003366;">⚡</div>
+          MAXVOLT
+        </div>
+        <p class="footer-tagline">⚡ TRUSTED POWER ALWAYS</p>
+      </div>
+
+      <div class="footer-section">
+        <h3>Products</h3>
+        <ul>
+          <li><a href="home-inverter-batteries.html">Home Batteries</a></li>
+          <li><a href="car-batteries.html">Car Batteries</a></li>
+          <li><a href="toto-erickshaw.html">TOTO / E-Rickshaw</a></li>
+          <li><a href="ebike-batteries.html">E-Bike Batteries</a></li>
+          <li><a href="ups.html">UPS Systems</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-section">
+        <h3>Support</h3>
+        <ul>
+          <li><a href="../index.html#quotation">Get a Quote</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-section">
+        <h3>Contact</h3>
+        <p style="font-size: 0.95rem; margin-bottom: 12px;">📧 maxvolt.power@gmail.com</p>
+        <button class="btn btn-secondary btn-small" onclick="openWhatsapp()">💬 WhatsApp</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; 2024 MAXVOLT. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadProducts();
+      displayProducts(allProducts.carBatteries, 'products-container');
+    });
+  </script>
+</body>
+</html>
+
