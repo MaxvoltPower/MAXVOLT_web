@@ -63,6 +63,14 @@ function setupNavigation() {
       nav.classList.remove('active');
     }
   });
+
+  // Sticky header shadow
+  const header = document.getElementById('site-header') || document.querySelector('header');
+  if (header) {
+    const onScroll = () => header.classList.toggle('scrolled', window.scrollY > 8);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
 }
 
 // ============================================
@@ -177,29 +185,20 @@ function handleRequirementSubmit(e) {
 }
 
 function showSuccessMessage(message) {
+  document.querySelectorAll('.success-message').forEach(el => el.remove());
+
   const div = document.createElement('div');
   div.className = 'success-message';
+  div.setAttribute('role', 'status');
   div.textContent = message;
-  div.style.cssText = `
-    position: fixed;
-    top: 80px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #27ae60;
-    color: white;
-    padding: 16px 24px;
-    border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 2000;
-    animation: slideDown 0.3s ease;
-  `;
-
   document.body.appendChild(div);
 
   setTimeout(() => {
-    div.style.animation = 'slideUp 0.3s ease';
+    div.style.transition = 'opacity .3s, transform .3s';
+    div.style.opacity = '0';
+    div.style.transform = 'translate(-50%, -12px)';
     setTimeout(() => div.remove(), 300);
-  }, 3000);
+  }, 3200);
 }
 
 // ============================================
@@ -218,46 +217,47 @@ function displayProducts(products, containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
+  if (!products || products.length === 0) {
+    container.innerHTML = `
+      <div style="grid-column:1/-1;text-align:center;padding:48px 16px;color:var(--text-muted);">
+        <div style="font-size:2.5rem;margin-bottom:12px;">🔋</div>
+        <p>No products match your filters. Try adjusting them.</p>
+      </div>`;
+    return;
+  }
+
   container.innerHTML = products.map(product => `
-    <div class="product-card">
+    <article class="product-card">
       <div class="product-image">
-        ${product.image ? `<img src="${basePath}assets/images/${product.image}" alt="${product.model}" loading="lazy">` : '🔋'}
+        ${product.image
+          ? `<img src="${basePath}assets/images/${product.image}" alt="${product.model}" loading="lazy" decoding="async" onerror="this.style.display='none';this.parentNode.textContent='🔋';">`
+          : '🔋'}
       </div>
       <div class="product-content">
         <div class="product-brand">${product.brand}</div>
-        <div class="product-model">${product.model}</div>
-        
+        <h3 class="product-model">${product.model}</h3>
+
         <div class="product-specs">
           <div class="product-spec">
-            <span class="product-spec-label">Capacity:</span>
+            <span class="product-spec-label">Capacity</span>
             <span>${product.capacity}</span>
           </div>
-          ${product.voltage ? `
-            <div class="product-spec">
-              <span class="product-spec-label">Voltage:</span>
-              <span>${product.voltage}</span>
-            </div>
-          ` : ''}
-          ${product.warranty ? `
-            <div class="product-spec">
-              <span class="product-spec-label">Warranty:</span>
-              <span>${product.warranty}</span>
-            </div>
-          ` : ''}
+          ${product.voltage ? `<div class="product-spec"><span class="product-spec-label">Voltage</span><span>${product.voltage}</span></div>` : ''}
+          ${product.warranty ? `<div class="product-spec"><span class="product-spec-label">Warranty</span><span>${product.warranty}</span></div>` : ''}
         </div>
 
-        <div class="product-price">${product.price}</div>
-        
+        <div class="product-price">₹ ${product.price}</div>
+
         <div class="product-availability ${getAvailabilityClass(product.availability)}">
           ${product.availability}
         </div>
 
         <div class="product-actions">
           <a href="${basePath}product-detail.html?id=${product.id}" class="btn btn-primary btn-small">View Details</a>
-          <button class="btn btn-secondary btn-small" data-whatsapp="${product.id}">WhatsApp</button>
+          <button class="btn btn-secondary btn-small" data-whatsapp="${product.id}" aria-label="Ask about ${product.model} on WhatsApp">WhatsApp</button>
         </div>
       </div>
-    </div>
+    </article>
   `).join('');
 }
 

@@ -2,31 +2,38 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="MAXVOLT - Trusted power and battery solutions for homes, vehicles, and businesses in Kolkata. Genuine products, transparent pricing, professional installation.">
   <meta name="keywords" content="inverter battery, car battery, TOTO battery, e-rickshaw battery, e-bike battery, UPS, Kolkata, power solutions">
   <meta name="theme-color" content="#003366">
-  
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="MAXVOLT - Trusted Power Always">
+  <meta property="og:description" content="Genuine power and battery solutions in Kolkata.">
+  <meta property="og:type" content="website">
+
   <title>MAXVOLT - Trusted Power Always | Home Inverter, Battery & UPS Solutions in Kolkata</title>
-  
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="css/styles.css">
   <script src="js/main.js" defer></script>
 </head>
 <body>
   <!-- HEADER -->
-  <header>
+  <header id="site-header">
     <div class="header-content container">
-      <a href="index.html" class="logo">
+      <a href="index.html" class="logo" aria-label="MAXVOLT home">
         <img src="assets/maxvolt-logo.png" alt="MAXVOLT - Trusted Power Always" class="logo-img">
       </a>
-      
-      <button class="hamburger" aria-label="Toggle menu">
-        <span></span>
-        <span></span>
-        <span></span>
+
+      <button class="hamburger" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
       </button>
 
-      <nav>
+      <nav aria-label="Main navigation">
         <ul>
           <li><a href="index.html">Home</a></li>
           <li><a href="#products">Products</a></li>
@@ -38,8 +45,8 @@
       </nav>
 
       <div class="header-right">
-        <a href="https://wa.me/917595941311" target="_blank" class="whatsapp-btn">
-          💬 WhatsApp
+        <a href="https://wa.me/917595941311" target="_blank" rel="noopener" class="whatsapp-btn">
+          <span aria-hidden="true">💬</span> WhatsApp
         </a>
         <a href="#quotation" class="btn btn-secondary">Get a Quote</a>
       </div>
@@ -47,30 +54,27 @@
   </header>
 
   <!-- FEATURED PRODUCTS MARQUEE -->
-  <section style="background: linear-gradient(90deg, #001a4d, #003366); color: white; padding: 20px 0; overflow: hidden;">
-    <div style="display: flex; align-items: center; gap: 20px; animation: scroll 20s linear infinite;">
-      <div style="display: inline-flex; gap: 40px; white-space: nowrap;">
-        <span style="font-weight: 600; font-size: 0.95rem;">⚡ Featured: Luminous RC18000 PRO - 150Ah</span>
-        <span style="font-weight: 600; font-size: 0.95rem;">⚡ Exide IMST1500 - Tall Tubular</span>
-        <span style="font-weight: 600; font-size: 0.95rem;">⚡ Amaron AR200TT54 - 200Ah Premium</span>
-        <span style="font-weight: 600; font-size: 0.95rem;">⚡ Eastman EM1622ER - TOTO Battery</span>
-        <span style="font-weight: 600; font-size: 0.95rem;">⚡ APC BX600C - 600VA UPS</span>
-        <span style="font-weight: 600; font-size: 0.95rem;">⚡ AMPTEK AT12-24 - E-Bike 24Ah</span>
-        <!-- Repeat for continuous loop -->
-        <span style="font-weight: 600; font-size: 0.95rem;">⚡ Featured: Luminous RC18000 PRO - 150Ah</span>
-        <span style="font-weight: 600; font-size: 0.95rem;">⚡ Exide IMST1500 - Tall Tubular</span>
-        <span style="font-weight: 600; font-size: 0.95rem;">⚡ Amaron AR200TT54 - 200Ah Premium</span>
-      </div>
+  <section class="marquee" aria-label="Featured products">
+    <div class="marquee-track">
+      <span class="marquee-item">⚡ Luminous RC18000 PRO — 150Ah</span>
+      <span class="marquee-item">⚡ Exide IMST1500 — Tall Tubular</span>
+      <span class="marquee-item">⚡ Amaron AR200TT54 — 200Ah Premium</span>
+      <span class="marquee-item">⚡ Eastman EM1622ER — TOTO Battery</span>
+      <span class="marquee-item">⚡ APC BX600C — 600VA UPS</span>
+      <span class="marquee-item">⚡ AMPTEK AT12-24 — E-Bike 24Ah</span>
+      <span class="marquee-item">⚡ Microtek Legend 1000 — 1000VA</span>
+      <!-- Duplicate set for seamless loop -->
+      <span class="marquee-item">⚡ Luminous RC18000 PRO — 150Ah</span>
+      <span class="marquee-item">⚡ Exide IMST1500 — Tall Tubular</span>
+      <span class="marquee-item">⚡ Amaron AR200TT54 — 200Ah Premium</span>
+      <span class="marquee-item">⚡ Eastman EM1622ER — TOTO Battery</span>
+      <span class="marquee-item">⚡ APC BX600C — 600VA UPS</span>
+      <span class="marquee-item">⚡ AMPTEK AT12-24 — E-Bike 24Ah</span>
+      <span class="marquee-item">⚡ Microtek Legend 1000 — 1000VA</span>
     </div>
-    <style>
-      @keyframes scroll {
-        0% { transform: translateX(0); }
-        100% { transform: translateX(-50%); }
-      }
-    </style>
   </section>
 
-  <!-- HERO SECTION -->
+  <!-- HERO -->
   <section class="hero" id="home">
     <div class="hero-content">
       <div class="tagline">⚡ TRUSTED POWER ALWAYS</div>
@@ -78,384 +82,307 @@
       <p>Reliable inverter, battery, automotive, TOTO, e-bike and UPS solutions for homes, vehicles and businesses in Kolkata.</p>
       <div class="hero-cta">
         <a href="#quotation" class="btn btn-secondary">Get a Quote</a>
-        <a href="#what-do-you-need" class="btn btn-outline" style="color: white; border-color: white;">Find the Right Battery</a>
+        <a href="#what-do-you-need" class="btn btn-outline" style="color:#fff;border-color:rgba(255,255,255,0.6);">Find the Right Battery</a>
       </div>
     </div>
   </section>
 
-  <!-- QUICK CATEGORY SECTION -->
-  <section id="products" class="container">
-    <div class="section-header">
-      <h2>Our Products</h2>
-      <p>Everything your home, vehicle, or business needs for reliable backup power</p>
-    </div>
-
-    <div class="category-grid">
-      <!-- Home Inverter & Battery -->
-      <div class="category-card">
-        <div class="category-image">🏠</div>
-        <div class="category-content">
-          <h3>Home Inverter & Battery</h3>
-          <p>Reliable backup power for homes and small businesses.</p>
-          <a href="products/home-inverter-batteries.html" class="btn btn-primary">View Products</a>
-        </div>
+  <!-- PRODUCTS -->
+  <section id="products">
+    <div class="container">
+      <div class="section-header">
+        <h2>Our Products</h2>
+        <p>Everything your home, vehicle, or business needs for reliable backup power</p>
       </div>
 
-      <!-- Car Batteries -->
-      <div class="category-card">
-        <div class="category-image">🚗</div>
-        <div class="category-content">
-          <h3>Car Batteries</h3>
-          <p>Reliable starting power for cars and commercial vehicles.</p>
-          <a href="products/car-batteries.html" class="btn btn-primary">View Products</a>
-        </div>
-      </div>
+      <div class="category-grid">
+        <article class="category-card">
+          <div class="category-image">🏠</div>
+          <div class="category-content">
+            <h3>Home Inverter &amp; Battery</h3>
+            <p>Reliable backup power for homes and small businesses.</p>
+            <a href="products/home-inverter-batteries.html" class="btn btn-primary">View Products</a>
+          </div>
+        </article>
 
-      <!-- TOTO / E-Rickshaw -->
-      <div class="category-card">
-        <div class="category-image">🛺</div>
-        <div class="category-content">
-          <h3>TOTO / E-Rickshaw</h3>
-          <p>Heavy-duty battery solutions for electric rickshaws.</p>
-          <a href="products/toto-erickshaw.html" class="btn btn-primary">View Products</a>
-        </div>
-      </div>
+        <article class="category-card">
+          <div class="category-image">🚗</div>
+          <div class="category-content">
+            <h3>Car Batteries</h3>
+            <p>Reliable starting power for cars and commercial vehicles.</p>
+            <a href="products/car-batteries.html" class="btn btn-primary">View Products</a>
+          </div>
+        </article>
 
-      <!-- E-Bike -->
-      <div class="category-card">
-        <div class="category-image">🚲</div>
-        <div class="category-content">
-          <h3>E-Bike Batteries</h3>
-          <p>Battery solutions for electric two-wheelers.</p>
-          <a href="products/ebike-batteries.html" class="btn btn-primary">View Products</a>
-        </div>
-      </div>
+        <article class="category-card">
+          <div class="category-image">🛺</div>
+          <div class="category-content">
+            <h3>TOTO / E-Rickshaw</h3>
+            <p>Heavy-duty battery solutions for electric rickshaws.</p>
+            <a href="products/toto-erickshaw.html" class="btn btn-primary">View Products</a>
+          </div>
+        </article>
 
-      <!-- UPS -->
-      <div class="category-card">
-        <div class="category-image">💻</div>
-        <div class="category-content">
-          <h3>UPS Systems</h3>
-          <p>Backup power and protection for PCs, offices and businesses.</p>
-          <a href="products/ups.html" class="btn btn-primary">View Products</a>
-        </div>
-      </div>
+        <article class="category-card">
+          <div class="category-image">🚲</div>
+          <div class="category-content">
+            <h3>E-Bike Batteries</h3>
+            <p>Battery solutions for electric two-wheelers.</p>
+            <a href="products/ebike-batteries.html" class="btn btn-primary">View Products</a>
+          </div>
+        </article>
 
-      <!-- Solar & Power -->
-      <div class="category-card">
-        <div class="category-image">☀️</div>
-        <div class="category-content">
-          <h3>Solar & Power Solutions</h3>
-          <p>Solutions for renewable and backup power options.</p>
-          <a href="#contact" class="btn btn-primary">Enquire Now</a>
-        </div>
+        <article class="category-card">
+          <div class="category-image">💻</div>
+          <div class="category-content">
+            <h3>UPS Systems</h3>
+            <p>Backup power and protection for PCs, offices and businesses.</p>
+            <a href="products/ups.html" class="btn btn-primary">View Products</a>
+          </div>
+        </article>
+
+        <article class="category-card">
+          <div class="category-image">☀️</div>
+          <div class="category-content">
+            <h3>Solar &amp; Power Solutions</h3>
+            <p>Solutions for renewable and backup power options.</p>
+            <a href="#contact" class="btn btn-primary">Enquire Now</a>
+          </div>
+        </article>
       </div>
     </div>
   </section>
 
-  <!-- HOME INVERTER + BATTERY SECTION -->
-  <section id="solutions" class="container">
+  <!-- SOLUTIONS -->
+  <section id="solutions" class="light-bg">
     <div class="section-header">
       <h2>Home Inverter + Battery Solutions</h2>
       <p>Backup power designed for your home or small business</p>
     </div>
 
-    <div style="background: #f5f5f5; padding: 32px; border-radius: 8px; text-align: center; margin-bottom: 40px;">
-      <h3 style="color: #003366; margin-bottom: 12px;">Inverter + Battery = Complete Backup Solution</h3>
-      <p style="margin-bottom: 20px; color: #666;">An inverter converts DC power from a battery to AC power for your home appliances. Together, they provide seamless backup during power cuts.</p>
+    <div style="background:#fff;padding:32px;border-radius:16px;text-align:center;margin-bottom:40px;box-shadow:var(--shadow-sm);">
+      <h3 style="margin-bottom:12px;">Inverter + Battery = Complete Backup Solution</h3>
+      <p style="margin-bottom:20px;">An inverter converts DC power from a battery to AC power for your home appliances. Together, they provide seamless backup during power cuts.</p>
       <a href="#calculator" class="btn btn-primary">Calculate My Requirement</a>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px;">
-      <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #ddd; text-align: center; cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.borderColor='#003366'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.borderColor='#ddd'; this.style.boxShadow='none'">
-        <h4 style="color: #003366; margin-bottom: 8px;">100Ah / Entry</h4>
-        <p style="font-size: 0.9rem;">For basic backup requirements</p>
-      </div>
-      <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #ddd; text-align: center; cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.borderColor='#003366'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.borderColor='#ddd'; this.style.boxShadow='none'">
-        <h4 style="color: #003366; margin-bottom: 8px;">120Ah</h4>
-        <p style="font-size: 0.9rem;">Small to medium homes</p>
-      </div>
-      <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #ddd; text-align: center; cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.borderColor='#003366'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.borderColor='#ddd'; this.style.boxShadow='none'">
-        <h4 style="color: #003366; margin-bottom: 8px;">150Ah</h4>
-        <p style="font-size: 0.9rem;">Stronger household backup</p>
-      </div>
-      <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #ddd; text-align: center; cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.borderColor='#003366'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.borderColor='#ddd'; this.style.boxShadow='none'">
-        <h4 style="color: #003366; margin-bottom: 8px;">180-200Ah</h4>
-        <p style="font-size: 0.9rem;">High backup requirements</p>
-      </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;">
+      <div class="benefit"><h4>100Ah / Entry</h4><p>For basic backup requirements</p></div>
+      <div class="benefit"><h4>120Ah</h4><p>Small to medium homes</p></div>
+      <div class="benefit"><h4>150Ah</h4><p>Stronger household backup</p></div>
+      <div class="benefit"><h4>180–200Ah</h4><p>High backup requirements</p></div>
     </div>
 
-    <div class="text-center">
-      <a href="products/home-inverter-batteries.html" class="btn btn-primary btn-large" style="font-size: 1.1rem; padding: 14px 32px;">Browse Home Battery Solutions</a>
+    <div style="text-align:center;margin-top:40px;">
+      <a href="products/home-inverter-batteries.html" class="btn btn-primary" style="font-size:1.05rem;padding:14px 32px;">Browse Home Battery Solutions</a>
     </div>
   </section>
 
-  <!-- CALCULATOR SECTION -->
+  <!-- CALCULATOR -->
   <section class="light-bg" id="calculator">
-    <div class="container">
-      <div class="section-header">
-        <h2>Find the Right Inverter & Battery</h2>
-        <p>Tell us what you need to power, and we'll recommend a suitable inverter and battery combination.</p>
-      </div>
-
-      <form id="requirement-calculator" style="max-width: 700px; margin: 0 auto;">
-        <div style="background: white; padding: 32px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-          
-          <h4 style="color: #003366; margin-bottom: 20px;">What do you want to power?</h4>
-
-          <div class="form-group">
-            <label for="calc-fans">Number of Fans:</label>
-            <input type="number" id="calc-fans" min="0" max="10" value="2">
-          </div>
-
-          <div class="form-group">
-            <label for="calc-lights">Number of Lights:</label>
-            <input type="number" id="calc-lights" min="0" max="20" value="5">
-          </div>
-
-          <div class="form-group">
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-              <input type="checkbox" id="calc-tv">
-              <span>TV</span>
-            </label>
-          </div>
-
-          <div class="form-group">
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-              <input type="checkbox" id="calc-fridge">
-              <span>Refrigerator</span>
-            </label>
-          </div>
-
-          <div class="form-group">
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-              <input type="checkbox" id="calc-router">
-              <span>Wi-Fi Router</span>
-            </label>
-          </div>
-
-          <div class="form-group">
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-              <input type="checkbox" id="calc-computer">
-              <span>Computer / Laptop</span>
-            </label>
-          </div>
-
-          <button type="submit" class="btn btn-primary btn-full" style="margin-top: 20px;">Calculate Recommendation</button>
-        </div>
-      </form>
-
-      <div id="calculator-result" style="margin-top: 40px;"></div>
-    </div>
-  </section>
-
-  <!-- FEATURED PRODUCTS SECTION -->
-  <section class="container">
     <div class="section-header">
-      <h2>Featured Home Batteries</h2>
-      <p>Popular choices from trusted brands</p>
+      <h2>Find the Right Inverter &amp; Battery</h2>
+      <p>Tell us what you need to power, and we'll recommend a suitable inverter and battery combination.</p>
     </div>
 
-    <div class="product-grid" id="featured-products">
-      <!-- Products loaded via JavaScript -->
-    </div>
+    <form id="requirement-calculator" style="max-width:700px;margin:0 auto;">
+      <div style="background:#fff;padding:32px;border-radius:16px;box-shadow:var(--shadow-sm);">
+        <h4 style="margin-bottom:20px;">What do you want to power?</h4>
 
-    <div class="text-center mt-3">
-      <a href="products/home-inverter-batteries.html" class="btn btn-primary">View All Home Batteries</a>
-    </div>
-  </section>
-
-  <!-- WHY MAXVOLT SECTION -->
-  <section class="light-bg" id="why-maxvolt">
-    <div class="container">
-      <div class="section-header">
-        <h2>Why Choose MAXVOLT</h2>
-        <p>We focus on what matters most: genuine products and your satisfaction</p>
-      </div>
-
-      <div class="benefits">
-        <div class="benefit">
-          <div class="benefit-icon">✓</div>
-          <h4>Genuine Products</h4>
-          <p>We focus on genuine branded power products only. No counterfeits.</p>
+        <div class="form-group">
+          <label for="calc-fans">Number of Fans:</label>
+          <input type="number" id="calc-fans" min="0" max="10" value="2">
         </div>
 
-        <div class="benefit">
-          <div class="benefit-icon">💰</div>
-          <h4>Transparent Pricing</h4>
-          <p>Clear and honest recommendations. No hidden charges or surprises.</p>
+        <div class="form-group">
+          <label for="calc-lights">Number of Lights:</label>
+          <input type="number" id="calc-lights" min="0" max="20" value="5">
         </div>
 
-        <div class="benefit">
-          <div class="benefit-icon">🛠️</div>
-          <h4>Professional Installation</h4>
-          <p>Expert installation and setup support when required.</p>
+        <div class="form-group">
+          <label class="checkbox-row" for="calc-tv">
+            <input type="checkbox" id="calc-tv">
+            <span>TV</span>
+          </label>
         </div>
 
-        <div class="benefit">
-          <div class="benefit-icon">🤝</div>
-          <h4>Reliable After-Sales</h4>
-          <p>Warranty assistance and long-term customer support.</p>
+        <div class="form-group">
+          <label class="checkbox-row" for="calc-fridge">
+            <input type="checkbox" id="calc-fridge">
+            <span>Refrigerator</span>
+          </label>
         </div>
 
-        <div class="benefit">
-          <div class="benefit-icon">🎯</div>
-          <h4>Right Product</h4>
-          <p>We help you choose based on actual need, not just sales pressure.</p>
+        <div class="form-group">
+          <label class="checkbox-row" for="calc-router">
+            <input type="checkbox" id="calc-router">
+            <span>Wi-Fi Router</span>
+          </label>
         </div>
 
-        <div class="benefit">
-          <div class="benefit-icon">📍</div>
-          <h4>Local Support</h4>
-          <p>Serving customers in Kolkata and surrounding areas with dedicated support.</p>
+        <div class="form-group">
+          <label class="checkbox-row" for="calc-computer">
+            <input type="checkbox" id="calc-computer">
+            <span>Computer / Laptop</span>
+          </label>
         </div>
+
+        <button type="submit" class="btn btn-primary btn-full" style="margin-top:20px;">Calculate Recommendation</button>
       </div>
-    </div>
-  </section>
-
-  <!-- QUOTATION SECTION -->
-  <section id="quotation" class="container">
-    <div class="section-header">
-      <h2>Get Your MAXVOLT Quote</h2>
-      <p>Simple. Quick. No hassle. We'll contact you within 24 hours.</p>
-    </div>
-
-    <form id="quotation-form" style="max-width: 600px; margin: 0 auto; background: #f5f5f5; padding: 32px; border-radius: 8px;">
-      <div class="form-group">
-        <label for="quote-name">Name *</label>
-        <input type="text" id="quote-name" required>
-      </div>
-
-      <div class="form-group">
-        <label for="quote-phone">Phone *</label>
-        <input type="tel" id="quote-phone" required placeholder="+91 XXXXX XXXXX">
-      </div>
-
-      <div class="form-group">
-        <label for="quote-email">Email</label>
-        <input type="email" id="quote-email">
-      </div>
-
-      <div class="form-group">
-        <label for="quote-location">Location</label>
-        <input type="text" id="quote-location" placeholder="Your area / locality">
-      </div>
-
-      <div class="form-group">
-        <label for="quote-requirement">What do you need? *</label>
-        <select id="quote-requirement" required>
-          <option value="">Select...</option>
-          <option value="Home inverter + battery">Home Inverter + Battery</option>
-          <option value="Car battery">Car Battery</option>
-          <option value="TOTO / E-rickshaw battery">TOTO / E-Rickshaw Battery</option>
-          <option value="E-bike battery">E-Bike Battery</option>
-          <option value="UPS System">UPS System</option>
-          <option value="Solar solution">Solar Solution</option>
-          <option value="Other power solution">Other Power Solution</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="quote-message">Tell us more (optional)</label>
-        <textarea id="quote-message" placeholder="e.g., Currently using XYZ battery, looking for upgrade..."></textarea>
-      </div>
-
-      <button type="submit" class="btn btn-primary btn-full">Request Quote</button>
-      <p style="font-size: 0.85rem; color: #666; margin-top: 12px; text-align: center;">We'll contact you via WhatsApp or phone to confirm details and provide pricing.</p>
     </form>
+
+    <div id="calculator-result" style="margin-top:40px;max-width:700px;margin-left:auto;margin-right:auto;"></div>
   </section>
 
-  <!-- SERVICE AREA SECTION -->
-  <section class="light-bg container">
+  <!-- FEATURED PRODUCTS -->
+  <section>
+    <div class="container">
+      <div class="section-header">
+        <h2>Featured Home Batteries</h2>
+        <p>Popular choices from trusted brands</p>
+      </div>
+
+      <div class="product-grid" id="featured-products" aria-live="polite">
+        <!-- Skeleton placeholders (removed by JS) -->
+        <div class="product-card"><div class="product-image skeleton"></div><div class="product-content"><div class="skeleton" style="height:12px;width:40%;margin-bottom:8px;"></div><div class="skeleton" style="height:16px;width:70%;margin-bottom:12px;"></div><div class="skeleton" style="height:12px;width:100%;margin-bottom:8px;"></div><div class="skeleton" style="height:12px;width:80%;"></div></div></div>
+        <div class="product-card"><div class="product-image skeleton"></div><div class="product-content"><div class="skeleton" style="height:12px;width:40%;margin-bottom:8px;"></div><div class="skeleton" style="height:16px;width:70%;margin-bottom:12px;"></div><div class="skeleton" style="height:12px;width:100%;margin-bottom:8px;"></div><div class="skeleton" style="height:12px;width:80%;"></div></div></div>
+        <div class="product-card"><div class="product-image skeleton"></div><div class="product-content"><div class="skeleton" style="height:12px;width:40%;margin-bottom:8px;"></div><div class="skeleton" style="height:16px;width:70%;margin-bottom:12px;"></div><div class="skeleton" style="height:12px;width:100%;margin-bottom:8px;"></div><div class="skeleton" style="height:12px;width:80%;"></div></div></div>
+        <div class="product-card"><div class="product-image skeleton"></div><div class="product-content"><div class="skeleton" style="height:12px;width:40%;margin-bottom:8px;"></div><div class="skeleton" style="height:16px;width:70%;margin-bottom:12px;"></div><div class="skeleton" style="height:12px;width:100%;margin-bottom:8px;"></div><div class="skeleton" style="height:12px;width:80%;"></div></div></div>
+      </div>
+
+      <div style="text-align:center;margin-top:40px;">
+        <a href="products/home-inverter-batteries.html" class="btn btn-primary">View All Home Batteries</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY -->
+  <section class="light-bg" id="why-maxvolt">
+    <div class="section-header">
+      <h2>Why Choose MAXVOLT</h2>
+      <p>We focus on what matters most: genuine products and your satisfaction</p>
+    </div>
+
+    <div class="benefits">
+      <div class="benefit"><div class="benefit-icon">✓</div><h4>Genuine Products</h4><p>We focus on genuine branded power products only. No counterfeits.</p></div>
+      <div class="benefit"><div class="benefit-icon">💰</div><h4>Transparent Pricing</h4><p>Clear and honest recommendations. No hidden charges or surprises.</p></div>
+      <div class="benefit"><div class="benefit-icon">🛠️</div><h4>Professional Installation</h4><p>Expert installation and setup support when required.</p></div>
+      <div class="benefit"><div class="benefit-icon">🤝</div><h4>Reliable After-Sales</h4><p>Warranty assistance and long-term customer support.</p></div>
+      <div class="benefit"><div class="benefit-icon">🎯</div><h4>Right Product</h4><p>We help you choose based on actual need, not just sales pressure.</p></div>
+      <div class="benefit"><div class="benefit-icon">📍</div><h4>Local Support</h4><p>Serving customers in Kolkata and surrounding areas with dedicated support.</p></div>
+    </div>
+  </section>
+
+  <!-- QUOTATION -->
+  <section id="quotation">
+    <div class="container">
+      <div class="section-header">
+        <h2>Get Your MAXVOLT Quote</h2>
+        <p>Simple. Quick. No hassle. We'll contact you within 24 hours.</p>
+      </div>
+
+      <form id="quotation-form" style="max-width:600px;margin:0 auto;background:var(--bg-subtle);padding:32px;border-radius:16px;border:1px solid var(--border);">
+        <div class="form-group"><label for="quote-name">Name *</label><input type="text" id="quote-name" required></div>
+        <div class="form-group"><label for="quote-phone">Phone *</label><input type="tel" id="quote-phone" required placeholder="+91 XXXXX XXXXX"></div>
+        <div class="form-group"><label for="quote-email">Email</label><input type="email" id="quote-email"></div>
+        <div class="form-group"><label for="quote-location">Location</label><input type="text" id="quote-location" placeholder="Your area / locality"></div>
+        <div class="form-group">
+          <label for="quote-requirement">What do you need? *</label>
+          <select id="quote-requirement" required>
+            <option value="">Select...</option>
+            <option>Home Inverter + Battery</option>
+            <option>Car Battery</option>
+            <option>TOTO / E-Rickshaw Battery</option>
+            <option>E-Bike Battery</option>
+            <option>UPS System</option>
+            <option>Solar Solution</option>
+            <option>Other Power Solution</option>
+          </select>
+        </div>
+        <div class="form-group"><label for="quote-message">Tell us more (optional)</label><textarea id="quote-message" placeholder="e.g., Currently using XYZ battery, looking for upgrade..."></textarea></div>
+
+        <button type="submit" class="btn btn-primary btn-full">Request Quote</button>
+        <p style="font-size:.85rem;color:var(--text-subtle);margin-top:12px;text-align:center;">We'll contact you via WhatsApp or phone to confirm details and provide pricing.</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- SERVICE AREA -->
+  <section class="light-bg">
     <div class="section-header">
       <h2>Service Area</h2>
       <p>Primary service area: Kolkata, West Bengal</p>
     </div>
-
-    <div style="background: white; padding: 32px; border-radius: 8px; text-align: center;">
-      <h4 style="color: #003366; margin-bottom: 12px;">📍 Kolkata & Nearby Areas</h4>
-      <p style="margin-bottom: 20px; color: #666;">We provide battery selection, quotation, and installation support across Kolkata and surrounding areas.</p>
+    <div style="background:#fff;padding:32px;border-radius:16px;text-align:center;box-shadow:var(--shadow-sm);">
+      <h4 style="margin-bottom:12px;">📍 Kolkata &amp; Nearby Areas</h4>
+      <p style="margin-bottom:20px;">We provide battery selection, quotation, and installation support across Kolkata and surrounding areas.</p>
       <a href="#quotation" class="btn btn-primary">Check Availability for Your Area</a>
     </div>
   </section>
 
-  <!-- ABOUT SECTION -->
-  <section id="about" class="container">
-    <div class="section-header">
-      <h2>About MAXVOLT</h2>
-      <p>Who we are and what drives us</p>
-    </div>
-
-    <div style="background: #f5f5f5; padding: 40px; border-radius: 8px; max-width: 900px; margin: 0 auto;">
-      <p style="margin-bottom: 16px; font-size: 1.05rem; line-height: 1.8;">MAXVOLT is a Kolkata-based power-solutions company focused on making batteries, inverters, and backup-power products easier to choose and purchase.</p>
-      
-      <h4 style="color: #003366; margin: 32px 0 16px;">Our Focus</h4>
-      <ul style="list-style: none; margin-bottom: 24px;">
-        <li style="margin-bottom: 12px;"><strong>✓ Genuine Products:</strong> Only authentic branded solutions.</li>
-        <li style="margin-bottom: 12px;"><strong>✓ Practical Recommendations:</strong> Right product for your actual need.</li>
-        <li style="margin-bottom: 12px;"><strong>✓ Professional Service:</strong> Expert guidance and installation support.</li>
-        <li style="margin-bottom: 12px;"><strong>✓ Transparent Communication:</strong> Clear pricing and honest answers.</li>
-        <li style="margin-bottom: 12px;"><strong>✓ Long-term Relationships:</strong> We care about your satisfaction after the sale.</li>
-      </ul>
-
-      <p style="color: #666;">MAXVOLT is not a generic battery shop. We understand power requirements and help customers make informed decisions for their specific situation.</p>
-    </div>
-  </section>
-
-  <!-- CONTACT SECTION -->
-  <section class="light-bg" id="contact">
+  <!-- ABOUT -->
+  <section id="about">
     <div class="container">
       <div class="section-header">
-        <h2>Contact MAXVOLT</h2>
-        <p>Get in touch. We're here to help.</p>
+        <h2>About MAXVOLT</h2>
+        <p>Who we are and what drives us</p>
       </div>
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 32px; max-width: 900px; margin: 0 auto;">
-        <div style="text-align: center;">
-          <div style="font-size: 2rem; margin-bottom: 12px;">💬</div>
-          <h4 style="color: #003366; margin-bottom: 8px;">WhatsApp</h4>
-          <p style="margin-bottom: 16px; color: #666;">Instant messaging for quick queries</p>
-          <a href="https://wa.me/917595941311" target="_blank" class="btn btn-secondary">Open WhatsApp</a>
-        </div>
+      <div style="background:var(--bg-subtle);padding:40px;border-radius:16px;max-width:900px;margin:0 auto;border:1px solid var(--border);">
+        <p style="margin-bottom:16px;font-size:1.05rem;line-height:1.8;">MAXVOLT is a Kolkata-based power-solutions company focused on making batteries, inverters, and backup-power products easier to choose and purchase.</p>
 
-        <div style="text-align: center;">
-          <div style="font-size: 2rem; margin-bottom: 12px;">📞</div>
-          <h4 style="color: #003366; margin-bottom: 8px;">Phone</h4>
-          <p style="margin-bottom: 16px; color: #666;">Call for detailed discussions</p>
-          <a href="tel:+917595941311" class="btn btn-primary">Call Now: 7595941311</a>
-        </div>
-
-        <div style="text-align: center;">
-          <div style="font-size: 2rem; margin-bottom: 12px;">✉️</div>
-          <h4 style="color: #003366; margin-bottom: 8px;">Email</h4>
-          <p style="margin-bottom: 16px; color: #666;">Send us your inquiry</p>
-          <a href="mailto:maxvolt.power@gmail.com" class="btn btn-outline">Email Us</a>
-        </div>
-      </div>
-
-      <div style="background: white; padding: 32px; border-radius: 8px; margin-top: 40px; max-width: 600px; margin-left: auto; margin-right: auto; text-align: center;">
-        <h4 style="color: #003366; margin-bottom: 8px;">MAXVOLT</h4>
-        <p style="font-size: 0.95rem; color: #666; margin-bottom: 16px;">⚡ TRUSTED POWER ALWAYS</p>
-        <p style="color: #999; font-size: 0.9rem;">Kolkata, West Bengal, India</p>
-        <p style="color: #999; font-size: 0.9rem;"><strong>Email:</strong> <a href="mailto:maxvolt.power@gmail.com" style="color: #0099cc;">maxvolt.power@gmail.com</a></p>
-        <p style="color: #999; font-size: 0.9rem;"><strong>Phone:</strong> <a href="tel:+917595941311" style="color: #0099cc;">+91 7595941311</a></p>
-        <p style="color: #999; font-size: 0.9rem;"><strong>WhatsApp:</strong> <a href="https://wa.me/917595941311" target="_blank" style="color: #25d366;">+91 7595941311</a></p>
+        <h4 style="margin:32px 0 16px;">Our Focus</h4>
+        <ul style="list-style:none;margin-bottom:24px;display:grid;gap:12px;">
+          <li><strong>✓ Genuine Products:</strong> Only authentic branded solutions.</li>
+          <li><strong>✓ Practical Recommendations:</strong> Right product for your actual need.</li>
+          <li><strong>✓ Professional Service:</strong> Expert guidance and installation support.</li>
+          <li><strong>✓ Transparent Communication:</strong> Clear pricing and honest answers.</li>
+          <li><strong>✓ Long-term Relationships:</strong> We care about your satisfaction after the sale.</li>
+        </ul>
       </div>
     </div>
   </section>
 
-  <!-- SCROLL TO TOP -->
-  <button id="scroll-top" style="position: fixed; bottom: 30px; right: 30px; width: 50px; height: 50px; background: #003366; color: white; border: none; border-radius: 50%; font-size: 1.5rem; cursor: pointer; display: none; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 999; transition: all 0.3s ease;" onmouseover="this.style.background='#002244'" onmouseout="this.style.background='#003366'">↑</button>
+  <!-- CONTACT -->
+  <section class="light-bg" id="contact">
+    <div class="section-header">
+      <h2>Contact MAXVOLT</h2>
+      <p>Get in touch. We're here to help.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:32px;max-width:1000px;margin:0 auto;">
+      <div class="benefit">
+        <div class="benefit-icon">💬</div>
+        <h4>WhatsApp</h4>
+        <p style="margin-bottom:16px;">Instant messaging for quick queries</p>
+        <a href="https://wa.me/917595941311" target="_blank" rel="noopener" class="btn btn-secondary">Open WhatsApp</a>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon">📞</div>
+        <h4>Phone</h4>
+        <p style="margin-bottom:16px;">Call for detailed discussions</p>
+        <a href="tel:+917595941311" class="btn btn-primary">Call 7595941311</a>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon">✉️</div>
+        <h4>Email</h4>
+        <p style="margin-bottom:16px;">Send us your inquiry</p>
+        <a href="mailto:maxvolt.power@gmail.com" class="btn btn-outline">Email Us</a>
+      </div>
+    </div>
+  </section>
+
+  <button id="scroll-top" aria-label="Scroll to top">↑</button>
 
   <!-- FOOTER -->
   <footer>
     <div class="footer-content">
       <div class="footer-section">
-        <div class="logo" style="color: white; display: inline-flex; margin-bottom: 12px;">
-          <img src="assets/maxvolt-logo.png" alt="MAXVOLT" class="logo-img" style="height: 40px;">
+        <div class="logo" style="display:inline-flex;margin-bottom:12px;">
+          <img src="assets/maxvolt-logo.png" alt="MAXVOLT" style="height:44px;filter:brightness(0) invert(1);">
         </div>
         <p class="footer-tagline">⚡ TRUSTED POWER ALWAYS</p>
-        <p style="font-size: 0.9rem; color: rgba(255,255,255,0.8); margin-top: 8px;">Your trusted partner for genuine power and battery solutions in Kolkata.</p>
+        <p style="font-size:.9rem;color:rgba(255,255,255,.7);margin-top:8px;">Your trusted partner for genuine power and battery solutions in Kolkata.</p>
       </div>
 
       <div class="footer-section">
@@ -481,41 +408,26 @@
       </div>
 
       <div class="footer-section">
-        <h3>Support</h3>
-        <ul>
-          <li><a href="#quotation">Get a Quote</a></li>
-          <li><a href="#calculator">Find Right Battery</a></li>
-          <li><a href="pages/warranty.html">Warranty</a></li>
-          <li><a href="pages/faq.html">FAQ</a></li>
-        </ul>
-      </div>
-
-      <div class="footer-section">
         <h3>Contact</h3>
-        <p style="font-size: 0.95rem; margin-bottom: 8px;">📍 Kolkata, West Bengal</p>
-        <p style="font-size: 0.95rem; margin-bottom: 12px;">
+        <p style="font-size:.95rem;margin-bottom:8px;color:rgba(255,255,255,.85);">📍 Kolkata, West Bengal</p>
+        <p style="font-size:.95rem;margin-bottom:12px;">
           📧 <a href="mailto:maxvolt.power@gmail.com">maxvolt.power@gmail.com</a>
         </p>
-        <a href="https://wa.me/917595941311" target="_blank" class="btn btn-secondary btn-small">💬 WhatsApp</a>
+        <a href="https://wa.me/917595941311" target="_blank" rel="noopener" class="btn btn-secondary btn-small">💬 WhatsApp</a>
       </div>
     </div>
 
     <div class="footer-bottom">
-      <p>&copy; 2024 MAXVOLT. All rights reserved. | <a href="pages/privacy.html">Privacy</a> | <a href="pages/terms.html">Terms</a></p>
+      <p>&copy; 2024 MAXVOLT. All rights reserved.</p>
     </div>
   </footer>
 
   <script>
-    // Load featured products on homepage
     document.addEventListener('DOMContentLoaded', async () => {
       await loadProducts();
-      
-      // Display first 4 home batteries as featured
       const featured = allProducts.homeInverterBatteries.slice(0, 4);
       displayProducts(featured, 'featured-products');
     });
   </script>
 </body>
 </html>
-
-
