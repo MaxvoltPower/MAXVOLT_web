@@ -66,6 +66,50 @@
   --transition-slow: 400ms var(--ease);
 }
 
+/* ============================================
+   THEMED SCROLLBARS
+   ============================================ */
+
+/* --- Firefox + modern Chromium --- */
+html {
+  scrollbar-color: var(--border-strong) var(--bg-subtle);
+  scrollbar-width: thin;
+}
+
+/* --- WebKit (Safari, older Chrome/Edge) --- */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-subtle);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--border-strong), var(--primary-light));
+  border-radius: var(--radius-full);
+  border: 3px solid var(--bg-subtle);
+  background-clip: padding-box;
+  transition: background var(--transition);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--secondary), var(--secondary-light));
+  background-clip: padding-box;
+  border-color: var(--bg-subtle);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: var(--secondary-dark);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--bg-subtle);
+}
+
 /* ---------- RESET ---------- */
 *, *::before, *::after {
   margin: 0;
@@ -950,60 +994,186 @@ footer::before {
    FORM LABEL + CHECKBOX FIXES
    ============================================================ */
 
-/* Checkbox row layout */
-#requirement-calculator .form-group > label,
-form .checkbox-row {
+/* ============================================================
+   REQUIREMENT CALCULATOR - LAYOUT
+   ============================================================ */
+
+.calc-form {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.calc-surface {
+  padding: var(--space-8);
+}
+
+.calc-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: var(--space-6);
+  text-align: center;
+}
+
+/* Two-column grid for number inputs */
+.calc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.calc-field label {
+  display: block;
+  margin-bottom: 8px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text);
+  cursor: default;
+}
+
+.calc-field input[type="number"] {
+  width: 100%;
+  max-width: 100%;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 14px 16px;
+}
+
+/* Divider with centered label */
+.calc-divider {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-4);
+  margin: var(--space-6) 0 var(--space-4);
+  color: var(--text-subtle);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.calc-divider::before,
+.calc-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* 2x2 checkbox grid */
+.calc-checkbox-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+/* Checkbox cards */
+#requirement-calculator .checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   cursor: pointer;
-  font-weight: 500;
-  color: var(--text);
   margin: 0;
-  padding: 12px 16px;
+  padding: 14px 16px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-muted);
-  transition: border-color var(--transition), background var(--transition), box-shadow var(--transition);
+  transition: border-color var(--transition),
+              background var(--transition),
+              box-shadow var(--transition),
+              transform var(--transition);
 }
 
-#requirement-calculator .form-group > label:hover,
-form .checkbox-row:hover {
+#requirement-calculator .checkbox-row:hover {
   border-color: var(--secondary);
   background: rgba(255, 107, 0, 0.08);
+  transform: translateY(-1px);
 }
 
-#requirement-calculator .form-group > label:has(input:checked),
-form .checkbox-row:has(input:checked) {
+#requirement-calculator .checkbox-row:has(input:checked) {
   border-color: var(--secondary);
   background: rgba(255, 107, 0, 0.12);
   box-shadow: var(--shadow-glow);
 }
 
-/* Undo the global width/padding on checkbox + radio */
-input[type="checkbox"],
-input[type="radio"] {
-  width: auto;
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.checkbox-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+/* Checkbox input */
+#requirement-calculator input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin: 0;
   padding: 0;
   border: none;
   background: none;
   box-shadow: none;
   accent-color: var(--secondary);
   cursor: pointer;
-}
-
-#requirement-calculator input[type="checkbox"],
-form .checkbox-row input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  margin: 0;
   border-radius: 6px;
-  outline-offset: 4px;
 }
 
-#requirement-calculator .form-group { margin-bottom: 12px; }
-#requirement-calculator input[type="number"] { max-width: 200px; }
+/* Submit button */
+.calc-submit {
+  margin-top: var(--space-2);
+  padding: 16px 24px;
+  font-size: 1rem;
+}
+
+/* Result card spacing */
+#calculator-result {
+  margin-top: var(--space-8);
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Mobile: collapse to single column */
+@media (max-width: 640px) {
+  .calc-grid,
+  .calc-checkbox-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .calc-surface {
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .calc-field input[type="number"] {
+    text-align: left;
+  }
+}
+
+.calc-note {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-subtle);
+  margin-top: var(--space-3);
+}
+
+.calc-note-icon {
+  display: inline-block;
+  margin-right: 4px;
+  opacity: 0.85;
+}
 
 /* ============================================================
    INLINE-STYLE OVERRIDES

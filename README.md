@@ -455,5 +455,3 @@ Everything you need for a professional, high-converting website is ready to go.
 
 Your professional battery and power solutions website.
 Ready to serve Kolkata and beyond.
-#   M A X V O L T _ w e b  
- 
