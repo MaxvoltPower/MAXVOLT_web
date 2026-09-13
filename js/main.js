@@ -15,7 +15,9 @@ let allProducts = {};
 
 async function loadProducts() {
   try {
-    const response = await fetch('/data/products.json');
+    // Detect if we're in /products/ subfolder
+    const basePath = window.location.pathname.includes('/products/') ? '../' : '';
+    const response = await fetch(basePath + 'data/products.json');
     allProducts = await response.json();
   } catch (error) {
     console.error('Error loading products:', error);
@@ -216,7 +218,7 @@ function displayProducts(products, containerId) {
   container.innerHTML = products.map(product => `
     <div class="product-card">
       <div class="product-image">
-        ${product.image ? `<img src="/assets/images/${product.image}" alt="${product.model}" loading="lazy">` : '🔋'}
+        ${product.image ? `<img src="${basePath}assets/images/${product.image}" alt="${product.model}" loading="lazy">` : '🔋'}
       </div>
       <div class="product-content">
         <div class="product-brand">${product.brand}</div>
@@ -248,7 +250,7 @@ function displayProducts(products, containerId) {
         </div>
 
         <div class="product-actions">
-          <a href="/product-detail.html?id=${product.id}" class="btn btn-primary btn-small">View Details</a>
+          <a href="${basePath}product-detail.html?id=${product.id}" class="btn btn-primary btn-small">View Details</a>
           <button class="btn btn-secondary btn-small" data-whatsapp="${product.id}">WhatsApp</button>
         </div>
       </div>

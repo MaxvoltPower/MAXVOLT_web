@@ -1,21 +1,18 @@
 [build]
   command = "echo 'Build complete'"
-  publish = "maxvolt-website"
+  publish = "."
 
 [dev]
   port = 3000
-  publish = "maxvolt-website"
+  publish = "."
   autoLaunch = false
 
-[[redirects]]
-  from = "/index.html"
-  to = "/index.html"
-  status = 200
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# Only redirect if the requested file doesn't exist (SPA fallback, optional)
+# Remove this block entirely if you want 404s for missing pages.
+# [[redirects]]
+#   from = "/*"
+#   to = "/index.html"
+#   status = 200
 
 [[headers]]
   for = "/*"
@@ -44,3 +41,8 @@
   for = "/data/*"
   [headers.values]
     Cache-Control = "public, max-age=3600"
+
+[[redirects]]
+  from = "/products/:page"
+  to = "/products/:page.html"
+  status = 200
