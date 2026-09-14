@@ -85,16 +85,73 @@
     </div>
   </section>
 
-  <!-- HERO -->
-  <section class="hero" id="home">
-    <div class="hero-content">
-      <div class="tagline">⚡ TRUSTED POWER ALWAYS</div>
-      <h1>Trusted Power. Wherever You Need It.</h1>
-      <p>Reliable inverter, battery, automotive, TOTO, e-bike and UPS solutions for homes, vehicles and businesses in Kolkata.</p>
-      <div class="hero-cta">
-        <a href="#quotation" class="btn btn-secondary">Get a Quote</a>
-        <a href="#what-do-you-need" class="btn btn-outline">Find the Right Battery</a>
+  <!-- HERO CAROUSEL -->
+  <section class="hero-carousel" id="home" aria-roledescription="carousel" aria-label="MAXVOLT highlights">
+    <div class="hero-slides">
+
+      <!-- Slide 1 -->
+      <div class="hero-slide is-active" role="group" aria-roledescription="slide" aria-label="1 of 4">
+        <div class="hero-slide-inner">
+          <div class="tagline">⚡ TRUSTED POWER ALWAYS</div>
+          <h1>Trusted Power. Wherever You Need It.</h1>
+          <p>Reliable inverter, battery, automotive, TOTO, e-bike and UPS solutions for homes, vehicles and businesses in Kolkata.</p>
+          <div class="hero-cta">
+            <a href="#quotation" class="btn btn-secondary">Get a Quote</a>
+            <a href="#what-do-you-need" class="btn btn-outline">Find the Right Battery</a>
+          </div>
+        </div>
       </div>
+
+      <!-- Slide 2 -->
+      <div class="hero-slide" role="group" aria-roledescription="slide" aria-label="2 of 4">
+        <div class="hero-slide-inner">
+          <div class="tagline">🏠 HOME BACKUP</div>
+          <h1>Never Sit in the Dark Again.</h1>
+          <p>Inverter + battery combinations sized for your actual load. Exide, Luminous and Amaron — genuine products, honest advice.</p>
+          <div class="hero-cta">
+            <a href="products/home-inverter-batteries.html" class="btn btn-secondary">Browse Home Batteries</a>
+            <a href="#calculator" class="btn btn-outline">Calculate My Requirement</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide 3 -->
+      <div class="hero-slide" role="group" aria-roledescription="slide" aria-label="3 of 4">
+        <div class="hero-slide-inner">
+          <div class="tagline">🛺 TOTO &amp; E-RICKSHAW</div>
+          <h1>Keep Your Rickshaw Running.</h1>
+          <p>Heavy-duty tubular batteries built for daily e-rickshaw duty. Fast replacement, professional installation, warranty support.</p>
+          <div class="hero-cta">
+            <a href="products/toto-erickshaw.html" class="btn btn-secondary">View TOTO Batteries</a>
+            <a href="https://wa.me/917595941311" target="_blank" rel="noopener" class="btn btn-outline">Ask on WhatsApp</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide 4 -->
+      <div class="hero-slide" role="group" aria-roledescription="slide" aria-label="4 of 4">
+        <div class="hero-slide-inner">
+          <div class="tagline">💻 OFFICE &amp; UPS</div>
+          <h1>Protect Your Work. Protect Your Data.</h1>
+          <p>APC and Microtek UPS systems for desktops, workstations and small offices. Safe shutdown power, every time.</p>
+          <div class="hero-cta">
+            <a href="products/ups.html" class="btn btn-secondary">Browse UPS Systems</a>
+            <a href="#quotation" class="btn btn-outline">Get a Quote</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Controls -->
+    <button class="hero-arrow hero-prev" aria-label="Previous slide">‹</button>
+    <button class="hero-arrow hero-next" aria-label="Next slide">›</button>
+
+    <div class="hero-dots" role="tablist" aria-label="Choose slide">
+      <button class="hero-dot is-active" role="tab" aria-selected="true" aria-label="Go to slide 1"></button>
+      <button class="hero-dot" role="tab" aria-selected="false" aria-label="Go to slide 2"></button>
+      <button class="hero-dot" role="tab" aria-selected="false" aria-label="Go to slide 3"></button>
+      <button class="hero-dot" role="tab" aria-selected="false" aria-label="Go to slide 4"></button>
     </div>
   </section>
 

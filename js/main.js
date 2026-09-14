@@ -556,3 +556,84 @@ if (document.querySelector('#requirement-calculator')) {
 }
 
 window.openWhatsapp = openWhatsapp;
+
+// ============================================
+// HERO CAROUSEL
+// ============================================
+
+function setupHeroCarousel() {
+  const carousel = document.querySelector('.hero-carousel');
+  if (!carousel) return;
+
+  const slides = Array.from(carousel.querySelectorAll('.hero-slide'));
+  const dots = Array.from(carousel.querySelectorAll('.hero-dot'));
+  const prevBtn = carousel.querySelector('.hero-prev');
+  const nextBtn = carousel.querySelector('.hero-next');
+  if (slides.length < 2) return;
+
+  const AUTO_MS = 6000;
+  let index = slides.findIndex(s => s.classList.contains('is-active'));
+  if (index < 0) index = 0;
+  let timer = null;
+
+  function show(next) {
+    index = (next + slides.length) % slides.length;
+    slides.forEach((s, i) => s.classList.toggle('is-active', i === index));
+    dots.forEach((d, i) => {
+      d.classList.toggle('is-active', i === index);
+      d.setAttribute('aria-selected', i === index ? 'true' : 'false');
+    });
+  }
+
+  function next() { show(index + 1); }
+  function prev() { show(index - 1); }
+
+  function start() {
+    stop();
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    timer = setInterval(next, AUTO_MS);
+  }
+  function stop() { if (timer) { clearInterval(timer); timer = null; } }
+  function restart() { stop(); start(); }
+
+  if (nextBtn) nextBtn.addEventListener('click', () => { next(); restart(); });
+  if (prevBtn) prevBtn.addEventListener('click', () => { prev(); restart(); });
+  dots.forEach((dot, i) => {
+    dot.addEventListener('click', () => { show(i); restart(); });
+  });
+
+  // Pause on hover / focus
+  carousel.addEventListener('mouseenter', stop);
+  carousel.addEventListener('mouseleave', start);
+  carousel.addEventListener('focusin', stop);
+  carousel.addEventListener('focusout', start);
+
+  // Pause when tab is hidden (saves CPU)
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stop(); else start();
+  });
+
+  // Keyboard arrows
+  carousel.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight') { next(); restart(); }
+    if (e.key === 'ArrowLeft') { prev(); restart(); }
+  });
+
+  // Touch swipe
+  let touchStartX = 0;
+  carousel.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].clientX;
+  }, { passive: true });
+  carousel.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 40) {
+      dx < 0 ? next() : prev();
+      restart();
+    }
+  }, { passive: true });
+
+  show(index);
+  start();
+}
+
+document.addEventListener('DOMContentLoaded', setupHeroCarousel);
