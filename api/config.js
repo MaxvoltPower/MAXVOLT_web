@@ -1,5 +1,5 @@
 export default function handler(req, res) {
-  res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
   return res.status(200).json({
     firebase: {
       apiKey: process.env.FIREBASE_API_KEY,
