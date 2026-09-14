@@ -558,82 +558,148 @@ if (document.querySelector('#requirement-calculator')) {
 window.openWhatsapp = openWhatsapp;
 
 // ============================================
-// HERO CAROUSEL
+// HERO CAROUSEL — self-initializing, animated
 // ============================================
 
-function setupHeroCarousel() {
-  const carousel = document.querySelector('.hero-carousel');
-  if (!carousel) return;
-
-  const slides = Array.from(carousel.querySelectorAll('.hero-slide'));
-  const dots = Array.from(carousel.querySelectorAll('.hero-dot'));
-  const prevBtn = carousel.querySelector('.hero-prev');
-  const nextBtn = carousel.querySelector('.hero-next');
-  if (slides.length < 2) return;
-
+(function initHeroCarousel() {
   const AUTO_MS = 6000;
-  let index = slides.findIndex(s => s.classList.contains('is-active'));
-  if (index < 0) index = 0;
-  let timer = null;
 
-  function show(next) {
-    index = (next + slides.length) % slides.length;
-    slides.forEach((s, i) => s.classList.toggle('is-active', i === index));
-    dots.forEach((d, i) => {
-      d.classList.toggle('is-active', i === index);
-      d.setAttribute('aria-selected', i === index ? 'true' : 'false');
-    });
-  }
+  function run() {
+    const carousel = document.querySelector('.hero-carousel');
+    if (!carousel || carousel.dataset.ready === '1') return;
 
-  function next() { show(index + 1); }
-  function prev() { show(index - 1); }
+    const slides = Array.from(carousel.querySelectorAll('.hero-slide'));
+    const dots = Array.from(carousel.querySelectorAll('.hero-dot'));
+    const prevBtn = carousel.querySelector('.hero-prev');
+    const nextBtn = carousel.querySelector('.hero-next');
 
-  function start() {
-    stop();
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    timer = setInterval(next, AUTO_MS);
-  }
-  function stop() { if (timer) { clearInterval(timer); timer = null; } }
-  function restart() { stop(); start(); }
+    if (slides.length < 2) return;
 
-  if (nextBtn) nextBtn.addEventListener('click', () => { next(); restart(); });
-  if (prevBtn) prevBtn.addEventListener('click', () => { prev(); restart(); });
-  dots.forEach((dot, i) => {
-    dot.addEventListener('click', () => { show(i); restart(); });
-  });
+    carousel.dataset.ready = '1';
+    carousel.setAttribute('tabindex', '0');
 
-  // Pause on hover / focus
-  carousel.addEventListener('mouseenter', stop);
-  carousel.addEventListener('mouseleave', start);
-  carousel.addEventListener('focusin', stop);
-  carousel.addEventListener('focusout', start);
+    // Respect reduced motion — but STILL rotate (just without slide transitions)
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // Pause when tab is hidden (saves CPU)
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) stop(); else start();
-  });
+    let index = slides.findIndex(s => s.classList.contains('is-active'));
+    if (index < 0) index = 0;
+    let timer = null;
 
-  // Keyboard arrows
-  carousel.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowRight') { next(); restart(); }
-    if (e.key === 'ArrowLeft') { prev(); restart(); }
-  });
-
-  // Touch swipe
-  let touchStartX = 0;
-  carousel.addEventListener('touchstart', (e) => {
-    touchStartX = e.changedTouches[0].clientX;
-  }, { passive: true });
-  carousel.addEventListener('touchend', (e) => {
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    if (Math.abs(dx) > 40) {
-      dx < 0 ? next() : prev();
-      restart();
+    function restartContentAnimations(slide) {
+      // Re-trigger CSS entrance animations on the active slide
+      const animated = slide.querySelectorAll('.tagline, h1, p, .hero-cta, .hero-eyebrow, .hero-feature-pill, .hero-stat-card, .hero-badge-large');
+      animated.forEach(el => {
+        el.style.animation = 'none';
+        // force reflow
+        // eslint-disable-next-line no-unused-expressions
+        el.offsetHeight;
+        el.style.animation = '';
+      });
     }
-  }, { passive: true });
 
-  show(index);
-  start();
-}
+    function show(nextIndex) {
+      index = (nextIndex + slides.length) % slides.length;
 
-document.addEventListener('DOMContentLoaded', setupHeroCarousel);
+      slides.forEach((s, i) => {
+        const active = i === index;
+        s.classList.toggle('is-active', active);
+        s.setAttribute('aria-hidden', active ? 'false' : 'true');
+      });
+
+      dots.forEach((d, i) => {
+        d.classList.toggle('is-active', i === index);
+        d.setAttribute('aria-selected', i === index ? 'true' : 'false');
+      });
+
+      // Reset the progress bar on the carousel
+      const bar = carousel.querySelector('.hero-progress-bar');
+      if (bar) {
+        bar.style.animation = 'none';
+        // eslint-disable-next-line no-unused-expressions
+        bar.offsetHeight;
+        bar.style.animation = '';
+      }
+
+      restartContentAnimations(slides[index]);
+    }
+
+    function advance() { show(index + 1); }
+    function goBack() { show(index - 1); }
+
+    function start() {
+      stop();
+      if (reduceMotion) return;
+      timer = setInterval(() => {
+        if (!document.hidden) advance();
+      }, AUTO_MS);
+    }
+
+    function stop() {
+      if (timer) { clearInterval(timer); timer = null; }
+    }
+
+    function restart() { stop(); start(); }
+
+    // Buttons
+    if (nextBtn) nextBtn.addEventListener('click', (e) => { e.preventDefault(); advance(); restart(); });
+    if (prevBtn) prevBtn.addEventListener('click', (e) => { e.preventDefault(); goBack(); restart(); });
+
+    // Dots
+    dots.forEach((dot, i) => {
+      dot.addEventListener('click', (e) => {
+        e.preventDefault();
+        show(i);
+        restart();
+      });
+    });
+
+    // No pause on hover / focus — carousel always advances.
+    // (Visibility pause below is kept to save CPU when the tab is hidden.)
+
+    // Pause only when the browser tab itself is hidden (saves CPU)
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) stop();
+      else start();
+    });
+
+    // Keyboard
+    carousel.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') { advance(); restart(); }
+      if (e.key === 'ArrowLeft') { goBack(); restart(); }
+    });
+
+    // Touch swipe
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchMoved = false;
+    carousel.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].clientX;
+      touchStartY = e.changedTouches[0].clientY;
+      touchMoved = false;
+    }, { passive: true });
+    carousel.addEventListener('touchmove', () => { touchMoved = true; }, { passive: true });
+    carousel.addEventListener('touchend', (e) => {
+      if (!touchMoved) return;
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+        if (dx < 0) advance(); else goBack();
+        restart();
+      }
+    }, { passive: true });
+
+    // Kick off
+    show(index);
+    start();
+  }
+
+  // Run now if DOM is ready, otherwise wait
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run, { once: true });
+  } else {
+    run();
+  }
+
+  // Safety net: also try a moment later (in case something re-rendered the DOM)
+  window.addEventListener('load', run, { once: true });
+})();
