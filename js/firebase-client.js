@@ -20,12 +20,12 @@ import {
 // Fallback config used only if /api/config fails (e.g. local dev without env vars).
 // Replace these with real values OR rely entirely on env vars via /api/config.
 const FALLBACK_CONFIG = {
-  apiKey: "AIzaSy...",
-  authDomain: "maxvolt-app.firebaseapp.com",
-  projectId: "maxvolt-app",
-  storageBucket: "maxvolt-app.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef",
+  apiKey: "AIzaSyDkM65-FnMQ3cm9a1VyOux60S-ubVVgFJI",
+  authDomain: "maxvolt-a1ceb.firebaseapp.com",
+  projectId: "maxvolt-a1ceb",
+  storageBucket: "maxvolt-a1ceb.firebasestorage.app",
+  messagingSenderId: "117152539614",
+  appId: "1:117152539614:web:bd54a688c8d4fcc320334f",
 };
 
 async function loadFirebaseConfig() {
