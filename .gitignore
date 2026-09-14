@@ -1,0 +1,144 @@
+# ============================================
+# MAXVOLT — .gitignore
+# ============================================
+
+# ---------- Environment & Secrets ----------
+# NEVER commit these — they contain real credentials
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+.env.*.local
+
+# Firebase service account keys
+firebase-service-account.json
+*-firebase-adminsdk-*.json
+serviceAccountKey.json
+service-account.json
+
+# Razorpay / payment credentials
+razorpay-keys.txt
+secrets.json
+
+# Generic secret patterns
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+
+# ---------- Node / Vercel ----------
+node_modules/
+.pnpm-store/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Vercel
+.vercel
+.vercelignore
+
+# Netlify (if you ever switch)
+.netlify
+.netlify.toml.local
+
+# ---------- Editor / IDE ----------
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# ---------- OS junk ----------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# ---------- Logs & Temp ----------
+logs/
+*.log
+tmp/
+temp/
+.cache/
+.parcel-cache/
+
+# ---------- Build artifacts ----------
+dist/
+build/
+out/
+.next/
+.nuxt/
+.cache/
+public/build/
+
+# ---------- Test / Coverage ----------
+coverage/
+.nyc_output/
+*.lcov
+
+# ---------- User-uploaded content (local) ----------
+# Keep the folder itself but ignore user-uploaded product images if you handle them
+# locally before pushing to a CDN / Firebase Storage.
+# assets/images/uploads/
+# assets/images/temp/
+
+# ---------- Backup / Draft files ----------
+*.bak
+*.backup
+*.old
+*.orig
+*.tmp
+*.draft
+* copy.*
+* Copy.*
+Untitled-*
+Untitled.*
+
+# ---------- Documentation drafts (optional) ----------
+# Uncomment if you want to keep planning docs local-only
+# NOTES.md
+# TODO.local.md
+# scratch/
+
+# ---------- Package manager lock conflicts ----------
+# Keep package-lock.json (committed). Ignore yarn/pnpm locks to avoid conflicts.
+yarn.lock
+pnpm-lock.yaml
+
+# ---------- Python (in case you use scripts for data prep) ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---------- Misc ----------
+.sass-cache/
+.eslintcache
+.stylelintcache

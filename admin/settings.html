@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings | MAXVOLT Admin</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <script type="module" src="../js/firebase-client.js"></script>
+  <script src="../js/auth-client.js" defer></script>
+  <script src="js/admin-api.js" defer></script>
+  <script src="js/admin-auth.js" defer></script>
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="admin-side">
+      <div class="admin-brand"><img src="../assets/maxvolt-logo.png" alt="MAXVOLT"><strong>Admin</strong></div>
+      <nav class="admin-nav">
+        <a href="dashboard.html">📊 Dashboard</a>
+        <a href="products.html">📦 Products</a>
+        <a href="orders.html">🛒 Orders</a>
+        <a href="quotes.html">💬 Quotes</a>
+        <a href="users.html">👥 Users</a>
+        <a href="settings.html" class="active">⚙️ Settings</a>
+        <a href="#" id="admin-logout">🚪 Logout</a>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <div class="admin-topbar"><h1>Site Settings</h1></div>
+      <form id="settings-form" class="surface" style="max-width:720px;">
+        <div class="form-group"><label>Business Name</label><input type="text" id="s-name" /></div>
+        <div class="form-group"><label>Tagline</label><input type="text" id="s-tagline" /></div>
+        <div class="form-group"><label>Phone</label><input type="text" id="s-phone" /></div>
+        <div class="form-group"><label>WhatsApp (with country code)</label><input type="text" id="s-whatsapp" /></div>
+        <div class="form-group"><label>Email</label><input type="email" id="s-email" /></div>
+        <div class="form-group"><label>Address</label><input type="text" id="s-address" /></div>
+        <button type="submit" class="btn btn-primary">Save Settings</button>
+        <div id="msg" style="margin-top:12px;"></div>
+      </form>
+    </main>
+  </div>
+
+  <script>
+    const KEYS = {
+      's-name': 'name', 's-tagline': 'tagline', 's-phone': 'phone',
+      's-whatsapp': 'whatsapp', 's-email': 'email', 's-address': 'address',
+    };
+
+    document.addEventListener('admin-ready', async () => {
+      try {
+        const s = await window.adminApi.settings();
+        for (const id in KEYS) {
+          if (s[KEYS[id]]) document.getElementById(id).value = s[KEYS[id]];
+        }
+      } catch (e) { console.warn(e); }
+    });
+
+    document.getElementById('settings-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {};
+      for (const id in KEYS) payload[KEYS[id]] = document.getElementById(id).value;
+      try {
+        await window.adminApi.saveSettings(payload);
+        document.getElementById('msg').textContent = '✓ Saved';
+      } catch (err) {
+        document.getElementById('msg').textContent = '✗ ' + err.message;
+      }
+    });
+  </script>
+</body>
+</html>

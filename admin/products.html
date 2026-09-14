@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Products | MAXVOLT Admin</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <script type="module" src="../js/firebase-client.js"></script>
+  <script src="../js/auth-client.js" defer></script>
+  <script src="js/admin-api.js" defer></script>
+  <script src="js/admin-auth.js" defer></script>
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="admin-side">
+      <div class="admin-brand"><img src="../assets/maxvolt-logo.png" alt="MAXVOLT"><strong>Admin</strong></div>
+      <nav class="admin-nav">
+        <a href="dashboard.html">📊 Dashboard</a>
+        <a href="products.html" class="active">📦 Products</a>
+        <a href="orders.html">🛒 Orders</a>
+        <a href="quotes.html">💬 Quotes</a>
+        <a href="users.html">👥 Users</a>
+        <a href="settings.html">⚙️ Settings</a>
+        <a href="#" id="admin-logout">🚪 Logout</a>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <div class="admin-topbar">
+        <h1>Products</h1>
+        <button class="btn btn-primary" id="add-product">+ Add Product</button>
+      </div>
+
+      <div class="toolbar">
+        <input type="text" id="search" placeholder="Search by model/brand..." />
+        <select id="filter-category">
+          <option value="">All Categories</option>
+          <option value="homeInverterBatteries">Home Inverter Batteries</option>
+          <option value="homeInverters">Home Inverters</option>
+          <option value="carBatteries">Car Batteries</option>
+          <option value="totoErickshawBatteries">TOTO / E-Rickshaw</option>
+          <option value="ebikeBatteries">E-Bike Batteries</option>
+          <option value="upsOffice">UPS Systems</option>
+        </select>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Brand</th><th>Model</th><th>Category</th><th>Price</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="products-body"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- Product modal -->
+  <div class="modal-bg" id="product-modal">
+    <form class="modal" id="product-form">
+      <h2 id="modal-title">Add Product</h2>
+      <input type="hidden" id="p-id" />
+      <div class="form-group"><label>Brand *</label><input type="text" id="p-brand" required /></div>
+      <div class="form-group"><label>Model *</label><input type="text" id="p-model" required /></div>
+      <div class="form-group">
+        <label>Category *</label>
+        <select id="p-category" required>
+          <option value="homeInverterBatteries">Home Inverter Batteries</option>
+          <option value="homeInverters">Home Inverters</option>
+          <option value="carBatteries">Car Batteries</option>
+          <option value="totoErickshawBatteries">TOTO / E-Rickshaw</option>
+          <option value="ebikeBatteries">E-Bike Batteries</option>
+          <option value="upsOffice">UPS Systems</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Capacity / Specs</label><input type="text" id="p-capacity" /></div>
+      <div class="form-group"><label>Type</label><input type="text" id="p-type" /></div>
+      <div class="form-group"><label>Voltage</label><input type="text" id="p-voltage" /></div>
+      <div class="form-group"><label>Warranty</label><input type="text" id="p-warranty" /></div>
+      <div class="form-group"><label>Price (₹)</label><input type="number" id="p-price" /></div>
+      <div class="form-group"><label>Availability</label><input type="text" id="p-availability" placeholder="Available / Usually Available" /></div>
+      <div class="form-group"><label>Image URL</label><input type="text" id="p-image" placeholder="assets/images/... or full URL" /></div>
+      <div class="form-group"><label>Best For</label><input type="text" id="p-bestFor" /></div>
+      <div class="form-group">
+        <label style="display:flex;gap:8px;align-items:center;">
+          <input type="checkbox" id="p-active" checked /> Active
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" id="modal-cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    let products = [];
+    const tbody = document.getElementById('products-body');
+    const modal = document.getElementById('product-modal');
+    const form = document.getElementById('product-form');
+
+    function render() {
+      const q = document.getElementById('search').value.toLowerCase();
+      const cat = document.getElementById('filter-category').value;
+      const filtered = products.filter(p =>
+        (!cat || p.category === cat) &&
+        (!q || (p.model || '').toLowerCase().includes(q) || (p.brand || '').toLowerCase().includes(q))
+      );
+      tbody.innerHTML = filtered.map(p => `
+        <tr>
+          <td>${p.brand || '-'}</td>
+          <td>${p.model || '-'}</td>
+          <td>${p.category || '-'}</td>
+          <td>₹${p.price || '-'}</td>
+          <td><span class="badge badge-${p.active !== false ? 'delivered' : 'failed'}">${p.active !== false ? 'Active' : 'Hidden'}</span></td>
+          <td>
+            <button class="btn btn-outline btn-small" data-edit="${p._id}">Edit</button>
+            <button class="btn btn-secondary btn-small" data-del="${p._id}">Delete</button>
+          </td>
+        </tr>`).join('');
+    }
+
+    function openModal(p = null) {
+      document.getElementById('modal-title').textContent = p ? 'Edit Product' : 'Add Product';
+      document.getElementById('p-id').value = p?._id || '';
+      ['brand','model','category','capacity','type','voltage','warranty','price','availability','image','bestFor'].forEach(k => {
+        const el = document.getElementById('p-' + k);
+        if (el) el.value = p?.[k] || '';
+      });
+      document.getElementById('p-active').checked = p ? p.active !== false : true;
+      modal.classList.add('open');
+    }
+    function closeModal() { modal.classList.remove('open'); form.reset(); }
+
+    async function load() {
+      try {
+        const res = await window.adminApi.products('?limit=1000');
+        products = res.items || [];
+        render();
+      } catch (e) { alert('Failed to load: ' + e.message); }
+    }
+
+    document.addEventListener('admin-ready', load);
+    document.getElementById('add-product').addEventListener('click', () => openModal());
+    document.getElementById('modal-cancel').addEventListener('click', closeModal);
+    document.getElementById('search').addEventListener('input', render);
+    document.getElementById('filter-category').addEventListener('change', render);
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('p-id').value;
+      const payload = {};
+      ['brand','model','category','capacity','type','voltage','warranty','availability','image','bestFor'].forEach(k => {
+        payload[k] = document.getElementById('p-' + k).value;
+      });
+      payload.price = Number(document.getElementById('p-price').value) || 0;
+      payload.active = document.getElementById('p-active').checked;
+
+      try {
+        if (id) await window.adminApi.updateProduct(id, payload);
+        else await window.adminApi.createProduct(payload);
+        closeModal();
+        load();
+      } catch (err) { alert('Save failed: ' + err.message); }
+    });
+
+    tbody.addEventListener('click', async (e) => {
+      const editId = e.target.dataset.edit;
+      const delId = e.target.dataset.del;
+      if (editId) {
+        const p = products.find(x => x._id === editId);
+        if (p) openModal(p);
+      }
+      if (delId) {
+        if (!confirm('Delete this product?')) return;
+        try { await window.adminApi.deleteProduct(delId); load(); }
+        catch (err) { alert(err.message); }
+      }
+    });
+  </script>
+</body>
+</html>

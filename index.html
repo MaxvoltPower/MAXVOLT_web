@@ -7,7 +7,6 @@
   <meta name="keywords" content="inverter battery, car battery, TOTO battery, e-rickshaw battery, e-bike battery, UPS, Kolkata, power solutions">
   <meta name="theme-color" content="#0a0f1a">
 
-  <!-- Open Graph -->
   <meta property="og:title" content="MAXVOLT - Trusted Power Always">
   <meta property="og:description" content="Genuine power and battery solutions in Kolkata.">
   <meta property="og:type" content="website">
@@ -19,9 +18,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="css/styles.css">
-  <script src="js/main.js" defer></script>
   <link rel="icon" type="image/png" href="assets/maxvolt-logo.png">
   <link rel="apple-touch-icon" href="assets/maxvolt-logo.png">
+
+  <script src="js/main.js" defer></script>
+  <script type="module" src="js/firebase-client.js"></script>
+  <script src="js/auth-client.js" defer></script>
 </head>
 <body>
   <!-- HEADER -->
@@ -47,6 +49,11 @@
       </nav>
 
       <div class="header-right">
+        <a href="account/login.html" id="nav-login" class="btn btn-outline btn-small">Login</a>
+        <a href="account/profile.html" id="nav-account" class="btn btn-outline btn-small" style="display:none;">My Account</a>
+        <a href="cart.html" class="btn btn-outline btn-small" style="position:relative;">
+          🛒 Cart <span class="cart-badge" style="display:none;background:var(--secondary);color:#fff;border-radius:999px;padding:2px 8px;font-size:0.75rem;margin-left:4px;">0</span>
+        </a>
         <a href="https://wa.me/917595941311" target="_blank" rel="noopener" class="whatsapp-btn">
           <svg class="wa-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.29.173-1.414-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
@@ -68,7 +75,6 @@
       <span class="marquee-item">⚡ APC BX600C — 600VA UPS</span>
       <span class="marquee-item">⚡ AMPTEK AT12-24 — E-Bike 24Ah</span>
       <span class="marquee-item">⚡ Microtek Legend 1000 — 1000VA</span>
-      <!-- Duplicate set for seamless loop -->
       <span class="marquee-item">⚡ Luminous RC18000 PRO — 150Ah</span>
       <span class="marquee-item">⚡ Exide IMST1500 — Tall Tubular</span>
       <span class="marquee-item">⚡ Amaron AR200TT54 — 200Ah Premium</span>
@@ -194,7 +200,6 @@
       <div class="surface calc-surface">
         <h4 class="calc-title">What do you want to power?</h4>
 
-        <!-- Row 1: Number inputs side by side -->
         <div class="calc-grid">
           <div class="form-group calc-field">
             <label for="calc-fans">Number of Fans</label>
@@ -207,12 +212,10 @@
           </div>
         </div>
 
-        <!-- Divider -->
         <div class="calc-divider">
           <span>Appliances</span>
         </div>
 
-        <!-- Row 2: Checkboxes as a 2x2 grid -->
         <div class="calc-checkbox-grid">
           <label class="checkbox-row" for="calc-tv">
             <input type="checkbox" id="calc-tv">
@@ -270,7 +273,6 @@
       </div>
 
       <div class="product-grid" id="featured-products" aria-live="polite">
-        <!-- Skeleton placeholders (removed by JS) -->
         <div class="product-card"><div class="product-image skeleton"></div><div class="product-content"><div class="skeleton" style="height:12px;width:40%;margin-bottom:8px;"></div><div class="skeleton" style="height:16px;width:70%;margin-bottom:12px;"></div><div class="skeleton" style="height:12px;width:100%;margin-bottom:8px;"></div><div class="skeleton" style="height:12px;width:80%;"></div></div></div>
         <div class="product-card"><div class="product-image skeleton"></div><div class="product-content"><div class="skeleton" style="height:12px;width:40%;margin-bottom:8px;"></div><div class="skeleton" style="height:16px;width:70%;margin-bottom:12px;"></div><div class="skeleton" style="height:12px;width:100%;margin-bottom:8px;"></div><div class="skeleton" style="height:12px;width:80%;"></div></div></div>
         <div class="product-card"><div class="product-image skeleton"></div><div class="product-content"><div class="skeleton" style="height:12px;width:40%;margin-bottom:8px;"></div><div class="skeleton" style="height:16px;width:70%;margin-bottom:12px;"></div><div class="skeleton" style="height:12px;width:100%;margin-bottom:8px;"></div><div class="skeleton" style="height:12px;width:80%;"></div></div></div>
@@ -424,6 +426,8 @@
           <li><a href="#solutions">Solutions</a></li>
           <li><a href="#about">About</a></li>
           <li><a href="#contact">Contact</a></li>
+          <li><a href="privacy-policy.html">Privacy Policy</a></li>
+          <li><a href="terms-conditions.html">Terms & Conditions</a></li>
         </ul>
       </div>
 

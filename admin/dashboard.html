@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard | MAXVOLT Admin</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+
+  <script type="module" src="../js/firebase-client.js"></script>
+  <script src="../js/auth-client.js" defer></script>
+  <script src="js/admin-api.js" defer></script>
+  <script src="js/admin-auth.js" defer></script>
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="admin-side">
+      <div class="admin-brand">
+        <img src="../assets/maxvolt-logo.png" alt="MAXVOLT" />
+        <strong>Admin</strong>
+      </div>
+      <nav class="admin-nav">
+        <a href="dashboard.html" class="active">📊 Dashboard</a>
+        <a href="products.html">📦 Products</a>
+        <a href="orders.html">🛒 Orders</a>
+        <a href="quotes.html">💬 Quotes</a>
+        <a href="users.html">👥 Users</a>
+        <a href="settings.html">⚙️ Settings</a>
+        <a href="#" id="admin-logout">🚪 Logout</a>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <div class="admin-topbar">
+        <h1>Dashboard</h1>
+        <div class="admin-user">Signed in as <strong id="admin-email"></strong></div>
+      </div>
+
+      <div class="stat-grid" id="stats">
+        <div class="stat-card"><span class="stat-label">Total Revenue</span><span class="stat-value accent" id="stat-revenue">—</span></div>
+        <div class="stat-card"><span class="stat-label">Orders</span><span class="stat-value" id="stat-orders">—</span></div>
+        <div class="stat-card"><span class="stat-label">Products</span><span class="stat-value" id="stat-products">—</span></div>
+        <div class="stat-card"><span class="stat-label">Quotes</span><span class="stat-value" id="stat-quotes">—</span></div>
+        <div class="stat-card"><span class="stat-label">Users</span><span class="stat-value" id="stat-users">—</span></div>
+        <div class="stat-card"><span class="stat-label">Orders Today</span><span class="stat-value" id="stat-today">—</span></div>
+      </div>
+
+      <h2 style="margin-bottom:16px;">Recent Orders</h2>
+      <div class="table-wrap" style="margin-bottom:32px;">
+        <table id="recent-orders"><thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Status</th><th>Date</th></tr></thead><tbody></tbody></table>
+      </div>
+
+      <h2 style="margin-bottom:16px;">Recent Quotes</h2>
+      <div class="table-wrap">
+        <table id="recent-quotes"><thead><tr><th>Name</th><th>Phone</th><th>Requirement</th><th>Status</th></tr></thead><tbody></tbody></table>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener('admin-ready', async () => {
+      try {
+        const data = await window.adminApi.stats();
+        document.getElementById('stat-revenue').textContent = '₹' + (data.totals.revenue || 0).toLocaleString('en-IN');
+        document.getElementById('stat-orders').textContent = data.totals.orders;
+        document.getElementById('stat-products').textContent = data.totals.products;
+        document.getElementById('stat-quotes').textContent = data.totals.quotes;
+        document.getElementById('stat-users').textContent = data.totals.users;
+        document.getElementById('stat-today').textContent = data.today.orders;
+
+        const ro = document.querySelector('#recent-orders tbody');
+        ro.innerHTML = data.recentOrders.map(o => `
+          <tr>
+            <td>#${String(o._id).slice(-8).toUpperCase()}</td>
+            <td>${o.email || '-'}</td>
+            <td>₹${o.total}</td>
+            <td><span class="badge badge-${o.status}">${o.status}</span></td>
+            <td>${new Date(o.createdAt).toLocaleDateString()}</td>
+          </tr>`).join('');
+
+        const rq = document.querySelector('#recent-quotes tbody');
+        rq.innerHTML = data.recentQuotes.map(q => `
+          <tr>
+            <td>${q.name}</td>
+            <td>${q.phone}</td>
+            <td>${q.requirement}</td>
+            <td><span class="badge badge-${q.status}">${q.status}</span></td>
+          </tr>`).join('');
+      } catch (e) {
+        console.error(e);
+        alert('Failed to load stats: ' + e.message);
+      }
+    });
+  </script>
+</body>
+</html>

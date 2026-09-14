@@ -93,6 +93,18 @@ function setupNavigation() {
   }
 }
 
+// Update cart badge on all pages
+function updateCartBadge() {
+  if (!window.maxvoltCart) return;
+  const count = window.maxvoltCart.getCartCount();
+  document.querySelectorAll('.cart-badge').forEach(el => {
+    el.textContent = count;
+    el.style.display = count > 0 ? 'inline-flex' : 'none';
+  });
+}
+document.addEventListener('DOMContentLoaded', updateCartBadge);
+window.addEventListener('cart-updated', updateCartBadge);
+
 // ============================================
 // WHATSAPP INTEGRATION
 // ============================================
@@ -347,14 +359,14 @@ function loadProductDetail() {
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; max-width: 1200px; margin: 0 auto;">
         <div>
           <div class="product-image" style="height: 400px; border-radius: 8px; margin-bottom: 20px;">
-            ${product.image ? `<img src="${basePath}assets/images/${product.image}" alt="${product.model}" style="width: 100%; height: 100%; object-fit: cover;">` : '🔋'}
+            ${product.image ? `<img src="${basePath}assets/images/${product.image}" alt="${product.model}" style="width: 100%; height: 100%; object-fit: contain; padding: 24px;">` : '🔋'}
           </div>
         </div>
         <div>
           <div class="product-brand">${product.brand}</div>
-          <h1 style="margin: 8px 0 16px; color: #003366;">${product.model}</h1>
-          
-          <div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+          <h1 style="margin: 8px 0 16px;">${product.model}</h1>
+
+          <div class="surface" style="margin-bottom: 24px;">
             <h3 style="margin-bottom: 12px;">Key Specifications</h3>
             <div style="display: grid; gap: 8px;">
               <div><strong>Capacity:</strong> ${product.capacity}</div>
@@ -366,22 +378,23 @@ function loadProductDetail() {
             </div>
           </div>
 
-          <div style="background: #fff3e0; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
-            <h3 style="margin-bottom: 8px; color: #f57c00;">Price</h3>
-            <div style="font-size: 1.5rem; font-weight: 700; color: #ff6b00;">₹ ${product.price}</div>
-            <div style="font-size: 0.9rem; color: #666; margin-top: 4px;">For current pricing, please get a quote.</div>
+          <div style="background: rgba(255,107,0,0.1); border: 1px solid rgba(255,107,0,0.3); padding: 20px; border-radius: 12px; margin-bottom: 24px;">
+            <div style="font-size: 0.85rem; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Price</div>
+            <div style="font-size: 1.75rem; font-weight: 800; color: var(--secondary-light);">₹ ${product.price}</div>
+            <div style="font-size: 0.8rem; color: var(--text-subtle); margin-top: 6px;">Inclusive of GST. Final price confirmed at checkout.</div>
           </div>
 
-          <div style="background: ${getAvailabilityBg(product.availability)}; padding: 12px; border-radius: 6px; margin-bottom: 24px; font-weight: 600;">
-            ${product.availability}
+          <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+            <button class="btn btn-primary btn-full" id="buy-now-btn">🛒 Buy Now</button>
+            <button class="btn btn-outline btn-full" id="add-to-cart-btn">Add to Cart</button>
           </div>
 
           <div style="display: flex; gap: 12px; margin-bottom: 24px;">
-            <button class="btn btn-primary btn-full" data-whatsapp="${product.id}">💬 Ask on WhatsApp</button>
+            <button class="btn btn-secondary btn-full" data-whatsapp="${product.id}">💬 Ask on WhatsApp</button>
             <a href="${basePath}index.html#quotation" class="btn btn-outline btn-full">📋 Get Quote</a>
           </div>
 
-          <div style="background: #f5f5f5; padding: 16px; border-radius: 8px;">
+          <div class="surface">
             <h4 style="margin-bottom: 12px;">Not Sure?</h4>
             <p style="margin-bottom: 12px;">Talk to our MAXVOLT experts. We'll recommend the right product based on your actual requirement.</p>
             <a href="${basePath}index.html#quotation" class="btn btn-secondary" style="display: inline-block;">Get Expert Help</a>
@@ -389,6 +402,18 @@ function loadProductDetail() {
         </div>
       </div>
     `;
+
+    // Buy Now → add to cart + go to checkout
+    document.getElementById('buy-now-btn').addEventListener('click', () => {
+      window.maxvoltCart.clearCart();
+      window.maxvoltCart.addToCart(product, 1);
+      window.location.href = basePath + 'checkout.html';
+    });
+
+    // Add to Cart
+    document.getElementById('add-to-cart-btn').addEventListener('click', () => {
+      window.maxvoltCart.addToCart(product, 1);
+    });
   }
 }
 
@@ -529,3 +554,5 @@ if (document.querySelector('#product-detail')) {
 if (document.querySelector('#requirement-calculator')) {
   setupCalculator();
 }
+
+window.openWhatsapp = openWhatsapp;
