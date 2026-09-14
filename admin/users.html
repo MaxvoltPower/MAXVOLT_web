@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Users | MAXVOLT Admin</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <script type="module" src="../js/firebase-client.js"></script>
+  <script src="../js/auth-client.js" defer></script>
+  <script src="js/admin-api.js" defer></script>
+  <script src="js/admin-auth.js" defer></script>
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="admin-side">
+      <div class="admin-brand"><img src="../assets/maxvolt-logo.png" alt="MAXVOLT"><strong>Admin</strong></div>
+      <nav class="admin-nav">
+        <a href="dashboard.html">📊 Dashboard</a>
+        <a href="products.html">📦 Products</a>
+        <a href="orders.html">🛒 Orders</a>
+        <a href="quotes.html">💬 Quotes</a>
+        <a href="users.html" class="active">👥 Users</a>
+        <a href="settings.html">⚙️ Settings</a>
+        <a href="#" id="admin-logout">🚪 Logout</a>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <div class="admin-topbar">
+        <h1>Users</h1>
+        <div class="toolbar"><input type="text" id="q" placeholder="Search by email/name..." /></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Actions</th></tr></thead>
+          <tbody id="users-body"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    async function load(q = '') {
+      const tbody = document.getElementById('users-body');
+      try {
+        const users = await window.adminApi.users(q);
+        tbody.innerHTML = users.map(u => `
+          <tr>
+            <td>${u.displayName || '-'}</td>
+            <td>${u.email || '-'}</td>
+            <td><span class="badge badge-${u.role === 'admin' ? 'won' : 'new'}">${u.role || 'customer'}</span></td>
+            <td>${new Date(u.createdAt).toLocaleDateString()}</td>
+            <td>
+              <button class="btn btn-outline btn-small" data-role="${u.uid}" data-set="customer">Make Customer</button>
+              <button class="btn btn-primary btn-small" data-role="${u.uid}" data-set="admin">Make Admin</button>
+            </td>
+          </tr>`).join('');
+      } catch (e) { tbody.innerHTML = `<tr><td colspan="5">${e.message}</td></tr>`; }
+    }
+
+    document.addEventListener('admin-ready', () => load());
+    document.getElementById('q').addEventListener('input', (e) => load(e.target.value));
+    document.getElementById('users-body').addEventListener('click', async (e) => {
+      const uid = e.target.dataset.role;
+      const role = e.target.dataset.set;
+      if (!uid || !role) return;
+      if (!confirm(`Change role to "${role}"?`)) return;
+      try { await window.adminApi.setRole(uid, role); load(document.getElementById('q').value); }
+      catch (err) { alert(err.message); }
+    });
+  </script>
+</body>
+</html>

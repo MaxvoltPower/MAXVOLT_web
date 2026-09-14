@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Orders | MAXVOLT</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="../admin/css/admin.css" />
+
+  <script type="module" src="../js/firebase-client.js"></script>
+  <script src="../js/auth-client.js" defer></script>
+</head>
+<body>
+  <header>
+    <div class="header-content container">
+      <a href="../index.html" class="logo"><img src="../assets/maxvolt-logo.png" alt="MAXVOLT" class="logo-img"></a>
+      <nav><ul><li><a href="profile.html">Profile</a></li><li><a href="#" id="logout-link">Logout</a></li></ul></nav>
+    </div>
+  </header>
+
+  <main class="container" style="padding:40px 20px;">
+    <div class="section-header"><h2>My Orders</h2></div>
+    <div id="orders-list"></div>
+  </main>
+
+  <script>
+    function waitForAuth(cb) {
+      if (window.maxvoltAuth) return cb();
+      const t = setInterval(() => {
+        if (window.maxvoltAuth) { clearInterval(t); cb(); }
+      }, 50);
+    }
+
+    waitForAuth(() => {
+      window.maxvoltAuth.onAuthChange(async (user) => {
+        if (!user) { window.location.href = 'login.html'; return; }
+        try {
+          const orders = await window.maxvoltApi.getOrders();
+          const el = document.getElementById('orders-list');
+          if (!orders.length) {
+            el.innerHTML = '<p style="text-align:center;color:var(--text-muted);">No orders yet.</p>';
+            return;
+          }
+          el.innerHTML = orders.map(o => `
+            <div class="surface" style="margin-bottom:16px;">
+              <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                <div><strong>Order #${String(o._id).slice(-8).toUpperCase()}</strong></div>
+                <div class="badge badge-${o.status}">${o.status}</div>
+              </div>
+              <p style="margin:8px 0;">${o.items.map(i => `${i.model} × ${i.qty}`).join(', ')}</p>
+              <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                <span>Total: <strong>₹${o.total}</strong></span>
+                <span style="color:var(--text-subtle);">${new Date(o.createdAt).toLocaleDateString()}</span>
+              </div>
+            </div>
+          `).join('');
+        } catch (e) { console.error(e); }
+      });
+
+      document.getElementById('logout-link').addEventListener('click', async (e) => {
+        e.preventDefault();
+        await window.maxvoltAuth.signOutUser();
+        window.location.href = '../index.html';
+      });
+    });
+  </script>
+</body>
+</html>

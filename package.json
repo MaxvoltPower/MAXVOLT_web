@@ -1,0 +1,19 @@
+{
+  "name": "maxvolt-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "mongodb": "^6.3.0",
+    "razorpay": "^2.9.2",
+    "zod": "^3.22.4"
+  },
+  "engines": {
+    "node": "20.x"
+  }
+}

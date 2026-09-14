@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Order Confirmed | MAXVOLT</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script type="module" src="js/firebase-client.js"></script>
+  <script src="js/auth-client.js" defer></script>
+  <link rel="icon" type="image/png" href="assets/maxvolt-logo.png">
+
+  <style>
+    .success-wrap { max-width: 640px; margin: 0 auto; padding: 80px 20px; text-align: center; }
+    .success-icon {
+      width: 96px; height: 96px; margin: 0 auto 24px;
+      background: rgba(16,185,129,0.15); border-radius: 50%;
+      display: grid; place-items: center; font-size: 3rem;
+      border: 2px solid rgba(16,185,129,0.3);
+    }
+    .order-detail-card {
+      background: var(--bg-elevated); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 24px; margin: 24px 0;
+      text-align: left;
+    }
+    .order-detail-row {
+      display: flex; justify-content: space-between;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+      font-size: 0.95rem;
+    }
+    .order-detail-row:last-child { border-bottom: none; }
+    .order-detail-row span:first-child { color: var(--text-subtle); }
+    .order-detail-row span:last-child { font-weight: 600; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-content container">
+      <a href="index.html" class="logo"><img src="assets/maxvolt-logo.png" alt="MAXVOLT" class="logo-img"></a>
+    </div>
+  </header>
+
+  <main class="success-wrap">
+    <div class="success-icon">✓</div>
+    <h1 style="color: var(--success);">Order Confirmed!</h1>
+    <p style="font-size: 1.05rem; margin-top: 8px;">
+      Thank you for your order. We'll contact you shortly to confirm delivery details.
+    </p>
+
+    <div class="order-detail-card" id="order-card">
+      <div class="order-detail-row">
+        <span>Order ID</span>
+        <span id="order-id">—</span>
+      </div>
+      <div class="order-detail-row">
+        <span>Payment Method</span>
+        <span id="order-method">—</span>
+      </div>
+      <div class="order-detail-row">
+        <span>Status</span>
+        <span id="order-status" class="badge badge-placed">—</span>
+      </div>
+      <div class="order-detail-row">
+        <span>Total</span>
+        <span id="order-total">—</span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+      <a href="account/orders.html" class="btn btn-primary">View My Orders</a>
+      <a href="index.html#products" class="btn btn-outline">Continue Shopping</a>
+      <a href="https://wa.me/917595941311?text=Hi%20MAXVOLT%2C%20I%20just%20placed%20order%20%23" target="_blank" class="btn btn-secondary">
+        💬 Contact on WhatsApp
+      </a>
+    </div>
+  </main>
+
+  <script>
+    function waitForAuth(cb) {
+      if (window.maxvoltAuth) return cb();
+      const t = setInterval(() => {
+        if (window.maxvoltAuth) { clearInterval(t); cb(); }
+      }, 50);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const orderId = params.get('id');
+      const method = params.get('method');
+
+      if (orderId) {
+        document.getElementById('order-id').textContent = '#' + String(orderId).slice(-8).toUpperCase();
+      }
+      document.getElementById('order-method').textContent =
+        method === 'cod' ? 'Cash on Delivery' : 'Paid Online (Razorpay)';
+
+      // Fetch order details to show total
+      if (orderId) {
+        waitForAuth(() => {
+          window.maxvoltAuth.onAuthChange(async (user) => {
+            if (!user) return;
+            try {
+              const res = await fetch('/api/orders/' + orderId, {
+                headers: { Authorization: 'Bearer ' + await window.maxvoltAuth.getIdToken() },
+              });
+              const json = await res.json();
+              if (json.success && json.data) {
+                document.getElementById('order-total').textContent = '₹' + json.data.total.toLocaleString('en-IN');
+                document.getElementById('order-status').textContent = json.data.status;
+                document.getElementById('order-status').className = 'badge badge-' + json.data.status;
+              }
+            } catch (e) { console.warn(e); }
+          });
+        });
+      }
+    });
+  </script>
+</body>
+</html>

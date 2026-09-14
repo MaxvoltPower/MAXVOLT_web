@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Orders | MAXVOLT Admin</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <script type="module" src="../js/firebase-client.js"></script>
+  <script src="../js/auth-client.js" defer></script>
+  <script src="js/admin-api.js" defer></script>
+  <script src="js/admin-auth.js" defer></script>
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="admin-side">
+      <div class="admin-brand"><img src="../assets/maxvolt-logo.png" alt="MAXVOLT"><strong>Admin</strong></div>
+      <nav class="admin-nav">
+        <a href="dashboard.html">📊 Dashboard</a>
+        <a href="products.html">📦 Products</a>
+        <a href="orders.html" class="active">🛒 Orders</a>
+        <a href="quotes.html">💬 Quotes</a>
+        <a href="users.html">👥 Users</a>
+        <a href="settings.html">⚙️ Settings</a>
+        <a href="#" id="admin-logout">🚪 Logout</a>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <div class="admin-topbar"><h1>Orders</h1></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="orders-body"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const STATUSES = ['placed','confirmed','processing','shipped','delivered','cancelled'];
+
+    async function load() {
+      const tbody = document.getElementById('orders-body');
+      try {
+        const orders = await window.adminApi.orders();
+        if (!orders.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No orders</td></tr>'; return; }
+        tbody.innerHTML = orders.map(o => `
+          <tr>
+            <td>#${String(o._id).slice(-8).toUpperCase()}</td>
+            <td>${o.email || '-'}</td>
+            <td>${o.items.map(i => `${i.model} ×${i.qty}`).join(', ')}</td>
+            <td>₹${o.total}</td>
+            <td><span class="badge badge-${o.paymentStatus === 'paid' ? 'paid' : 'new'}">${o.paymentStatus}</span></td>
+            <td>
+              <select data-status="${o._id}">
+                ${STATUSES.map(s => `<option value="${s}" ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}
+              </select>
+            </td>
+            <td><button class="btn btn-primary btn-small" data-save="${o._id}">Save</button></td>
+          </tr>`).join('');
+      } catch (e) { tbody.innerHTML = `<tr><td colspan="7">${e.message}</td></tr>`; }
+    }
+
+    document.addEventListener('admin-ready', load);
+
+    document.getElementById('orders-body').addEventListener('click', async (e) => {
+      const id = e.target.dataset.save;
+      if (!id) return;
+      const sel = document.querySelector(`select[data-status="${id}"]`);
+      try {
+        await window.adminApi.updateOrder(id, { status: sel.value });
+        alert('Order updated');
+      } catch (err) { alert(err.message); }
+    });
+  </script>
+</body>
+</html>
