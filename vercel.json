@@ -30,9 +30,16 @@
     }
   ],
   "rewrites": [
-    { "source": "/products/:page", "destination": "/products/:page.html" },
-    { "source": "/account/:page", "destination": "/account/:page.html" },
-    { "source": "/admin/:page", "destination": "/admin/:page.html" },
-    { "source": "/admin", "destination": "/admin/index.html" }
+    { "source": "/api/auth/:path*",      "destination": "/api/auth" },
+    { "source": "/api/products/:path*",  "destination": "/api/products" },
+    { "source": "/api/orders/:path*",    "destination": "/api/orders" },
+    { "source": "/api/quotes/:path*",    "destination": "/api/quotes" },
+    { "source": "/api/admin/:path*",     "destination": "/api/admin" },
+    { "source": "/api/payments/webhook", "destination": "/api/webhook" },
+    { "source": "/api/payments/:path*",  "destination": "/api/payments" },
+    { "source": "/products/:page",       "destination": "/products/:page.html" },
+    { "source": "/account/:page",        "destination": "/account/:page.html" },
+    { "source": "/admin/:page",          "destination": "/admin/:page.html" },
+    { "source": "/admin",                "destination": "/admin/index.html" }
   ]
 }

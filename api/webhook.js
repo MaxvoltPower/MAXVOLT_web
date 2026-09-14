@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { getCollection, COLLECTIONS } from '../_lib/mongodb.js';
+import { getCollection, COLLECTIONS } from './_lib/mongodb.js';
 
 // Vercel: disable body parsing so we can read the raw body for signature verification
 export const config = {
@@ -9,10 +9,8 @@ export const config = {
 };
 
 async function readRawBody(req) {
-  // If body was already parsed (shouldn't happen with bodyParser: false, but be safe)
   if (req.body && Buffer.isBuffer(req.body)) return req.body;
   if (typeof req.body === 'string') return Buffer.from(req.body);
-
   return new Promise((resolve, reject) => {
     const chunks = [];
     req.on('data', (c) => chunks.push(c));
