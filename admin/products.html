@@ -41,14 +41,14 @@
           <option value="carBatteries">Car Batteries</option>
           <option value="totoErickshawBatteries">TOTO / E-Rickshaw</option>
           <option value="ebikeBatteries">E-Bike Batteries</option>
-          <option value="upsOffice">UPS Systems</option>
+          <option value="ups">UPS Systems</option>
         </select>
       </div>
 
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>Brand</th><th>Model</th><th>Category</th><th>Price</th><th>Status</th><th>Actions</th></tr>
+            <tr><th style="width:60px;"></th><th>Brand</th><th>Model</th><th>Category</th><th>Price</th><th>Status</th><th>Actions</th></tr>
           </thead>
           <tbody id="products-body"></tbody>
         </table>
@@ -58,11 +58,40 @@
 
   <!-- Product modal -->
   <div class="modal-bg" id="product-modal">
-    <form class="modal" id="product-form">
+    <form class="modal modal-wide" id="product-form">
       <h2 id="modal-title">Add Product</h2>
       <input type="hidden" id="p-id" />
-      <div class="form-group"><label>Brand *</label><input type="text" id="p-brand" required /></div>
-      <div class="form-group"><label>Model *</label><input type="text" id="p-model" required /></div>
+
+      <!-- IMAGE PASTE / DROP ZONE -->
+      <div class="form-group">
+        <label>Product Image</label>
+        <div id="image-dropzone" class="image-dropzone" tabindex="0">
+          <img id="image-preview" alt="" style="display:none;" />
+          <div id="image-placeholder" class="image-placeholder">
+            <div style="font-size:2.5rem;">🖼️</div>
+            <div><strong>Paste an image</strong> (Ctrl/⌘ + V)</div>
+            <div style="font-size:0.85rem;color:var(--text-subtle);margin-top:4px;">
+              or drag &amp; drop a file here, or
+              <label for="image-file" class="image-file-label">choose a file</label>
+            </div>
+            <input type="file" id="image-file" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none;" />
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-outline btn-small" id="clear-image">Remove image</button>
+          <span id="image-status" style="font-size:0.85rem;color:var(--text-subtle);align-self:center;"></span>
+        </div>
+        <details style="margin-top:12px;">
+          <summary style="cursor:pointer;color:var(--text-muted);font-size:0.9rem;">Or paste an image URL / filename manually</summary>
+          <input type="text" id="p-image-url" placeholder="https://... or assets/images/foo.jpg" style="margin-top:8px;" />
+        </details>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group"><label>Brand *</label><input type="text" id="p-brand" required /></div>
+        <div class="form-group"><label>Model *</label><input type="text" id="p-model" required /></div>
+      </div>
+
       <div class="form-group">
         <label>Category *</label>
         <select id="p-category" required>
@@ -71,36 +100,56 @@
           <option value="carBatteries">Car Batteries</option>
           <option value="totoErickshawBatteries">TOTO / E-Rickshaw</option>
           <option value="ebikeBatteries">E-Bike Batteries</option>
-          <option value="upsOffice">UPS Systems</option>
+          <option value="ups">UPS Systems</option>
         </select>
       </div>
-      <div class="form-group"><label>Capacity / Specs</label><input type="text" id="p-capacity" /></div>
-      <div class="form-group"><label>Type</label><input type="text" id="p-type" /></div>
-      <div class="form-group"><label>Voltage</label><input type="text" id="p-voltage" /></div>
-      <div class="form-group"><label>Warranty</label><input type="text" id="p-warranty" /></div>
-      <div class="form-group"><label>Price (₹)</label><input type="number" id="p-price" /></div>
-      <div class="form-group"><label>Availability</label><input type="text" id="p-availability" placeholder="Available / Usually Available" /></div>
-      <div class="form-group"><label>Image URL</label><input type="text" id="p-image" placeholder="assets/images/... or full URL" /></div>
-      <div class="form-group"><label>Best For</label><input type="text" id="p-bestFor" /></div>
+
+      <div class="form-row">
+        <div class="form-group"><label>Capacity / Specs</label><input type="text" id="p-capacity" /></div>
+        <div class="form-group"><label>Type</label><input type="text" id="p-type" /></div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group"><label>Voltage</label><input type="text" id="p-voltage" /></div>
+        <div class="form-group"><label>Warranty</label><input type="text" id="p-warranty" /></div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group"><label>Price (₹)</label><input type="number" id="p-price" /></div>
+        <div class="form-group"><label>VA (for inverters/UPS)</label><input type="text" id="p-va" /></div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group"><label>Availability</label><input type="text" id="p-availability" placeholder="Available / Usually Available" /></div>
+        <div class="form-group"><label>Best For / Suitable For</label><input type="text" id="p-bestFor" /></div>
+      </div>
+
       <div class="form-group">
         <label style="display:flex;gap:8px;align-items:center;">
-          <input type="checkbox" id="p-active" checked /> Active
+          <input type="checkbox" id="p-active" checked /> Active (visible on website)
         </label>
       </div>
 
       <div class="modal-actions">
         <button type="button" class="btn btn-outline" id="modal-cancel">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save</button>
+        <button type="submit" class="btn btn-primary" id="save-btn">Save</button>
       </div>
     </form>
   </div>
 
   <script>
     let products = [];
+    let currentImageData = ''; // base64 data URL or URL string
+
     const tbody = document.getElementById('products-body');
     const modal = document.getElementById('product-modal');
     const form = document.getElementById('product-form');
+    const dropzone = document.getElementById('image-dropzone');
+    const imagePreview = document.getElementById('image-preview');
+    const imagePlaceholder = document.getElementById('image-placeholder');
+    const imageStatus = document.getElementById('image-status');
 
+    // ---------- List + Filter ----------
     function render() {
       const q = document.getElementById('search').value.toLowerCase();
       const cat = document.getElementById('filter-category').value;
@@ -108,38 +157,184 @@
         (!cat || p.category === cat) &&
         (!q || (p.model || '').toLowerCase().includes(q) || (p.brand || '').toLowerCase().includes(q))
       );
-      tbody.innerHTML = filtered.map(p => `
-        <tr>
-          <td>${p.brand || '-'}</td>
-          <td>${p.model || '-'}</td>
-          <td>${p.category || '-'}</td>
-          <td>₹${p.price || '-'}</td>
-          <td><span class="badge badge-${p.active !== false ? 'delivered' : 'failed'}">${p.active !== false ? 'Active' : 'Hidden'}</span></td>
-          <td>
-            <button class="btn btn-outline btn-small" data-edit="${p._id}">Edit</button>
-            <button class="btn btn-secondary btn-small" data-del="${p._id}">Delete</button>
-          </td>
-        </tr>`).join('');
+      if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-subtle);">No products found</td></tr>';
+        return;
+      }
+      tbody.innerHTML = filtered.map(p => {
+        const img = resolveImg(p.image);
+        return `
+          <tr>
+            <td>${img ? `<img src="${img}" alt="" style="width:44px;height:44px;object-fit:contain;background:var(--bg-muted);border-radius:6px;">` : '<div style="width:44px;height:44px;display:grid;place-items:center;background:var(--bg-muted);border-radius:6px;">🔋</div>'}</td>
+            <td>${p.brand || '-'}</td>
+            <td>${p.model || '-'}</td>
+            <td>${p.category || '-'}</td>
+            <td>₹${p.price || '-'}</td>
+            <td><span class="badge badge-${p.active !== false ? 'delivered' : 'failed'}">${p.active !== false ? 'Active' : 'Hidden'}</span></td>
+            <td>
+              <button class="btn btn-outline btn-small" data-edit="${p._id}">Edit</button>
+              <button class="btn btn-secondary btn-small" data-del="${p._id}">Delete</button>
+            </td>
+          </tr>`;
+      }).join('');
     }
 
+    function resolveImg(img) {
+      if (!img) return null;
+      if (typeof img !== 'string') return null;
+      if (img.startsWith('data:')) return img;
+      if (/^https?:\/\//i.test(img)) return img;
+      if (img.startsWith('/')) return '..' + img;
+      if (img.startsWith('assets/')) return '../' + img;
+      return '../assets/images/' + img;
+    }
+
+    // ---------- Modal ----------
     function openModal(p = null) {
       document.getElementById('modal-title').textContent = p ? 'Edit Product' : 'Add Product';
       document.getElementById('p-id').value = p?._id || '';
-      ['brand','model','category','capacity','type','voltage','warranty','price','availability','image','bestFor'].forEach(k => {
+      ['brand','model','category','capacity','type','voltage','warranty','price','availability','bestFor','va'].forEach(k => {
         const el = document.getElementById('p-' + k);
-        if (el) el.value = p?.[k] || '';
+        if (el) el.value = p?.[k] ?? '';
       });
       document.getElementById('p-active').checked = p ? p.active !== false : true;
+
+      // image
+      currentImageData = p?.image || '';
+      updateImagePreview();
+      document.getElementById('p-image-url').value =
+        currentImageData && !currentImageData.startsWith('data:') ? currentImageData : '';
+
       modal.classList.add('open');
     }
-    function closeModal() { modal.classList.remove('open'); form.reset(); }
 
+    function closeModal() {
+      modal.classList.remove('open');
+      form.reset();
+      currentImageData = '';
+      updateImagePreview();
+      imageStatus.textContent = '';
+    }
+
+    function updateImagePreview() {
+      if (currentImageData) {
+        imagePreview.src = resolveImg(currentImageData);
+        imagePreview.style.display = 'block';
+        imagePlaceholder.style.display = 'none';
+      } else {
+        imagePreview.removeAttribute('src');
+        imagePreview.style.display = 'none';
+        imagePlaceholder.style.display = 'block';
+      }
+    }
+
+    // ---------- Clipboard Paste ----------
+    dropzone.addEventListener('paste', (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type && item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            e.preventDefault();
+            handleImageFile(file);
+            return;
+          }
+        }
+      }
+    });
+
+    // Also catch paste anywhere in the modal while it's open
+    document.addEventListener('paste', (e) => {
+      if (!modal.classList.contains('open')) return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type && item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            e.preventDefault();
+            handleImageFile(file);
+            return;
+          }
+        }
+      }
+    });
+
+    // ---------- Drag & Drop ----------
+    ['dragenter','dragover'].forEach(evt =>
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault(); e.stopPropagation();
+        dropzone.classList.add('is-dragover');
+      })
+    );
+    ['dragleave','drop'].forEach(evt =>
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault(); e.stopPropagation();
+        dropzone.classList.remove('is-dragover');
+      })
+    );
+    dropzone.addEventListener('drop', (e) => {
+      const file = e.dataTransfer?.files?.[0];
+      if (file && file.type.startsWith('image/')) handleImageFile(file);
+    });
+
+    // ---------- File picker ----------
+    document.getElementById('image-file').addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (file) handleImageFile(file);
+    });
+
+    // ---------- Clear image ----------
+    document.getElementById('clear-image').addEventListener('click', () => {
+      currentImageData = '';
+      updateImagePreview();
+      document.getElementById('p-image-url').value = '';
+      imageStatus.textContent = 'Image removed';
+    });
+
+    // ---------- URL input ----------
+    document.getElementById('p-image-url').addEventListener('input', (e) => {
+      const v = e.target.value.trim();
+      if (v) {
+        currentImageData = v;
+        updateImagePreview();
+        imageStatus.textContent = 'Using URL';
+      }
+    });
+
+    // ---------- File → base64 (with size guard) ----------
+    function handleImageFile(file) {
+      if (!file.type.startsWith('image/')) {
+        imageStatus.textContent = 'Not an image file';
+        return;
+      }
+      const MAX = 2 * 1024 * 1024; // 2 MB raw
+      if (file.size > MAX) {
+        imageStatus.textContent = `Too large (${(file.size/1024/1024).toFixed(2)} MB). Max 2 MB.`;
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        currentImageData = reader.result;
+        updateImagePreview();
+        document.getElementById('p-image-url').value = '';
+        const kb = Math.round((currentImageData.length * 3 / 4) / 1024);
+        imageStatus.textContent = `✓ ${kb} KB`;
+      };
+      reader.onerror = () => { imageStatus.textContent = 'Failed to read file'; };
+      reader.readAsDataURL(file);
+    }
+
+    // ---------- Load products ----------
     async function load() {
       try {
-        const res = await window.adminApi.products('?limit=1000');
+        const res = await window.adminApi.products('?limit=1000&all=1');
         products = res.items || [];
         render();
-      } catch (e) { alert('Failed to load: ' + e.message); }
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="7" style="color:var(--danger);padding:24px;">${e.message}</td></tr>`;
+      }
     }
 
     document.addEventListener('admin-ready', load);
@@ -148,24 +343,37 @@
     document.getElementById('search').addEventListener('input', render);
     document.getElementById('filter-category').addEventListener('change', render);
 
+    // ---------- Save ----------
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const id = document.getElementById('p-id').value;
       const payload = {};
-      ['brand','model','category','capacity','type','voltage','warranty','availability','image','bestFor'].forEach(k => {
+      ['brand','model','category','capacity','type','voltage','warranty','availability','bestFor','va'].forEach(k => {
         payload[k] = document.getElementById('p-' + k).value;
       });
       payload.price = Number(document.getElementById('p-price').value) || 0;
       payload.active = document.getElementById('p-active').checked;
+      payload.image = currentImageData || null;
+
+      const btn = document.getElementById('save-btn');
+      const orig = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
 
       try {
         if (id) await window.adminApi.updateProduct(id, payload);
-        else await window.adminApi.createProduct(payload);
+        else     await window.adminApi.createProduct(payload);
         closeModal();
         load();
-      } catch (err) { alert('Save failed: ' + err.message); }
+      } catch (err) {
+        alert('Save failed: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = orig;
+      }
     });
 
+    // ---------- Edit / Delete ----------
     tbody.addEventListener('click', async (e) => {
       const editId = e.target.dataset.edit;
       const delId = e.target.dataset.del;
@@ -174,7 +382,7 @@
         if (p) openModal(p);
       }
       if (delId) {
-        if (!confirm('Delete this product?')) return;
+        if (!confirm('Delete this product? This cannot be undone.')) return;
         try { await window.adminApi.deleteProduct(delId); load(); }
         catch (err) { alert(err.message); }
       }

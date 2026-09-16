@@ -46,17 +46,28 @@
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         errEl.style.display = 'none';
+        const btn = form.querySelector('button[type="submit"]');
+        const orig = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Creating account...';
         try {
           await window.maxvoltAuth.signUp(
             document.getElementById('email').value,
             document.getElementById('password').value,
             document.getElementById('name').value
           );
-          await window.maxvoltApi.verify();
-          window.location.href = 'profile.html';
+          const profile = await window.maxvoltApi.verify();
+          // Admins created via the standard form still get the admin panel.
+          if (profile && profile.isAdmin) {
+            window.location.href = '/admin/dashboard.html';
+          } else {
+            window.location.href = 'profile.html';
+          }
         } catch (err) {
           errEl.textContent = err.message;
           errEl.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = orig;
         }
       });
     });

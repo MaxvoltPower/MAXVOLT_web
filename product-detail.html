@@ -133,27 +133,21 @@
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       await loadProducts();
-      
-      // Get product ID from URL
+
       const params = new URLSearchParams(window.location.search);
       const productId = params.get('id');
-      
+
       if (productId) {
         loadProductDetail();
-        
-        // Load related products
+
         const product = findProductById(productId);
         if (product) {
-          for (const category in allProducts) {
-            const related = allProducts[category].filter(p => 
-              p.brand === product.brand && p.id !== productId
-            ).slice(0, 3);
-            
-            if (related.length > 0) {
-              displayProducts(related, 'related-products');
-              break;
-            }
-          }
+          // Related products: same category, same brand first, then any brand
+          const cat = product.category;
+          const pool = (allProducts[cat] || []).filter(p => (p.id || p._id) !== productId);
+          const sameBrand = pool.filter(p => p.brand === product.brand);
+          const related = (sameBrand.length >= 3 ? sameBrand : pool).slice(0, 3);
+          displayProducts(related, 'related-products');
         }
       }
     });

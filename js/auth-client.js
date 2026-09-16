@@ -57,18 +57,38 @@
       apiFetch('/api/contact', { method: 'POST', body: JSON.stringify(payload) }),
   };
 
-  // Update header login/account links once auth state is known
+  // Update header login/account links once auth state is known.
+  // Also swaps "My Account" → "Admin" for admin users.
   whenAuthReady().then(() => {
-    window.maxvoltAuth.onAuthChange((user) => {
+    window.maxvoltAuth.onAuthChange(async (user) => {
       const loginLink = document.getElementById('nav-login');
       const accountLink = document.getElementById('nav-account');
       if (!loginLink && !accountLink) return;
-      if (user) {
-        if (loginLink) loginLink.style.display = 'none';
-        if (accountLink) accountLink.style.display = 'inline-flex';
-      } else {
+
+      if (!user) {
         if (loginLink) loginLink.style.display = 'inline-flex';
         if (accountLink) accountLink.style.display = 'none';
+        return;
+      }
+
+      // Logged in
+      if (loginLink) loginLink.style.display = 'none';
+
+      let isAdmin = false;
+      try {
+        const profile = await window.maxvoltApi.verify();
+        isAdmin = !!(profile && profile.isAdmin);
+      } catch { /* offline / not verified — treat as customer */ }
+
+      if (accountLink) {
+        if (isAdmin) {
+          accountLink.textContent = 'Admin';
+          accountLink.href = '/admin/dashboard.html';
+        } else {
+          accountLink.textContent = 'My Account';
+          accountLink.href = 'account/profile.html';
+        }
+        accountLink.style.display = 'inline-flex';
       }
     });
   });

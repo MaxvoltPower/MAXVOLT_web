@@ -1,5 +1,6 @@
 // ============================================
 // MAXVOLT — Cart Management (localStorage-based)
+// Fixed: badge now updates on ALL pages, immediately, everywhere.
 // ============================================
 
 const CART_KEY = 'maxvolt_cart';
@@ -7,16 +8,28 @@ const CART_KEY = 'maxvolt_cart';
 function getCart() {
   try {
     const raw = localStorage.getItem(CART_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
 }
 
 function saveCart(cart) {
-  localStorage.setItem(CART_KEY, JSON.stringify(cart));
+  try {
+    localStorage.setItem(CART_KEY, JSON.stringify(cart));
+  } catch (e) {
+    console.error('Failed to save cart', e);
+  }
+  // Update badge synchronously
   updateCartBadge();
+  // Notify other listeners
   window.dispatchEvent(new CustomEvent('cart-updated', { detail: cart }));
+  // Notify other tabs/windows
+  try {
+    localStorage.setItem('maxvolt_cart_ts', String(Date.now()));
+  } catch { /* ignore */ }
 }
 
 function addToCart(product, qty = 1) {
@@ -27,8 +40,6 @@ function addToCart(product, qty = 1) {
 
   const cart = getCart();
   const existing = cart.find(item => item.id === product.id);
-
-  // Get numeric price (use lower bound of range if it's a range)
   const numericPrice = parsePriceToNumber(product.price);
 
   if (existing) {
@@ -39,8 +50,8 @@ function addToCart(product, qty = 1) {
       brand: product.brand,
       model: product.model,
       capacity: product.capacity,
-      price: product.price,          // Original display price (e.g., "12000 - 13500")
-      numericPrice,                  // For calculation
+      price: product.price,
+      numericPrice,
       image: product.image || null,
       qty,
     });
@@ -72,35 +83,37 @@ function clearCart() {
 }
 
 function getCartTotal() {
-  return getCart().reduce((sum, item) => sum + (item.numericPrice * item.qty), 0);
+  return getCart().reduce((sum, item) => sum + (Number(item.numericPrice) || 0) * (Number(item.qty) || 0), 0);
 }
 
 function getCartCount() {
-  return getCart().reduce((sum, item) => sum + item.qty, 0);
+  return getCart().reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
 }
 
-// Parse "12000 - 13500" → 12000 (use lower bound for estimation)
-// Parse "12500" → 12500
 function parsePriceToNumber(priceStr) {
   if (!priceStr) return 0;
   if (typeof priceStr === 'number') return priceStr;
-
-  const str = String(priceStr).replace(/[₹,]/g, '').trim();
+  const str = String(priceStr).replace(/[₹,\s]/g, '').trim();
   const match = str.match(/(\d+)/);
   return match ? parseInt(match[1], 10) : 0;
 }
 
-// Update cart badge in header (all pages)
+/**
+ * Update every .cart-badge element on the page.
+ * Uses multiple strategies so it works even if badge element is added later.
+ */
 function updateCartBadge() {
   const count = getCartCount();
-  document.querySelectorAll('.cart-badge').forEach(el => {
-    el.textContent = count;
+  const badges = document.querySelectorAll('.cart-badge');
+  badges.forEach(el => {
+    el.textContent = String(count);
     el.style.display = count > 0 ? 'inline-flex' : 'none';
+    el.setAttribute('aria-label', `${count} items in cart`);
   });
+  return count;
 }
 
 function showCartToast(message) {
-  // Remove existing toast
   document.querySelectorAll('.cart-toast').forEach(el => el.remove());
 
   const toast = document.createElement('div');
@@ -108,7 +121,7 @@ function showCartToast(message) {
   toast.innerHTML = `
     <span style="font-size:1.25rem;">✓</span>
     <span>${message}</span>
-    <a href="cart.html" class="cart-toast-link">View Cart</a>
+    <a href="${typeof basePathForCart === 'function' ? basePathForCart() : ''}cart.html" class="cart-toast-link">View Cart</a>
   `;
   document.body.appendChild(toast);
 
@@ -119,9 +132,42 @@ function showCartToast(message) {
   }, 3500);
 }
 
-// Auto-update badge on page load + cart changes
-document.addEventListener('DOMContentLoaded', updateCartBadge);
+function basePathForCart() {
+  return window.location.pathname.includes('/products/') ||
+         window.location.pathname.includes('/account/')
+    ? '../'
+    : '';
+}
+
+// ---------- Auto-update wiring ----------
+
+// 1. On DOMContentLoaded (fresh page)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', updateCartBadge);
+} else {
+  updateCartBadge();
+}
+
+// 2. Whenever the cart changes in this tab
 window.addEventListener('cart-updated', updateCartBadge);
+
+// 3. When another tab changes the cart
+window.addEventListener('storage', (e) => {
+  if (e.key === CART_KEY || e.key === 'maxvolt_cart_ts') {
+    updateCartBadge();
+    window.dispatchEvent(new CustomEvent('cart-updated', { detail: getCart() }));
+  }
+});
+
+// 4. If a page loads the badge lazily (e.g. after JS renders header), re-scan
+const badgeObserver = new MutationObserver(() => updateCartBadge());
+if (document.body) {
+  badgeObserver.observe(document.body, { childList: true, subtree: true });
+} else {
+  document.addEventListener('DOMContentLoaded', () => {
+    badgeObserver.observe(document.body, { childList: true, subtree: true });
+  });
+}
 
 // Expose globally
 window.maxvoltCart = {
@@ -133,4 +179,8 @@ window.maxvoltCart = {
   getCartTotal,
   getCartCount,
   parsePriceToNumber,
+  updateCartBadge,
 };
+
+// Expose a simple helper for pages that render badges dynamically
+window.refreshCartBadge = updateCartBadge;

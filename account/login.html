@@ -54,7 +54,42 @@
       }, 50);
     }
 
+    /**
+     * Decide where to send a freshly-signed-in user.
+     * Admin → /admin/dashboard.html
+     * Customer → /account/profile.html
+     * If a "next" param was stashed in sessionStorage, honour it first (for admins only
+     * if the target is an admin page).
+     */
+    function redirectAfterLogin(profile) {
+      const stashed = sessionStorage.getItem('maxvolt_redirect_after_login');
+      sessionStorage.removeItem('maxvolt_redirect_after_login');
+
+      if (profile && profile.isAdmin) {
+        window.location.href = '/admin/dashboard.html';
+        return;
+      }
+
+      // Regular user
+      if (stashed && !stashed.startsWith('/admin')) {
+        window.location.href = stashed;
+        return;
+      }
+      window.location.href = 'profile.html';
+    }
+
     waitForAuth(() => {
+      // If an admin is already signed in, skip the form entirely.
+      window.maxvoltAuth.onAuthChange(async (user) => {
+        if (!user) return;
+        try {
+          const profile = await window.maxvoltApi.verify();
+          if (profile && profile.isAdmin) {
+            window.location.href = '/admin/dashboard.html';
+          }
+        } catch { /* ignore — user can still log in manually */ }
+      });
+
       const form = document.getElementById('login-form');
       const errEl = document.getElementById('auth-error');
       const showErr = (m) => { errEl.textContent = m; errEl.style.display = 'block'; };
@@ -62,21 +97,30 @@
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         errEl.style.display = 'none';
+        const btn = form.querySelector('button[type="submit"]');
+        const orig = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Signing in...';
         try {
           await window.maxvoltAuth.signIn(
             document.getElementById('email').value,
             document.getElementById('password').value
           );
-          await window.maxvoltApi.verify();
-          window.location.href = 'profile.html';
-        } catch (err) { showErr(err.message); }
+          const profile = await window.maxvoltApi.verify();
+          redirectAfterLogin(profile);
+        } catch (err) {
+          showErr(err.message);
+          btn.disabled = false;
+          btn.textContent = orig;
+        }
       });
 
       document.getElementById('google-btn').addEventListener('click', async () => {
+        errEl.style.display = 'none';
         try {
           await window.maxvoltAuth.signInGoogle();
-          await window.maxvoltApi.verify();
-          window.location.href = 'profile.html';
+          const profile = await window.maxvoltApi.verify();
+          redirectAfterLogin(profile);
         } catch (err) { showErr(err.message); }
       });
 

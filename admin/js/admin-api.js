@@ -39,6 +39,7 @@
     saveSettings: (payload) => adminFetch('/api/admin/settings', { method: 'PUT', body: JSON.stringify(payload) }),
 
     products: (qs = '') => adminFetch(`/api/products${qs}`),
+    getProduct: (id) => adminFetch(`/api/products/${id}`),
     createProduct: (p) => adminFetch('/api/products', { method: 'POST', body: JSON.stringify(p) }),
     updateProduct: (id, p) => adminFetch(`/api/products/${id}`, { method: 'PUT', body: JSON.stringify(p) }),
     deleteProduct: (id) => adminFetch(`/api/products/${id}`, { method: 'DELETE' }),

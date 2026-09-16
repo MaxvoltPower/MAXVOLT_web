@@ -25,16 +25,85 @@ const CONFIG = {
 // On root pages (index.html, product-detail.html) we need "".
 const basePath = window.location.pathname.includes('/products/') ? '../' : '';
 
-// Load products from JSON
+// ============================================
+// Product loading — now from the API (MongoDB)
+// Falls back to /data/products.json only if the API is unreachable.
+// Groups products by `category` field matching the old JSON keys.
+// ============================================
+
 let allProducts = {};
+let allProductsFlat = []; // flat list for recommendation engine
+
+// Category key mapping: DB `category` -> internal key used in templates
+const CATEGORY_KEYS = {
+  homeInverterBatteries: 'homeInverterBatteries',
+  homeInverters: 'homeInverters',
+  carBatteries: 'carBatteries',
+  totoErickshawBatteries: 'totoErickshawBatteries',
+  ebikeBatteries: 'ebikeBatteries',
+  ups: 'ups',
+  upsOffice: 'ups', // legacy alias
+  home_inverter_batteries: 'homeInverterBatteries',
+  home_inverters: 'homeInverters',
+  car_batteries: 'carBatteries',
+  toto_erickshaw_batteries: 'totoErickshawBatteries',
+  ebike_batteries: 'ebikeBatteries',
+};
+
+function normalizeCategory(cat) {
+  if (!cat) return 'homeInverterBatteries';
+  return CATEGORY_KEYS[cat] || cat;
+}
 
 async function loadProducts() {
+  // 1. Try the live API
+  try {
+    const res = await fetch('/api/products?limit=1000', { cache: 'no-store' });
+    if (res.ok) {
+      const json = await res.json();
+      const items = (json && json.data && json.data.items) || [];
+      if (items.length) {
+        hydrateProductStore(items);
+        return;
+      }
+    }
+  } catch (err) {
+    console.warn('API products unavailable, falling back to JSON:', err.message);
+  }
+
+  // 2. Fallback to bundled JSON (only used during local dev / offline)
   try {
     const response = await fetch(basePath + 'data/products.json');
-    allProducts = await response.json();
+    const data = await response.json();
+    const flat = [];
+    for (const key in data) {
+      if (Array.isArray(data[key])) {
+        data[key].forEach(p => flat.push({ ...p, category: normalizeCategory(key) }));
+      }
+    }
+    hydrateProductStore(flat);
   } catch (error) {
     console.error('Error loading products:', error);
+    allProducts = {};
+    allProductsFlat = [];
   }
+}
+
+function hydrateProductStore(items) {
+  allProductsFlat = items.slice();
+  allProducts = {
+    homeInverterBatteries: [],
+    homeInverters: [],
+    carBatteries: [],
+    totoErickshawBatteries: [],
+    ebikeBatteries: [],
+    ups: [],
+  };
+  items.forEach(p => {
+    const key = normalizeCategory(p.category);
+    if (!allProducts[key]) allProducts[key] = [];
+    allProducts[key].push(p);
+  });
 }
 
 // Initialize on page load
@@ -238,11 +307,9 @@ function showSuccessMessage(message) {
 // ============================================
 
 function findProductById(id) {
-  for (const category in allProducts) {
-    const product = allProducts[category].find(p => p.id === id);
-    if (product) return product;
-  }
-  return null;
+  if (!id) return null;
+  // Match either our legacy "id" field OR Mongo's "_id"
+  return allProductsFlat.find(p => p.id === id || p._id === id) || null;
 }
 
 function displayProducts(products, containerId) {
@@ -261,9 +328,7 @@ function displayProducts(products, containerId) {
   container.innerHTML = products.map(product => `
     <article class="product-card">
       <div class="product-image">
-        ${product.image
-          ? `<img src="${basePath}assets/images/${product.image}" alt="${product.model}" loading="lazy" decoding="async" onerror="this.style.display='none';this.parentNode.textContent='🔋';">`
-          : '🔋'}
+        ${renderProductImage(product)}
       </div>
       <div class="product-content">
         <div class="product-brand">${product.brand}</div>
@@ -340,6 +405,31 @@ function applyFilters() {
   displayProducts(filtered, 'products-container');
 }
 
+/**
+ * Resolve the best possible image URL for a product.
+ *  - base64 data URL  → use as-is
+ *  - http(s) URL      → use as-is
+ *  - /assets/... path → use as-is
+ *  - bare filename    → assets/images/<filename>
+ */
+function resolveProductImageSrc(product) {
+  if (!product || !product.image) return null;
+  const img = String(product.image).trim();
+  if (!img) return null;
+  if (img.startsWith('data:')) return img;
+  if (/^https?:\/\//i.test(img)) return img;
+  if (img.startsWith('/')) return img;
+  if (img.startsWith('assets/')) return basePath + img;
+  return basePath + 'assets/images/' + img;
+}
+
+function renderProductImage(product, opts = {}) {
+  const src = resolveProductImageSrc(product);
+  if (!src) return '🔋';
+  const cls = opts.class ? ` class="${opts.class}"` : '';
+  return `<img src="${src}" alt="${product.model}" loading="lazy" decoding="async"${cls} onerror="this.style.display='none';this.parentNode.textContent='🔋';">`;
+}
+
 // ============================================
 // PRODUCT DETAIL PAGE
 // ============================================
@@ -359,7 +449,7 @@ function loadProductDetail() {
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; max-width: 1200px; margin: 0 auto;">
         <div>
           <div class="product-image" style="height: 400px; border-radius: 8px; margin-bottom: 20px;">
-            ${product.image ? `<img src="${basePath}assets/images/${product.image}" alt="${product.model}" style="width: 100%; height: 100%; object-fit: contain; padding: 24px;">` : '🔋'}
+            ${product.image ? `<img src="${resolveProductImageSrc(product)}" alt="${product.model}" style="width: 100%; height: 100%; object-fit: contain; padding: 24px;">` : '🔋'}
           </div>
         </div>
         <div>
@@ -424,8 +514,119 @@ function getAvailabilityBg(availability) {
 }
 
 // ============================================
-// CALCULATOR
+// REAL RECOMMENDATION ENGINE
+// Uses actual products from MongoDB, scores them against
+// the user's load requirement, and returns the best match.
 // ============================================
+
+/**
+ * Estimate total load in watts from the calculator form.
+ */
+function estimateLoad(form) {
+  const fans      = parseInt(form.querySelector('#calc-fans')?.value) || 0;
+  const lights    = parseInt(form.querySelector('#calc-lights')?.value) || 0;
+  const tv        = form.querySelector('#calc-tv')?.checked ? 1 : 0;
+  const fridge    = form.querySelector('#calc-fridge')?.checked ? 1 : 0;
+  const router    = form.querySelector('#calc-router')?.checked ? 1 : 0;
+  const computer  = form.querySelector('#calc-computer')?.checked ? 1 : 0;
+
+  // Realistic average wattages
+  const WATTS = {
+    fan: 70, light: 12, tv: 110, fridge: 180, router: 15, computer: 180,
+  };
+
+  const total =
+    fans * WATTS.fan +
+    lights * WATTS.light +
+    tv * WATTS.tv +
+    fridge * WATTS.fridge +
+    router * WATTS.router +
+    computer * WATTS.computer;
+
+  return {
+    total,
+    breakdown: { fans, lights, tv, fridge, router, computer },
+    counts: { fans, lights, tv, fridge, router, computer },
+  };
+}
+
+/**
+ * Required inverter VA. Rule of thumb: load * 1.25 (safety) / 0.8 (power factor)
+ * → roughly load * 1.6. Then round up to a standard size.
+ */
+function requiredInverterVA(loadWatts) {
+  const raw = loadWatts * 1.6;
+  const sizes = [600, 700, 750, 800, 850, 900, 1000, 1100, 1200, 1400, 1500, 1600, 1800, 2000, 2500, 3000];
+  return sizes.find(s => s >= raw) || 3000;
+}
+
+/**
+ * Required battery Ah.
+ * Backup hours assumed: 3 hrs at full load (typical Indian home).
+ * Ah = (Load * Hours) / (BatteryVoltage * Efficiency * DoD)
+ *   = (Load * 3) / (12 * 0.85 * 0.6) ≈ Load * 0.49
+ * Then round up to a standard capacity.
+ */
+function requiredBatteryAh(loadWatts) {
+  const raw = (loadWatts * 3) / (12 * 0.85 * 0.6);
+  const sizes = [100, 120, 135, 150, 160, 180, 200, 220, 250];
+  return sizes.find(s => s >= raw) || 250;
+}
+
+/**
+ * Score a product against a target capacity / VA / Ah.
+ * Lower score = better match.
+ */
+function scoreProduct(product, targets) {
+  const cat = normalizeCategory(product.category);
+
+  // Inverters — match on VA
+  if (cat === 'homeInverters') {
+    const va = parseInt(String(product.va || '').replace(/\D/g, '')) || 0;
+    if (!va) return 9999;
+    const diff = Math.abs(va - targets.va);
+    // Prefer the smallest VA that still meets requirement
+    const penalty = va < targets.va ? 500 : 0;
+    return diff + penalty;
+  }
+
+  // Home inverter batteries — match on Ah
+  if (cat === 'homeInverterBatteries') {
+    const ah = parseInt(String(product.capacity || '').replace(/\D/g, '')) || 0;
+    if (!ah) return 9999;
+    const diff = Math.abs(ah - targets.ah);
+    const penalty = ah < targets.ah ? 500 : 0;
+    return diff + penalty;
+  }
+
+  return 9999;
+}
+
+/**
+ * Recommend the best inverter + battery from REAL products in the DB.
+ */
+function recommendProducts(loadWatts) {
+  const targets = {
+    va: requiredInverterVA(loadWatts),
+    ah: requiredBatteryAh(loadWatts),
+  };
+
+  const inverters = (allProducts.homeInverters || [])
+    .filter(p => p.active !== false)
+    .map(p => ({ p, score: scoreProduct(p, targets) }))
+    .sort((a, b) => a.score - b.score);
+
+  const batteries = (allProducts.homeInverterBatteries || [])
+    .filter(p => p.active !== false)
+    .map(p => ({ p, score: scoreProduct(p, targets) }))
+    .sort((a, b) => a.score - b.score);
+
+  return {
+    inverter:  inverters[0]?.p || null,
+    battery:   batteries[0]?.p || null,
+    targets,
+  };
+}
 
 function setupCalculator() {
   const form = document.getElementById('requirement-calculator');
@@ -434,63 +635,66 @@ function setupCalculator() {
   form.addEventListener('submit', (e) => {
     e.preventDefault();
 
-    const fans = parseInt(document.getElementById('calc-fans').value) || 0;
-    const lights = parseInt(document.getElementById('calc-lights').value) || 0;
-    const tv = document.getElementById('calc-tv').checked ? 1 : 0;
-    const fridge = document.getElementById('calc-fridge').checked ? 1 : 0;
-    const router = document.getElementById('calc-router').checked ? 1 : 0;
-    const computer = document.getElementById('calc-computer').checked ? 1 : 0;
-
-    // Simple calculation (in watts)
-    let totalLoad = 0;
-    totalLoad += fans * 60;
-    totalLoad += lights * 10;
-    totalLoad += tv * 100;
-    totalLoad += fridge * 150;
-    totalLoad += router * 10;
-    totalLoad += computer * 150;
-
-    // Recommend inverter and battery
-    let inverterVA = 700;
-    let batteryCapacity = '100Ah';
-
-    if (totalLoad > 1500) {
-      inverterVA = 1625;
-      batteryCapacity = '180-200Ah';
-    } else if (totalLoad > 1000) {
-      inverterVA = 1125;
-      batteryCapacity = '150-160Ah';
-    } else if (totalLoad > 600) {
-      inverterVA = 900;
-      batteryCapacity = '120Ah';
-    }
+    const { total, counts, breakdown } = estimateLoad(form);
+    const rec = recommendProducts(total);
 
     const result = document.getElementById('calculator-result');
-    if (result) {
-      result.innerHTML = `
-        <div style="background: #e8f5e9; padding: 24px; border-radius: 8px; border-left: 4px solid #27ae60;">
-          <h3 style="color: #27ae60; margin-bottom: 16px;">Based on Your Requirement:</h3>
-          <div style="background: white; padding: 16px; border-radius: 6px; margin-bottom: 16px;">
-            <div style="margin-bottom: 12px;">
-              <strong>Estimated Load:</strong> ${totalLoad}W
-            </div>
-            <div style="margin-bottom: 12px;">
-              <strong>Recommended Inverter:</strong> ${inverterVA}VA Pure Sine Wave
-            </div>
-            <div>
-              <strong>Recommended Battery:</strong> ${batteryCapacity} Tubular Battery
-            </div>
-          </div>
-          <p style="color: #666; margin-bottom: 16px; font-size: 0.95rem;">This is an estimated recommendation. For precise sizing, please contact our experts.</p>
-          <a href="${basePath}index.html#quotation" class="btn btn-primary">Get Personalized Quote</a>
-          <button class="btn btn-secondary" style="margin-left:8px;"
-            onclick="openWhatsapp(encodeURIComponent('Hi MAXVOLT, based on the calculator: ${totalLoad}W load, recommended ${inverterVA}VA inverter and ${batteryCapacity} battery. Please send me a quote.'))">
-            <svg class="wa-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.29.173-1.414-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-            Send via WhatsApp
-          </button>
+    if (!result) return;
+
+    const inverterLine = rec.inverter
+      ? `<strong>Recommended Inverter:</strong>
+           <a href="${basePath}product-detail.html?id=${rec.inverter.id || rec.inverter._id}">
+             ${rec.inverter.brand} ${rec.inverter.model}
+           </a>
+           <span style="color:var(--text-subtle);">(${rec.inverter.va})</span>`
+      : `<strong>Recommended Inverter:</strong> ~${rec.targets.va}VA Pure Sine Wave
+           <span style="color:var(--text-subtle);">(no exact match in stock — contact us)</span>`;
+
+    const batteryLine = rec.battery
+      ? `<strong>Recommended Battery:</strong>
+           <a href="${basePath}product-detail.html?id=${rec.battery.id || rec.battery._id}">
+             ${rec.battery.brand} ${rec.battery.model}
+           </a>
+           <span style="color:var(--text-subtle);">(${rec.battery.capacity})</span>`
+      : `<strong>Recommended Battery:</strong> ~${rec.targets.ah}Ah Tubular
+           <span style="color:var(--text-subtle);">(no exact match in stock — contact us)</span>`;
+
+    const itemsHtml = [
+      counts.fans     ? `${counts.fans} fan(s)`         : '',
+      counts.lights   ? `${counts.lights} light(s)`     : '',
+      counts.tv       ? 'TV'                            : '',
+      counts.fridge   ? 'Refrigerator'                  : '',
+      counts.router   ? 'Wi-Fi Router'                  : '',
+      counts.computer ? 'Computer'                      : '',
+    ].filter(Boolean).join(' · ') || 'No items selected';
+
+    const waMessage = encodeURIComponent(
+      `Hi MAXVOLT, based on my requirement (${itemsHtml}), ` +
+      `my estimated load is ${total}W. Please quote for: ` +
+      `${rec.inverter ? rec.inverter.brand + ' ' + rec.inverter.model : rec.targets.va + 'VA inverter'} + ` +
+      `${rec.battery ? rec.battery.brand + ' ' + rec.battery.model : rec.targets.ah + 'Ah battery'}.`
+    );
+
+    result.innerHTML = `
+      <div style="background: rgba(16,185,129,0.1); padding: 24px; border-radius: 12px; border-left: 4px solid var(--success); color: var(--text);">
+        <h3 style="color: var(--success); margin-bottom: 16px;">Based on Your Requirement</h3>
+        <div style="background: var(--bg-elevated); padding: 16px; border-radius: 8px; margin-bottom: 16px; border: 1px solid var(--border);">
+          <div style="margin-bottom: 10px;"><strong>Your items:</strong> ${itemsHtml}</div>
+          <div style="margin-bottom: 12px;"><strong>Estimated Load:</strong> ${total}W</div>
+          <div style="margin-bottom: 12px;">${inverterLine}</div>
+          <div>${batteryLine}</div>
         </div>
-      `;
-    }
+        <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 0.95rem;">
+          This is an estimate based on typical usage. For precise sizing and pricing, contact our experts.
+        </p>
+        <a href="${basePath}index.html#quotation" class="btn btn-primary">Get Personalized Quote</a>
+        <button class="btn btn-secondary" style="margin-left:8px;"
+          onclick="openWhatsapp('${waMessage}')">
+          <svg class="wa-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.29.173-1.414-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+          Send via WhatsApp
+        </button>
+      </div>
+    `;
   });
 }
 

@@ -559,7 +559,14 @@
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       await loadProducts();
-      const featured = allProducts.homeInverterBatteries.slice(0, 4);
+      // Featured: prefer batteries marked with a `featured: true` flag;
+      // otherwise fall back to the first 4 home batteries.
+      const pool = allProducts.homeInverterBatteries || [];
+      let featured = pool.filter(p => p.featured === true);
+      if (featured.length < 4) {
+        const extra = pool.filter(p => !featured.includes(p)).slice(0, 4 - featured.length);
+        featured = featured.concat(extra);
+      }
       displayProducts(featured, 'featured-products');
     });
   </script>

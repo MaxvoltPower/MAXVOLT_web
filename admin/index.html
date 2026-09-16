@@ -3,31 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Login | MAXVOLT</title>
+  <title>Admin | MAXVOLT</title>
   <link rel="stylesheet" href="../css/styles.css" />
   <link rel="stylesheet" href="css/admin.css" />
-
   <script type="module" src="../js/firebase-client.js"></script>
   <script src="../js/auth-client.js" defer></script>
 </head>
 <body>
   <main class="auth-wrap">
-    <form id="login-form" class="auth-card surface">
-      <div style="text-align:center;margin-bottom:20px;">
-        <img src="../assets/maxvolt-logo.png" alt="MAXVOLT" style="height:64px;margin:0 auto 16px;background:#fff;padding:6px 10px;border-radius:10px;">
-      </div>
-      <h1>Admin Login</h1>
-      <p>Sign in with your admin account</p>
-
-      <div class="form-group"><label>Email</label><input type="email" id="email" required /></div>
-      <div class="form-group"><label>Password</label><input type="password" id="password" required /></div>
-
-      <button type="submit" class="btn btn-primary btn-full">Sign In</button>
-      <div id="auth-error" class="auth-error" style="display:none;"></div>
-    </form>
+    <div class="auth-card surface" style="text-align:center;">
+      <img src="../assets/maxvolt-logo.png" alt="MAXVOLT"
+           style="height:56px;margin:0 auto 20px;background:#fff;padding:6px 10px;border-radius:10px;">
+      <h1>Checking access…</h1>
+      <p>Please wait while we verify your account.</p>
+    </div>
   </main>
 
   <script>
+    // Fast redirector:
+    //   1. If not logged in            → /account/login.html
+    //   2. If logged in and admin      → /admin/dashboard.html
+    //   3. If logged in and not admin  → /account/profile.html
     function waitForAuth(cb) {
       if (window.maxvoltAuth) return cb();
       const t = setInterval(() => {
@@ -36,24 +32,25 @@
     }
 
     waitForAuth(() => {
-      document.getElementById('login-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const errEl = document.getElementById('auth-error');
-        errEl.style.display = 'none';
+      let resolved = false;
+      window.maxvoltAuth.onAuthChange(async (user) => {
+        if (resolved) return;
+        resolved = true;
+
+        if (!user) {
+          window.location.replace('/account/login.html');
+          return;
+        }
         try {
-          await window.maxvoltAuth.signIn(
-            document.getElementById('email').value,
-            document.getElementById('password').value
-          );
           const profile = await window.maxvoltApi.verify();
-          if (!profile.isAdmin) {
-            await window.maxvoltAuth.signOutUser();
-            throw new Error('This account does not have admin access.');
+          if (profile && profile.isAdmin) {
+            window.location.replace('/admin/dashboard.html');
+          } else {
+            window.location.replace('/account/profile.html');
           }
-          window.location.href = 'dashboard.html';
-        } catch (err) {
-          errEl.textContent = err.message;
-          errEl.style.display = 'block';
+        } catch (e) {
+          console.error(e);
+          window.location.replace('/account/login.html');
         }
       });
     });
