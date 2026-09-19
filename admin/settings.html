@@ -45,7 +45,7 @@
         </div>
         <div class="form-group">
           <label>Model Name</label>
-          <input type="text" id="s-chatModel" placeholder="e.g. llama-3.3-70b-versatile" />
+          <input type="text" id="s-chatModel" placeholder="e.g. llama-3.1-8b-instant" />
           <small style="color:var(--text-subtle);font-size:0.8rem;">
             Type any Groq model name. See <a href="https://console.groq.com/docs/models" target="_blank" rel="noopener">console.groq.com/docs/models</a>.
           </small>
@@ -93,11 +93,23 @@
     document.getElementById('test-chat-btn').addEventListener('click', async () => {
       const out = document.getElementById('chat-test-result');
       out.textContent = 'Testing…';
+      out.style.color = 'var(--text-muted)';
+
+      // Send the CURRENT typed-in values so the admin doesn't have to save first
+      const typedKey = document.getElementById('s-chatApiKey').value.trim();
+      const typedModel = document.getElementById('s-chatModel').value.trim();
+
       try {
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: 'Say hi in one short sentence.', history: [] }),
+          body: JSON.stringify({
+            message: 'Say hi in one short sentence.',
+            history: [],
+            // Optional override — server will use these if provided
+            apiKeyOverride: typedKey || undefined,
+            modelOverride: typedModel || undefined,
+          }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Request failed');

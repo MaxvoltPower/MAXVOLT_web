@@ -21,15 +21,16 @@ export default async function handler(req, res) {
   }
 
   const body = await readBody(req);
-  const { message, history = [] } = body;
+  const { message, history = [], apiKeyOverride, modelOverride } = body;
   if (!message) {
     return res.status(400).json({ error: 'Message is required' });
   }
 
   let apiKey = process.env.GROQ_API_KEY;
   // Default model — admin can override by typing any name in Settings.
-  let model = 'llama-3.3-70b-versatile';
+  let model = 'llama-3.1-8b-instant';
 
+  // Load saved settings (fallback)
   try {
     const settings = await getCollection(COLLECTIONS.SETTINGS);
     const doc = await settings.findOne({ key: 'chatbot' });
@@ -43,6 +44,15 @@ export default async function handler(req, res) {
     }
   } catch (e) {
     console.warn('Could not load chatbot settings:', e.message);
+  }
+
+  // Allow the admin's "Test Chatbot" button to try unsaved values.
+  // Inline overrides take precedence over both env and DB.
+  if (typeof apiKeyOverride === 'string' && apiKeyOverride.trim()) {
+    apiKey = apiKeyOverride.trim();
+  }
+  if (typeof modelOverride === 'string' && modelOverride.trim()) {
+    model = modelOverride.trim();
   }
 
   if (!apiKey) {
