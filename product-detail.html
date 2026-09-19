@@ -93,7 +93,7 @@
     <div class="footer-content">
       <div class="footer-section">
         <div class="logo" style="display:inline-flex;margin-bottom:12px;">
-          <img src="../assets/maxvolt-logo.png" alt="MAXVOLT" style="height:44px;background:#fff;padding:6px 10px;border-radius:8px;">
+          <img src="assets/maxvolt-logo.png" alt="MAXVOLT" style="height:44px;background:#fff;padding:6px 10px;border-radius:8px;">
         </div>
         <p class="footer-tagline">⚡ TRUSTED POWER ALWAYS</p>
       </div>
@@ -143,11 +143,15 @@
         const product = findProductById(productId);
         if (product) {
           // Related products: same category, same brand first, then any brand
-          const cat = product.category;
-          const pool = (allProducts[cat] || []).filter(p => (p.id || p._id) !== productId);
+          const cat = normalizeCategory(product.category);
+          const pool = (allProducts[cat] || []).filter(p => (p.id || p._id) !== productId && p.id !== product.id);
           const sameBrand = pool.filter(p => p.brand === product.brand);
-          const related = (sameBrand.length >= 3 ? sameBrand : pool).slice(0, 3);
-          displayProducts(related, 'related-products');
+          const related = (sameBrand.length >= 3 ? sameBrand : pool).slice(0, 4);
+          if (related.length) {
+            displayProducts(related, 'related-products');
+          } else {
+            document.getElementById('related-products').innerHTML = '<p style="text-align:center;color:var(--text-subtle);grid-column:1/-1;">No related products found.</p>';
+          }
         }
       }
     });

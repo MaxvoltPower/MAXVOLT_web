@@ -38,6 +38,7 @@
           <option value="">All Categories</option>
           <option value="homeInverterBatteries">Home Inverter Batteries</option>
           <option value="homeInverters">Home Inverters</option>
+          <option value="inverter">Inverters</option>
           <option value="carBatteries">Car Batteries</option>
           <option value="totoErickshawBatteries">TOTO / E-Rickshaw</option>
           <option value="ebikeBatteries">E-Bike Batteries</option>
@@ -62,29 +63,25 @@
       <h2 id="modal-title">Add Product</h2>
       <input type="hidden" id="p-id" />
 
-      <!-- IMAGE PASTE / DROP ZONE -->
+      <!-- MULTIPLE IMAGES -->
       <div class="form-group">
-        <label>Product Image</label>
+        <label>Product Images</label>
         <div id="image-dropzone" class="image-dropzone" tabindex="0">
-          <img id="image-preview" alt="" style="display:none;" />
+          <div id="image-preview-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;width:100%;"></div>
           <div id="image-placeholder" class="image-placeholder">
             <div style="font-size:2.5rem;">🖼️</div>
-            <div><strong>Paste an image</strong> (Ctrl/⌘ + V)</div>
+            <div><strong>Paste images</strong> (Ctrl/⌘ + V)</div>
             <div style="font-size:0.85rem;color:var(--text-subtle);margin-top:4px;">
-              or drag &amp; drop a file here, or
-              <label for="image-file" class="image-file-label">choose a file</label>
+              or drag &amp; drop files here, or
+              <label for="image-file" class="image-file-label">choose files</label>
             </div>
-            <input type="file" id="image-file" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none;" />
+            <input type="file" id="image-file" accept="image/png,image/jpeg,image/webp,image/gif" multiple style="display:none;" />
           </div>
         </div>
         <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-          <button type="button" class="btn btn-outline btn-small" id="clear-image">Remove image</button>
+          <button type="button" class="btn btn-outline btn-small" id="clear-image">Remove all images</button>
           <span id="image-status" style="font-size:0.85rem;color:var(--text-subtle);align-self:center;"></span>
         </div>
-        <details style="margin-top:12px;">
-          <summary style="cursor:pointer;color:var(--text-muted);font-size:0.9rem;">Or paste an image URL / filename manually</summary>
-          <input type="text" id="p-image-url" placeholder="https://... or assets/images/foo.jpg" style="margin-top:8px;" />
-        </details>
       </div>
 
       <div class="form-row">
@@ -97,6 +94,7 @@
         <select id="p-category" required>
           <option value="homeInverterBatteries">Home Inverter Batteries</option>
           <option value="homeInverters">Home Inverters</option>
+          <option value="inverter">Inverters</option>
           <option value="carBatteries">Car Batteries</option>
           <option value="totoErickshawBatteries">TOTO / E-Rickshaw</option>
           <option value="ebikeBatteries">E-Bike Batteries</option>
@@ -115,8 +113,12 @@
       </div>
 
       <div class="form-row">
-        <div class="form-group"><label>Price (₹)</label><input type="number" id="p-price" /></div>
+        <div class="form-group"><label>MRP / Real Price (₹)</label><input type="number" id="p-price" /></div>
+        <div class="form-group"><label>Discounted Price (₹)</label><input type="number" id="p-discountedPrice" /></div>
+      </div>
+      <div class="form-row">
         <div class="form-group"><label>VA (for inverters/UPS)</label><input type="text" id="p-va" /></div>
+        <div class="form-group"><label>Stock Quantity</label><input type="number" id="p-stock" min="0" /></div>
       </div>
 
       <div class="form-row">
@@ -139,7 +141,7 @@
 
   <script>
     let products = [];
-    let currentImageData = ''; // base64 data URL or URL string
+    let currentImages = []; // array of base64 data URLs or URL strings
 
     const tbody = document.getElementById('products-body');
     const modal = document.getElementById('product-modal');
@@ -193,17 +195,15 @@
     function openModal(p = null) {
       document.getElementById('modal-title').textContent = p ? 'Edit Product' : 'Add Product';
       document.getElementById('p-id').value = p?._id || '';
-      ['brand','model','category','capacity','type','voltage','warranty','price','availability','bestFor','va'].forEach(k => {
+      ['brand','model','category','capacity','type','voltage','warranty','price','discountedPrice','availability','bestFor','va','stock'].forEach(k => {
         const el = document.getElementById('p-' + k);
         if (el) el.value = p?.[k] ?? '';
       });
       document.getElementById('p-active').checked = p ? p.active !== false : true;
 
-      // image
-      currentImageData = p?.image || '';
+      // images
+      currentImages = p?.images || (p?.image ? [p.image] : []);
       updateImagePreview();
-      document.getElementById('p-image-url').value =
-        currentImageData && !currentImageData.startsWith('data:') ? currentImageData : '';
 
       modal.classList.add('open');
     }
@@ -211,21 +211,21 @@
     function closeModal() {
       modal.classList.remove('open');
       form.reset();
-      currentImageData = '';
+      currentImages = [];
       updateImagePreview();
       imageStatus.textContent = '';
     }
 
     function updateImagePreview() {
-      if (currentImageData) {
-        imagePreview.src = resolveImg(currentImageData);
-        imagePreview.style.display = 'block';
-        imagePlaceholder.style.display = 'none';
-      } else {
-        imagePreview.removeAttribute('src');
-        imagePreview.style.display = 'none';
-        imagePlaceholder.style.display = 'block';
-      }
+      const grid = document.getElementById('image-preview-grid');
+      if (!grid) return;
+      grid.innerHTML = currentImages.map((img, i) => `
+        <div style="position:relative;border-radius:8px;overflow:hidden;background:var(--bg-muted);aspect-ratio:1;">
+          <img src="${resolveImg(img)}" style="width:100%;height:100%;object-fit:contain;padding:4px;" />
+          <button type="button" data-remove-img="${i}" style="position:absolute;top:4px;right:4px;background:rgba(239,68,68,0.9);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:0.75rem;display:grid;place-items:center;">✕</button>
+        </div>
+      `).join('');
+      imagePlaceholder.style.display = currentImages.length ? 'none' : 'block';
     }
 
     // ---------- Clipboard Paste ----------
@@ -275,31 +275,29 @@
       })
     );
     dropzone.addEventListener('drop', (e) => {
-      const file = e.dataTransfer?.files?.[0];
-      if (file && file.type.startsWith('image/')) handleImageFile(file);
+      const files = e.dataTransfer?.files;
+      if (files) Array.from(files).forEach(f => { if (f.type.startsWith('image/')) handleImageFile(f); });
     });
 
     // ---------- File picker ----------
     document.getElementById('image-file').addEventListener('change', (e) => {
-      const file = e.target.files?.[0];
-      if (file) handleImageFile(file);
+      const files = e.target.files;
+      if (files) Array.from(files).forEach(f => handleImageFile(f));
     });
 
-    // ---------- Clear image ----------
+    // ---------- Clear images ----------
     document.getElementById('clear-image').addEventListener('click', () => {
-      currentImageData = '';
+      currentImages = [];
       updateImagePreview();
-      document.getElementById('p-image-url').value = '';
-      imageStatus.textContent = 'Image removed';
+      imageStatus.textContent = 'All images removed';
     });
 
-    // ---------- URL input ----------
-    document.getElementById('p-image-url').addEventListener('input', (e) => {
-      const v = e.target.value.trim();
-      if (v) {
-        currentImageData = v;
+    // ---------- Remove image from preview grid ----------
+    document.getElementById('image-preview-grid').addEventListener('click', (e) => {
+      const idx = e.target.dataset.removeImg;
+      if (idx !== undefined) {
+        currentImages.splice(Number(idx), 1);
         updateImagePreview();
-        imageStatus.textContent = 'Using URL';
       }
     });
 
@@ -316,11 +314,9 @@
       }
       const reader = new FileReader();
       reader.onload = () => {
-        currentImageData = reader.result;
+        currentImages.push(reader.result);
         updateImagePreview();
-        document.getElementById('p-image-url').value = '';
-        const kb = Math.round((currentImageData.length * 3 / 4) / 1024);
-        imageStatus.textContent = `✓ ${kb} KB`;
+        imageStatus.textContent = `${currentImages.length} image(s)`;
       };
       reader.onerror = () => { imageStatus.textContent = 'Failed to read file'; };
       reader.readAsDataURL(file);
@@ -352,8 +348,11 @@
         payload[k] = document.getElementById('p-' + k).value;
       });
       payload.price = Number(document.getElementById('p-price').value) || 0;
+      payload.discountedPrice = Number(document.getElementById('p-discountedPrice').value) || null;
+      payload.stock = Number(document.getElementById('p-stock').value) || 0;
       payload.active = document.getElementById('p-active').checked;
-      payload.image = currentImageData || null;
+      payload.images = currentImages.length ? currentImages : null;
+      payload.image = currentImages[0] || null;
 
       const btn = document.getElementById('save-btn');
       const orig = btn.textContent;

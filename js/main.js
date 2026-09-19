@@ -38,6 +38,7 @@ let allProductsFlat = []; // flat list for recommendation engine
 const CATEGORY_KEYS = {
   homeInverterBatteries: 'homeInverterBatteries',
   homeInverters: 'homeInverters',
+  inverter: 'homeInverters',
   carBatteries: 'carBatteries',
   totoErickshawBatteries: 'totoErickshawBatteries',
   ebikeBatteries: 'ebikeBatteries',
@@ -94,6 +95,7 @@ function hydrateProductStore(items) {
   allProducts = {
     homeInverterBatteries: [],
     homeInverters: [],
+    inverter: [],
     carBatteries: [],
     totoErickshawBatteries: [],
     ebikeBatteries: [],
@@ -343,15 +345,27 @@ function displayProducts(products, containerId) {
           ${product.warranty ? `<div class="product-spec"><span class="product-spec-label">Warranty</span><span>${product.warranty}</span></div>` : ''}
         </div>
 
-        <div class="product-price">₹ ${product.price}</div>
-
-        <div class="product-availability ${getAvailabilityClass(product.availability)}">
-          ${product.availability}
+        <div class="product-price">
+          ${product.discountedPrice ? `
+            <span style="text-decoration:line-through;color:var(--text-subtle);font-size:0.9rem;margin-right:6px;">₹ ${product.price}</span>
+            <span style="color:var(--success);font-weight:800;">₹ ${product.discountedPrice}</span>
+          ` : `₹ ${product.price}`}
         </div>
 
+        <div class="product-availability ${product.stock === 0 ? 'availability-check' : getAvailabilityClass(product.availability)}">
+          ${product.stock === 0 ? 'Out of Stock' : product.availability}
+        </div>
+
+        ${product.stock === 0 ? `
+          <div style="margin-top:8px;font-size:0.8rem;color:var(--danger);font-weight:600;">Currently unavailable</div>
+        ` : ''}
+
         <div class="product-actions">
-          <a href="${basePath}product-detail.html?id=${product.id}" class="btn btn-primary btn-small">View Details</a>
-          <button class="btn btn-secondary btn-small" data-whatsapp="${product.id}" aria-label="Ask about ${product.model} on WhatsApp">WhatsApp</button>
+          <a href="${basePath}product-detail.html?id=${product.id || product._id}" class="btn btn-primary btn-small">View Details</a>
+          ${product.stock === 0
+            ? `<button class="btn btn-outline btn-small" disabled style="opacity:0.5;cursor:not-allowed;">Out of Stock</button>`
+            : `<button class="btn btn-secondary btn-small" data-whatsapp="${product.id || product._id}" aria-label="Ask about ${product.model} on WhatsApp">WhatsApp</button>`
+          }
         </div>
       </div>
     </article>
@@ -425,9 +439,9 @@ function resolveProductImageSrc(product) {
 
 function renderProductImage(product, opts = {}) {
   const src = resolveProductImageSrc(product);
-  if (!src) return '🔋';
+  if (!src) return '<div style="display:grid;place-items:center;height:100%;font-size:3rem;">🔋</div>';
   const cls = opts.class ? ` class="${opts.class}"` : '';
-  return `<img src="${src}" alt="${product.model}" loading="lazy" decoding="async"${cls} onerror="this.style.display='none';this.parentNode.textContent='🔋';">`;
+  return `<img src="${src}" alt="${product.model}" loading="lazy" decoding="async"${cls} style="width:100%;height:100%;object-fit:contain;padding:12px;" onerror="this.style.display='none';this.parentNode.innerHTML='<div style=\\'display:grid;place-items:center;height:100%;font-size:3rem;\\'>🔋</div>';">`;
 }
 
 // ============================================
@@ -445,12 +459,25 @@ function loadProductDetail() {
 
   const detail = document.getElementById('product-detail');
   if (detail) {
+    const images = (product.images && product.images.length)
+      ? product.images
+      : (product.image ? [product.image] : []);
+
     detail.innerHTML = `
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; max-width: 1200px; margin: 0 auto;">
         <div>
-          <div class="product-image" style="height: 400px; border-radius: 8px; margin-bottom: 20px;">
-            ${product.image ? `<img src="${resolveProductImageSrc(product)}" alt="${product.model}" style="width: 100%; height: 100%; object-fit: contain; padding: 24px;">` : '🔋'}
+          <div class="product-image" id="pd-main-image" style="height: 400px; border-radius: 8px; margin-bottom: 20px; cursor: ${images.length > 1 ? 'pointer' : 'default'};">
+            ${images.length ? `<img src="${resolveProductImageSrc({ image: images[0] })}" alt="${product.model}" style="width: 100%; height: 100%; object-fit: contain; padding: 24px;">` : '🔋'}
           </div>
+          ${images.length > 1 ? `
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 8px;">
+              ${images.map((img, i) => `
+                <button type="button" class="pd-thumb" data-img-index="${i}" style="background: var(--bg-muted); border: 2px solid ${i === 0 ? 'var(--secondary)' : 'var(--border)'}; border-radius: 8px; padding: 4px; cursor: pointer; aspect-ratio: 1;">
+                  <img src="${resolveProductImageSrc({ image: img })}" style="width:100%;height:100%;object-fit:contain;" alt="">
+                </button>
+              `).join('')}
+            </div>
+          ` : ''}
         </div>
         <div>
           <div class="product-brand">${product.brand}</div>
@@ -493,6 +520,20 @@ function loadProductDetail() {
       </div>
     `;
 
+    // Thumbnail gallery wiring
+    const thumbs = detail.querySelectorAll('.pd-thumb');
+    if (thumbs.length) {
+      thumbs.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = Number(btn.dataset.imgIndex);
+          const mainImg = detail.querySelector('#pd-main-image img');
+          if (mainImg) mainImg.src = resolveProductImageSrc({ image: images[idx] });
+          thumbs.forEach(b => b.style.borderColor = 'var(--border)');
+          btn.style.borderColor = 'var(--secondary)';
+        });
+      });
+    }
+
     // Buy Now → add to cart + go to checkout
     document.getElementById('buy-now-btn').addEventListener('click', () => {
       window.maxvoltCart.clearCart();
@@ -522,56 +563,90 @@ function getAvailabilityBg(availability) {
 /**
  * Estimate total load in watts from the calculator form.
  */
-function estimateLoad(form) {
-  const fans      = parseInt(form.querySelector('#calc-fans')?.value) || 0;
-  const lights    = parseInt(form.querySelector('#calc-lights')?.value) || 0;
-  const tv        = form.querySelector('#calc-tv')?.checked ? 1 : 0;
-  const fridge    = form.querySelector('#calc-fridge')?.checked ? 1 : 0;
-  const router    = form.querySelector('#calc-router')?.checked ? 1 : 0;
-  const computer  = form.querySelector('#calc-computer')?.checked ? 1 : 0;
+// Appliance definitions with realistic wattages
+const APPLIANCES = [
+  { id: 'fan',        name: 'Ceiling Fan',           icon: '🌀', watts: 70,  default: 2 },
+  { id: 'light',      name: 'LED Light',             icon: '💡', watts: 12,  default: 5 },
+  { id: 'tube',       name: 'Tube Light',            icon: '🔆', watts: 40,  default: 0 },
+  { id: 'tv',         name: 'Television',            icon: '📺', watts: 110, default: 0 },
+  { id: 'fridge',     name: 'Refrigerator',          icon: '🧊', watts: 180, default: 0 },
+  { id: 'router',     name: 'Wi-Fi Router',          icon: '📶', watts: 15,  default: 0 },
+  { id: 'computer',   name: 'Desktop Computer',      icon: '💻', watts: 200, default: 0 },
+  { id: 'laptop',     name: 'Laptop',                icon: '💻', watts: 60,  default: 0 },
+  { id: 'ac',         name: 'Air Conditioner (1.5T)',icon: '❄️', watts: 1500,default: 0 },
+  { id: 'microwave',  name: 'Microwave',             icon: '📡', watts: 1200,default: 0 },
+  { id: 'mixer',      name: 'Mixer/Grinder',         icon: '🥤', watts: 500, default: 0 },
+  { id: 'iron',       name: 'Iron',                  icon: '👔', watts: 1000,default: 0 },
+  { id: 'waterpump',  name: 'Water Pump',            icon: '🚰', watts: 750, default: 0 },
+  { id: 'cctv',       name: 'CCTV Camera',           icon: '📹', watts: 10,  default: 0 },
+  { id: 'printer',    name: 'Printer',               icon: '🖨️', watts: 300, default: 0 },
+];
 
-  // Realistic average wattages
-  const WATTS = {
-    fan: 70, light: 12, tv: 110, fridge: 180, router: 15, computer: 180,
-  };
+function renderApplianceList() {
+  const container = document.getElementById('calc-appliance-list');
+  if (!container) return;
+  container.innerHTML = APPLIANCES.map(a => `
+    <div class="calc-appliance-row" data-id="${a.id}">
+      <div class="appliance-icon">${a.icon}</div>
+      <div>
+        <div class="appliance-name">${a.name}</div>
+        <div class="appliance-watts">~${a.watts}W each</div>
+      </div>
+      <input type="number" min="0" max="20" value="${a.default}" data-qty="${a.id}" ${a.default === 0 ? 'disabled' : ''}>
+      <div class="appliance-toggle">
+        <input type="checkbox" data-toggle="${a.id}" ${a.default > 0 ? 'checked' : ''}>
+      </div>
+    </div>
+  `).join('');
 
-  const total =
-    fans * WATTS.fan +
-    lights * WATTS.light +
-    tv * WATTS.tv +
-    fridge * WATTS.fridge +
-    router * WATTS.router +
-    computer * WATTS.computer;
-
-  return {
-    total,
-    breakdown: { fans, lights, tv, fridge, router, computer },
-    counts: { fans, lights, tv, fridge, router, computer },
-  };
+  container.addEventListener('change', (e) => {
+    const toggleId = e.target.dataset.toggle;
+    if (toggleId) {
+      const qtyInput = container.querySelector(`[data-qty="${toggleId}"]`);
+      if (qtyInput) {
+        qtyInput.disabled = !e.target.checked;
+        if (e.target.checked && Number(qtyInput.value) === 0) qtyInput.value = 1;
+      }
+    }
+  });
 }
 
-/**
- * Required inverter VA. Rule of thumb: load * 1.25 (safety) / 0.8 (power factor)
- * → roughly load * 1.6. Then round up to a standard size.
- */
+function estimateLoad(form) {
+  const rows = form.querySelectorAll('.calc-appliance-row');
+  let total = 0;
+  const breakdown = [];
+  const counts = {};
+
+  rows.forEach(row => {
+    const id = row.dataset.id;
+    const appliance = APPLIANCES.find(a => a.id === id);
+    if (!appliance) return;
+    const toggle = row.querySelector(`[data-toggle="${id}"]`);
+    if (!toggle || !toggle.checked) return;
+    const qty = parseInt(row.querySelector(`[data-qty="${id}"]`)?.value) || 0;
+    if (qty <= 0) return;
+    const watts = qty * appliance.watts;
+    total += watts;
+    counts[id] = qty;
+    breakdown.push({ name: appliance.name, qty, watts });
+  });
+
+  return { total, breakdown, counts };
+}
+
 function requiredInverterVA(loadWatts) {
   const raw = loadWatts * 1.6;
-  const sizes = [600, 700, 750, 800, 850, 900, 1000, 1100, 1200, 1400, 1500, 1600, 1800, 2000, 2500, 3000];
-  return sizes.find(s => s >= raw) || 3000;
+  const sizes = [600, 700, 750, 800, 850, 900, 1000, 1100, 1200, 1400, 1500, 1600, 1800, 2000, 2500, 3000, 4000, 5000];
+  return sizes.find(s => s >= raw) || 5000;
 }
 
-/**
- * Required battery Ah.
- * Backup hours assumed: 3 hrs at full load (typical Indian home).
- * Ah = (Load * Hours) / (BatteryVoltage * Efficiency * DoD)
- *   = (Load * 3) / (12 * 0.85 * 0.6) ≈ Load * 0.49
- * Then round up to a standard capacity.
- */
-function requiredBatteryAh(loadWatts) {
-  const raw = (loadWatts * 3) / (12 * 0.85 * 0.6);
-  const sizes = [100, 120, 135, 150, 160, 180, 200, 220, 250];
-  return sizes.find(s => s >= raw) || 250;
+function requiredBatteryAh(loadWatts, hours) {
+  const raw = (loadWatts * hours) / (12 * 0.85 * 0.6);
+  const sizes = [100, 120, 135, 150, 160, 180, 200, 220, 250, 300];
+  return sizes.find(s => s >= raw) || 300;
 }
+
+// (moved above into the new calculator block)
 
 /**
  * Score a product against a target capacity / VA / Ah.
@@ -605,26 +680,53 @@ function scoreProduct(product, targets) {
 /**
  * Recommend the best inverter + battery from REAL products in the DB.
  */
-function recommendProducts(loadWatts) {
+function recommendProducts(loadWatts, hours = 3) {
   const targets = {
     va: requiredInverterVA(loadWatts),
-    ah: requiredBatteryAh(loadWatts),
+    ah: requiredBatteryAh(loadWatts, hours),
   };
 
   const inverters = (allProducts.homeInverters || [])
-    .filter(p => p.active !== false)
+    .filter(p => p.active !== false && (p.stock === undefined || p.stock > 0))
     .map(p => ({ p, score: scoreProduct(p, targets) }))
     .sort((a, b) => a.score - b.score);
 
   const batteries = (allProducts.homeInverterBatteries || [])
-    .filter(p => p.active !== false)
+    .filter(p => p.active !== false && (p.stock === undefined || p.stock > 0))
     .map(p => ({ p, score: scoreProduct(p, targets) }))
     .sort((a, b) => a.score - b.score);
 
+  const validInverter = inverters.find(i => {
+    const va = parseInt(String(i.p.va || '').replace(/\D/g, '')) || 0;
+    return va >= loadWatts * 0.8;
+  });
+  const validBattery = batteries.find(b => {
+    const ah = parseInt(String(b.p.capacity || '').replace(/\D/g, '')) || 0;
+    return ah >= targets.ah * 0.8;
+  });
+
+  // Check for a matching combo section
+  let combo = null;
+  const comboSections = window._comboSections || {};
+  for (const [sid, products] of Object.entries(comboSections)) {
+    const inv = products.find(p => normalizeCategory(p.category) === 'homeInverters');
+    const bat = products.find(p => normalizeCategory(p.category) === 'homeInverterBatteries');
+    if (inv && bat) {
+      const va = parseInt(String(inv.va || '').replace(/\D/g, '')) || 0;
+      const ah = parseInt(String(bat.capacity || '').replace(/\D/g, '')) || 0;
+      if (va >= loadWatts * 0.8 && ah >= targets.ah * 0.8) {
+        combo = { id: sid, products, inverter: inv, battery: bat };
+        break;
+      }
+    }
+  }
+
   return {
-    inverter:  inverters[0]?.p || null,
-    battery:   batteries[0]?.p || null,
+    inverter: validInverter?.p || inverters[0]?.p || null,
+    battery: validBattery?.p || batteries[0]?.p || null,
+    combo,
     targets,
+    valid: !!(validInverter && validBattery),
   };
 }
 
@@ -632,14 +734,62 @@ function setupCalculator() {
   const form = document.getElementById('requirement-calculator');
   if (!form) return;
 
+  renderApplianceList();
+
   form.addEventListener('submit', (e) => {
     e.preventDefault();
 
     const { total, counts, breakdown } = estimateLoad(form);
-    const rec = recommendProducts(total);
+    const hours = parseFloat(document.getElementById('calc-backup-hours')?.value) || 3;
+    const rec = recommendProducts(total, hours);
 
     const result = document.getElementById('calculator-result');
     if (!result) return;
+
+    if (total === 0) {
+      result.innerHTML = `
+        <div style="background: rgba(245,158,11,0.1); padding: 24px; border-radius: 12px; border-left: 4px solid var(--warning); color: var(--text);">
+          <h3 style="color: var(--warning); margin-bottom: 12px;">No Appliances Selected</h3>
+          <p>Please select at least one appliance to get a recommendation.</p>
+        </div>
+      `;
+      return;
+    }
+
+    if (!rec.valid) {
+      result.innerHTML = `
+        <div style="background: rgba(239,68,68,0.1); padding: 24px; border-radius: 12px; border-left: 4px solid var(--danger); color: var(--text);">
+          <h3 style="color: var(--danger); margin-bottom: 12px;">Requirement Exceeds Available Solutions</h3>
+          <p>Your estimated load of <strong>${total}W</strong> requires ~<strong>${rec.targets.va}VA</strong> inverter and ~<strong>${rec.targets.ah}Ah</strong> battery, which is beyond our current stock.</p>
+          <p style="margin-top:12px;">Please contact us directly for a custom solution.</p>
+          <a href="${basePath}index.html#quotation" class="btn btn-primary" style="margin-top:16px;">Get Custom Quote</a>
+          <button class="btn btn-secondary" style="margin-left:8px;" onclick="openWhatsapp('${encodeURIComponent('Hi MAXVOLT, I need a custom power solution for ' + total + 'W load. Please help.')}')">Contact on WhatsApp</button>
+        </div>
+      `;
+      return;
+    }
+
+    const itemsHtml = breakdown.map(b => `${b.name} ×${b.qty}`).join(' · ');
+
+    // Combo recommendation
+    if (rec.combo) {
+      result.innerHTML = `
+        <div style="background: rgba(255,107,0,0.1); padding: 24px; border-radius: 12px; border-left: 4px solid var(--secondary); color: var(--text);">
+          <h3 style="color: var(--secondary); margin-bottom: 16px;">🎁 Recommended Combo Package</h3>
+          <div style="background: var(--bg-elevated); padding: 16px; border-radius: 8px; margin-bottom: 16px; border: 1px solid var(--border);">
+            <div style="margin-bottom: 10px;"><strong>Your items:</strong> ${itemsHtml}</div>
+            <div style="margin-bottom: 6px;"><strong>Estimated Load:</strong> ${total}W</div>
+            <div style="margin-bottom: 12px;"><strong>Backup Time:</strong> ${hours} hour(s)</div>
+            <div style="margin-bottom: 12px;"><strong>Inverter:</strong> ${rec.combo.inverter.brand} ${rec.combo.inverter.model}</div>
+            <div><strong>Battery:</strong> ${rec.combo.battery.brand} ${rec.combo.battery.model}</div>
+          </div>
+          <p style="color: var(--text-muted); margin-bottom: 16px;">This combo package is optimized for your requirement.</p>
+          <button class="btn btn-secondary" onclick="addComboToCart('${rec.combo.id}')">🛒 Add Combo to Cart</button>
+          <a href="${basePath}index.html#quotation" class="btn btn-primary" style="margin-left:8px;">Get Quote</a>
+        </div>
+      `;
+      return;
+    }
 
     const inverterLine = rec.inverter
       ? `<strong>Recommended Inverter:</strong>
@@ -647,8 +797,8 @@ function setupCalculator() {
              ${rec.inverter.brand} ${rec.inverter.model}
            </a>
            <span style="color:var(--text-subtle);">(${rec.inverter.va})</span>`
-      : `<strong>Recommended Inverter:</strong> ~${rec.targets.va}VA Pure Sine Wave
-           <span style="color:var(--text-subtle);">(no exact match in stock — contact us)</span>`;
+      : `<strong>Recommended Inverter:</strong> ~${rec.targets.va}VA
+           <span style="color:var(--text-subtle);">(contact us)</span>`;
 
     const batteryLine = rec.battery
       ? `<strong>Recommended Battery:</strong>
@@ -656,31 +806,23 @@ function setupCalculator() {
              ${rec.battery.brand} ${rec.battery.model}
            </a>
            <span style="color:var(--text-subtle);">(${rec.battery.capacity})</span>`
-      : `<strong>Recommended Battery:</strong> ~${rec.targets.ah}Ah Tubular
-           <span style="color:var(--text-subtle);">(no exact match in stock — contact us)</span>`;
-
-    const itemsHtml = [
-      counts.fans     ? `${counts.fans} fan(s)`         : '',
-      counts.lights   ? `${counts.lights} light(s)`     : '',
-      counts.tv       ? 'TV'                            : '',
-      counts.fridge   ? 'Refrigerator'                  : '',
-      counts.router   ? 'Wi-Fi Router'                  : '',
-      counts.computer ? 'Computer'                      : '',
-    ].filter(Boolean).join(' · ') || 'No items selected';
+      : `<strong>Recommended Battery:</strong> ~${rec.targets.ah}Ah
+           <span style="color:var(--text-subtle);">(contact us)</span>`;
 
     const waMessage = encodeURIComponent(
       `Hi MAXVOLT, based on my requirement (${itemsHtml}), ` +
-      `my estimated load is ${total}W. Please quote for: ` +
+      `my estimated load is ${total}W with ${hours}h backup. Please quote for: ` +
       `${rec.inverter ? rec.inverter.brand + ' ' + rec.inverter.model : rec.targets.va + 'VA inverter'} + ` +
       `${rec.battery ? rec.battery.brand + ' ' + rec.battery.model : rec.targets.ah + 'Ah battery'}.`
     );
 
     result.innerHTML = `
       <div style="background: rgba(16,185,129,0.1); padding: 24px; border-radius: 12px; border-left: 4px solid var(--success); color: var(--text);">
-        <h3 style="color: var(--success); margin-bottom: 16px;">Based on Your Requirement</h3>
+        <h3 style="color: var(--success); margin-bottom: 16px;">✓ Best Match Found</h3>
         <div style="background: var(--bg-elevated); padding: 16px; border-radius: 8px; margin-bottom: 16px; border: 1px solid var(--border);">
           <div style="margin-bottom: 10px;"><strong>Your items:</strong> ${itemsHtml}</div>
-          <div style="margin-bottom: 12px;"><strong>Estimated Load:</strong> ${total}W</div>
+          <div style="margin-bottom: 6px;"><strong>Estimated Load:</strong> ${total}W</div>
+          <div style="margin-bottom: 12px;"><strong>Backup Time:</strong> ${hours} hour(s)</div>
           <div style="margin-bottom: 12px;">${inverterLine}</div>
           <div>${batteryLine}</div>
         </div>
@@ -760,6 +902,85 @@ if (document.querySelector('#requirement-calculator')) {
 }
 
 window.openWhatsapp = openWhatsapp;
+window.normalizeCategory = normalizeCategory;
+window.addComboToCart = function(sectionId) {
+  const products = window._comboSections?.[sectionId];
+  if (!products) return;
+  products.forEach(p => window.maxvoltCart.addToCart(p, 1));
+  showSuccessMessage(`${products.length} items added to cart`);
+};
+
+// Load dynamic sections
+async function loadDynamicSections() {
+  const container = document.getElementById('dynamic-sections');
+  if (!container) return;
+  try {
+    const res = await fetch('/api/sections');
+    const json = await res.json();
+    const sections = json.data || [];
+    if (!sections.length) return;
+
+    const hasFeatured = sections.some(s => s.type === 'featured');
+    if (hasFeatured) {
+      const fallback = document.getElementById('featured-fallback');
+      if (fallback) fallback.style.display = 'none';
+    }
+
+    for (const section of sections) {
+      const products = (section.products || [])
+        .map(pid => allProductsFlat.find(p => p._id === pid || p.id === pid))
+        .filter(Boolean);
+
+      if (!products.length) continue;
+
+      const sectionEl = document.createElement('section');
+      sectionEl.className = 'dynamic-section';
+      const isCombo = section.type === 'combo';
+      const isSale = section.type === 'sale';
+      sectionEl.innerHTML = `
+        <div class="container">
+          <div class="section-header">
+            <h2>${section.title}</h2>
+            <p>${isSale ? 'Limited time offers' : isCombo ? 'Bundle & save' : 'Hand-picked for you'}</p>
+          </div>
+          ${isCombo ? `
+            <div style="text-align:center;margin-bottom:16px;">
+              <span style="display:inline-block;padding:6px 16px;background:linear-gradient(135deg,var(--secondary),var(--secondary-light));color:#fff;border-radius:999px;font-weight:700;font-size:0.85rem;">🎁 COMBO OFFER</span>
+            </div>
+          ` : ''}
+          <div class="product-grid" id="section-${section._id}"></div>
+          ${isCombo ? `
+            <div style="text-align:center;margin-top:24px;">
+              <button class="btn btn-secondary" onclick="addComboToCart('${section._id}')">🛒 Add Combo to Cart</button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+      container.appendChild(sectionEl);
+      displayProducts(products, `section-${section._id}`);
+
+      window._comboSections = window._comboSections || {};
+      window._comboSections[section._id] = products;
+    }
+  } catch (e) {
+    console.warn('Dynamic sections unavailable:', e.message);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Wait for products to be in memory, then load sections
+  const t = setInterval(() => {
+    if (allProductsFlat.length > 0) {
+      clearInterval(t);
+      loadDynamicSections();
+    }
+  }, 200);
+  // Fallback in case products never load
+  setTimeout(() => {
+    clearInterval(t);
+    if (!document.querySelector('.dynamic-section')) loadDynamicSections();
+  }, 4000);
+});
 
 // ============================================
 // HERO CAROUSEL — self-initializing, animated

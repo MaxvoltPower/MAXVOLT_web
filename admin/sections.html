@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sections | MAXVOLT Admin</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <script type="module" src="../js/firebase-client.js"></script>
+  <script src="../js/auth-client.js" defer></script>
+  <script src="js/admin-api.js" defer></script>
+  <script src="js/admin-auth.js" defer></script>
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="admin-side">
+      <div class="admin-brand"><img src="../assets/maxvolt-logo.png" alt="MAXVOLT"><strong>Admin</strong></div>
+      <nav class="admin-nav">
+        <a href="dashboard.html">📊 Dashboard</a>
+        <a href="products.html">📦 Products</a>
+        <a href="sections.html" class="active">🏷️ Sections</a>
+        <a href="orders.html">🛒 Orders</a>
+        <a href="quotes.html">💬 Quotes</a>
+        <a href="users.html">👥 Users</a>
+        <a href="settings.html">⚙️ Settings</a>
+        <a href="#" id="admin-logout">🚪 Logout</a>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <div class="admin-topbar">
+        <h1>Website Sections</h1>
+        <button class="btn btn-primary" id="add-section">+ Add Section</button>
+      </div>
+      <div id="sections-list"></div>
+    </main>
+  </div>
+
+  <div class="modal-bg" id="section-modal">
+    <form class="modal modal-wide" id="section-form">
+      <h2 id="section-modal-title">Add Section</h2>
+      <input type="hidden" id="s-id" />
+      <div class="form-group">
+        <label>Section Title *</label>
+        <input type="text" id="s-title" required placeholder="e.g., Summer Sale, Featured Products" />
+      </div>
+      <div class="form-group">
+        <label>Section Type *</label>
+        <select id="s-type" required>
+          <option value="featured">Featured Products</option>
+          <option value="sale">Sale / Offers</option>
+          <option value="combo">Combo / Package Offers</option>
+          <option value="new">New Arrivals</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Display Order</label>
+        <input type="number" id="s-order" value="0" />
+      </div>
+      <div class="form-group">
+        <label>Select Products</label>
+        <div id="s-product-picker" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;"></div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;gap:8px;align-items:center;">
+          <input type="checkbox" id="s-active" checked /> Active
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" id="section-cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="section-save">Save</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    let sections = [];
+    let allProducts = [];
+    let selectedProducts = [];
+
+    async function loadProducts() {
+      try {
+        const res = await window.adminApi.products('?limit=1000&all=1');
+        allProducts = res.items || [];
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderProductPicker() {
+      const picker = document.getElementById('s-product-picker');
+      picker.innerHTML = allProducts.map(p => `
+        <label style="display:flex;gap:8px;align-items:center;padding:6px;cursor:pointer;">
+          <input type="checkbox" data-pid="${p._id}" ${selectedProducts.includes(p._id) ? 'checked' : ''}>
+          <span>${p.brand} ${p.model} — ₹${p.discountedPrice || p.price}</span>
+        </label>
+      `).join('');
+    }
+
+    async function loadSections() {
+      try {
+        const res = await fetch('/api/sections');
+        const json = await res.json();
+        sections = json.data || [];
+        renderSections();
+      } catch (e) {
+        document.getElementById('sections-list').innerHTML = `<p style="color:var(--danger);">${e.message}</p>`;
+      }
+    }
+
+    function renderSections() {
+      const el = document.getElementById('sections-list');
+      if (!sections.length) {
+        el.innerHTML = '<p style="text-align:center;color:var(--text-subtle);padding:40px;">No sections yet. Click "+ Add Section" to create one.</p>';
+        return;
+      }
+      el.innerHTML = sections.map(s => `
+        <div class="surface" style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h3 style="margin:0 0 4px;">${s.title}</h3>
+            <span class="badge badge-new">${s.type}</span>
+            <span class="badge badge-${s.active !== false ? 'delivered' : 'failed'}">${s.active !== false ? 'Active' : 'Hidden'}</span>
+            <span style="font-size:0.85rem;color:var(--text-subtle);margin-left:8px;">${(s.products || []).length} product(s)</span>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline btn-small" data-edit="${s._id}">Edit</button>
+            <button class="btn btn-secondary btn-small" data-del="${s._id}">Delete</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    document.addEventListener('admin-ready', async () => {
+      await loadProducts();
+      await loadSections();
+    });
+
+    document.getElementById('add-section').addEventListener('click', () => {
+      document.getElementById('section-modal-title').textContent = 'Add Section';
+      document.getElementById('s-id').value = '';
+      document.getElementById('s-title').value = '';
+      document.getElementById('s-type').value = 'featured';
+      document.getElementById('s-order').value = '0';
+      document.getElementById('s-active').checked = true;
+      selectedProducts = [];
+      renderProductPicker();
+      document.getElementById('section-modal').classList.add('open');
+    });
+
+    document.getElementById('section-cancel').addEventListener('click', () => {
+      document.getElementById('section-modal').classList.remove('open');
+    });
+
+    document.getElementById('s-product-picker').addEventListener('change', (e) => {
+      const pid = e.target.dataset.pid;
+      if (!pid) return;
+      if (e.target.checked) {
+        if (!selectedProducts.includes(pid)) selectedProducts.push(pid);
+      } else {
+        selectedProducts = selectedProducts.filter(id => id !== pid);
+      }
+    });
+
+    document.getElementById('section-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('s-id').value;
+      const payload = {
+        title: document.getElementById('s-title').value,
+        type: document.getElementById('s-type').value,
+        order: Number(document.getElementById('s-order').value) || 0,
+        active: document.getElementById('s-active').checked,
+        products: selectedProducts,
+      };
+      const token = await window.maxvoltAuth.getIdToken();
+      const url = id ? `/api/sections/${id}` : '/api/sections';
+      const method = id ? 'PUT' : 'POST';
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify(payload),
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error);
+        document.getElementById('section-modal').classList.remove('open');
+        loadSections();
+      } catch (err) {
+        alert('Save failed: ' + err.message);
+      }
+    });
+
+    document.getElementById('sections-list').addEventListener('click', async (e) => {
+      const editId = e.target.dataset.edit;
+      const delId = e.target.dataset.del;
+      if (editId) {
+        const s = sections.find(x => x._id === editId);
+        if (!s) return;
+        document.getElementById('section-modal-title').textContent = 'Edit Section';
+        document.getElementById('s-id').value = s._id;
+        document.getElementById('s-title').value = s.title;
+        document.getElementById('s-type').value = s.type;
+        document.getElementById('s-order').value = s.order || 0;
+        document.getElementById('s-active').checked = s.active !== false;
+        selectedProducts = s.products || [];
+        renderProductPicker();
+        document.getElementById('section-modal').classList.add('open');
+      }
+      if (delId) {
+        if (!confirm('Delete this section?')) return;
+        const token = await window.maxvoltAuth.getIdToken();
+        try {
+          await fetch(`/api/sections/${delId}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          loadSections();
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

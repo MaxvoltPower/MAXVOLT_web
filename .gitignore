@@ -142,3 +142,4 @@ ENV/
 .sass-cache/
 .eslintcache
 .stylelintcache
+combined_project_files.txt

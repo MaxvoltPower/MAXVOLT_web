@@ -55,11 +55,32 @@ export default async function handler(req, res) {
       const body = parseBody(req);
       delete body._id;
 
-      // Handle image field
-      if ('image' in body) {
+      // Handle image fields
+      if ('images' in body && Array.isArray(body.images)) {
+        body.images = body.images.map(img => {
+          const norm = normalizeImageInput(img);
+          return norm.ok ? norm.value : null;
+        }).filter(Boolean);
+        body.image = body.images[0] || null;
+      } else if ('image' in body) {
         const norm = normalizeImageInput(body.image);
         if (!norm.ok) return fail(res, norm.error);
         body.image = norm.value;
+        body.images = [norm.value];
+      }
+
+      // Normalize numeric fields
+      if ('discountedPrice' in body) {
+        const n = Number(body.discountedPrice);
+        body.discountedPrice = Number.isFinite(n) && n > 0 ? n : null;
+      }
+      if ('stock' in body) {
+        const n = Number(body.stock);
+        body.stock = Number.isFinite(n) && n >= 0 ? n : 0;
+      }
+      if ('price' in body) {
+        const n = Number(body.price);
+        body.price = Number.isFinite(n) && n >= 0 ? n : 0;
       }
 
       body.updatedAt = new Date();
@@ -123,17 +144,28 @@ export default async function handler(req, res) {
       return fail(res, 'model, brand, category are required');
     }
 
-    // Image handling
+    // Image handling — support multiple images
     let imageValue = null;
-    if (body.image) {
+    let imagesValue = [];
+    if (Array.isArray(body.images) && body.images.length) {
+      imagesValue = body.images.map(img => {
+        const norm = normalizeImageInput(img);
+        return norm.ok ? norm.value : null;
+      }).filter(Boolean);
+      imageValue = imagesValue[0] || null;
+    } else if (body.image) {
       const norm = normalizeImageInput(body.image);
       if (!norm.ok) return fail(res, norm.error);
       imageValue = norm.value;
+      imagesValue = [imageValue];
     }
 
     const doc = {
       ...body,
       image: imageValue,
+      images: imagesValue,
+      discountedPrice: body.discountedPrice ? Number(body.discountedPrice) : null,
+      stock: body.stock !== undefined ? Number(body.stock) : 0,
       active: body.active !== false,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -150,6 +182,13 @@ function toPublicProduct(doc) {
   if (!doc) return doc;
   const out = { ...doc };
   out.image = resolveProductImage(doc);
+  if (Array.isArray(doc.images)) {
+    out.images = doc.images.map(resolveProductImage);
+  } else if (out.image) {
+    out.images = [out.image];
+  } else {
+    out.images = [];
+  }
   return out;
 }
 

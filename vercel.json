@@ -35,6 +35,8 @@
     { "source": "/api/orders/:path*",    "destination": "/api/orders" },
     { "source": "/api/quotes/:path*",    "destination": "/api/quotes" },
     { "source": "/api/admin/:path*",     "destination": "/api/admin" },
+    { "source": "/api/sections/:path*",  "destination": "/api/sections" },
+    { "source": "/api/chat",             "destination": "/api/chat" },
     { "source": "/api/payments/webhook", "destination": "/api/webhook" },
     { "source": "/api/payments/:path*",  "destination": "/api/payments" },
     { "source": "/products/:page",       "destination": "/products/:page.html" },

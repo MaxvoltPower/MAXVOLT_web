@@ -83,8 +83,10 @@
         </ul>
       </nav>
       <div class="header-right">
-        <a href="cart.html" class="btn btn-outline btn-small" style="position:relative;">
-          🛒 Cart <span class="cart-badge" style="display:none;background:var(--secondary);color:#fff;border-radius:999px;padding:2px 8px;font-size:0.75rem;margin-left:4px;">0</span>
+        <a href="cart.html" id="nav-cart" class="btn btn-outline btn-small" style="position:relative;">
+          <span aria-hidden="true" style="font-size:1rem;">🛒</span>
+          <span class="nav-cart-label">Cart</span>
+          <span class="cart-badge" style="display:none;background:var(--secondary);color:#fff;border-radius:999px;padding:2px 8px;font-size:0.75rem;margin-left:4px;">0</span>
         </a>
         <a href="account/login.html" id="nav-login" class="btn btn-outline btn-small">Login</a>
         <a href="account/profile.html" id="nav-account" class="btn btn-outline btn-small" style="display:none;">My Account</a>

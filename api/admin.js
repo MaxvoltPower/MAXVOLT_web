@@ -94,15 +94,32 @@ export default async function handler(req, res) {
 
     if (method === 'GET') {
       const doc = await settings.findOne({ key: SETTINGS_KEY });
-      return ok(res, doc?.value || {});
+      const chatbot = await settings.findOne({ key: 'chatbot' });
+      return ok(res, { ...(doc?.value || {}), ...(chatbot?.value || {}) });
     }
     if (method === 'PUT' || method === 'PATCH') {
       const body = parseBody(req);
-      await settings.updateOne(
-        { key: SETTINGS_KEY },
-        { $set: { key: SETTINGS_KEY, value: body, updatedAt: new Date(), updatedBy: admin.uid } },
-        { upsert: true }
-      );
+      const chatKeys = ['chatApiKey', 'chatModel'];
+      const chatValue = {};
+      const siteValue = {};
+      for (const k in body) {
+        if (chatKeys.includes(k)) chatValue[k] = body[k];
+        else siteValue[k] = body[k];
+      }
+      if (Object.keys(siteValue).length) {
+        await settings.updateOne(
+          { key: SETTINGS_KEY },
+          { $set: { key: SETTINGS_KEY, value: siteValue, updatedAt: new Date(), updatedBy: admin.uid } },
+          { upsert: true }
+        );
+      }
+      if (Object.keys(chatValue).length) {
+        await settings.updateOne(
+          { key: 'chatbot' },
+          { $set: { key: 'chatbot', value: chatValue, updatedAt: new Date(), updatedBy: admin.uid } },
+          { upsert: true }
+        );
+      }
       return ok(res, body);
     }
     return fail(res, 'Method not allowed', 405);
