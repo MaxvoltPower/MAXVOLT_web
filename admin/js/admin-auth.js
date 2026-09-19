@@ -45,6 +45,11 @@
           const el = document.getElementById('admin-email');
           if (el) el.textContent = profile.email || user.email;
           window.currentAdmin = profile;
+
+          // Inject "View Site" link into the admin sidebar so admins
+          // can always navigate back to the public website.
+          injectViewSiteLink();
+
           document.dispatchEvent(new CustomEvent('admin-ready', { detail: profile }));
         } catch (e) {
           console.error('Admin guard failed:', e);
@@ -61,6 +66,56 @@
         });
       }
     });
+  }
+
+  // ----------------------------------------------------------------
+  // Injects a "View Site" link and a "Signed in as…" header into every
+  // admin sidebar so admins can navigate back to the public website.
+  // ----------------------------------------------------------------
+  function injectViewSiteLink() {
+    const nav = document.querySelector('.admin-nav');
+    if (!nav) return;
+    if (nav.dataset.viewSiteInjected === '1') return;
+    nav.dataset.viewSiteInjected = '1';
+
+    // 1. "View Site" link (goes to homepage)
+    const viewSite = document.createElement('a');
+    viewSite.href = '/index.html';
+    viewSite.target = '_blank';
+    viewSite.rel = 'noopener';
+    viewSite.className = 'admin-nav-view-site';
+    viewSite.innerHTML = '🌐 View Site <span style="font-size:0.7rem;opacity:0.6;margin-left:auto;">↗</span>';
+
+    // Insert just before the logout link so it stays near the bottom
+    const logout = nav.querySelector('#admin-logout');
+    if (logout) {
+      nav.insertBefore(viewSite, logout);
+    } else {
+      nav.appendChild(viewSite);
+    }
+
+    // 2. Small inline style for the new link (mimics the existing nav links)
+    const style = document.createElement('style');
+    style.textContent = `
+      .admin-nav-view-site {
+        margin-top: 12px;
+        padding: 12px 16px;
+        border-radius: 10px;
+        color: var(--accent, #38bdf8);
+        font-weight: 600;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-top: 1px solid var(--border, #1f2b45);
+        transition: background 200ms, color 200ms;
+      }
+      .admin-nav-view-site:hover {
+        background: rgba(56, 189, 248, 0.1);
+        color: #7dd3fc;
+      }
+    `;
+    document.head.appendChild(style);
   }
 
   if (document.readyState === 'loading') {

@@ -32,7 +32,8 @@
   position: sticky; top: 0; height: 100vh;
   overflow-y: auto;
 }
-.admin-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; padding: 0 8px; }
+.admin-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; padding: 0 8px; text-decoration: none; color: inherit; transition: opacity 200ms; }
+.admin-brand:hover { opacity: 0.85; }
 .admin-brand img { height: 40px; background: #fff; border-radius: 8px; padding: 4px 8px; }
 .admin-nav { display: flex; flex-direction: column; gap: 4px; }
 .admin-nav a {

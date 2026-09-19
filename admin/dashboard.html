@@ -15,10 +15,10 @@
 <body>
   <div class="admin-layout">
     <aside class="admin-side">
-      <div class="admin-brand">
+      <a href="../index.html" class="admin-brand" title="Go to website">
         <img src="../assets/maxvolt-logo.png" alt="MAXVOLT" />
         <strong>Admin</strong>
-      </div>
+      </a>
       <nav class="admin-nav">
         <a href="dashboard.html" class="active">📊 Dashboard</a>
         <a href="products.html">📦 Products</a>
@@ -33,7 +33,10 @@
     <main class="admin-main">
       <div class="admin-topbar">
         <h1>Dashboard</h1>
-        <div class="admin-user">Signed in as <strong id="admin-email"></strong></div>
+        <div class="admin-user">
+          Signed in as <strong id="admin-email"></strong>
+          <a href="../index.html" class="btn btn-outline btn-small" style="margin-left:12px;">🌐 View Site</a>
+        </div>
       </div>
 
       <div class="stat-grid" id="stats">
