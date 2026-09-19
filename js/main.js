@@ -109,8 +109,14 @@ function hydrateProductStore(items) {
 }
 
 // Initialize on page load
+// Skip the auto product loader on the dedicated /products.html page —
+// that page does its own loading + filtering so we don't double-render.
+const IS_PRODUCTS_PAGE =
+  window.location.pathname.endsWith('/products.html') ||
+  window.location.pathname.endsWith('/products');
+
 document.addEventListener('DOMContentLoaded', () => {
-  loadProducts();
+  if (!IS_PRODUCTS_PAGE) loadProducts();
   setupNavigation();
   setupFormHandlers();
   setupProductFilters();
@@ -582,6 +588,7 @@ const APPLIANCES = [
   { id: 'printer',    name: 'Printer',               icon: '🖨️', watts: 300, default: 0 },
 ];
 
+let _applianceListWired = false;
 function renderApplianceList() {
   const container = document.getElementById('calc-appliance-list');
   if (!container) return;
@@ -599,6 +606,9 @@ function renderApplianceList() {
     </div>
   `).join('');
 
+  // Only wire the delegated listener once per page load.
+  if (_applianceListWired) return;
+  _applianceListWired = true;
   container.addEventListener('change', (e) => {
     const toggleId = e.target.dataset.toggle;
     if (toggleId) {
@@ -968,6 +978,9 @@ async function loadDynamicSections() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Only render dynamic sections on the homepage.
+  if (!document.getElementById('dynamic-sections')) return;
+
   // Wait for products to be in memory, then load sections
   const t = setInterval(() => {
     if (allProductsFlat.length > 0) {

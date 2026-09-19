@@ -44,13 +44,16 @@
           <small style="color:var(--text-subtle);font-size:0.8rem;">Get from console.groq.com</small>
         </div>
         <div class="form-group">
-          <label>Model</label>
-          <select id="s-chatModel">
-            <option value="llama3-70b-8192">Llama 3 70B</option>
-            <option value="llama3-8b-8192">Llama 3 8B (faster)</option>
-            <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
-            <option value="gemma2-9b-it">Gemma 2 9B</option>
-          </select>
+          <label>Model Name</label>
+          <input type="text" id="s-chatModel" placeholder="e.g. llama-3.3-70b-versatile" />
+          <small style="color:var(--text-subtle);font-size:0.8rem;">
+            Type any Groq model name. See <a href="https://console.groq.com/docs/models" target="_blank" rel="noopener">console.groq.com/docs/models</a>.
+          </small>
+        </div>
+        <div class="form-group">
+          <label>Test Chatbot</label>
+          <button type="button" class="btn btn-outline btn-small" id="test-chat-btn">Send test message</button>
+          <div id="chat-test-result" style="margin-top:8px;font-size:0.85rem;color:var(--text-muted);"></div>
         </div>
 
         <button type="submit" class="btn btn-primary">Save Settings</button>
@@ -84,6 +87,25 @@
         document.getElementById('msg').textContent = '✓ Saved';
       } catch (err) {
         document.getElementById('msg').textContent = '✗ ' + err.message;
+      }
+    });
+
+    document.getElementById('test-chat-btn').addEventListener('click', async () => {
+      const out = document.getElementById('chat-test-result');
+      out.textContent = 'Testing…';
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: 'Say hi in one short sentence.', history: [] }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Request failed');
+        out.textContent = '✓ Bot replied: ' + data.reply;
+        out.style.color = 'var(--success)';
+      } catch (err) {
+        out.textContent = '✗ ' + err.message;
+        out.style.color = 'var(--danger)';
       }
     });
   </script>

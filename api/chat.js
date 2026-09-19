@@ -27,21 +27,28 @@ export default async function handler(req, res) {
   }
 
   let apiKey = process.env.GROQ_API_KEY;
-  let model = 'llama3-70b-8192';
+  // Default model — admin can override by typing any name in Settings.
+  let model = 'llama-3.3-70b-versatile';
 
   try {
     const settings = await getCollection(COLLECTIONS.SETTINGS);
     const doc = await settings.findOne({ key: 'chatbot' });
     if (doc?.value) {
-      if (doc.value.chatApiKey) apiKey = doc.value.chatApiKey;
-      if (doc.value.chatModel) model = doc.value.chatModel;
+      if (doc.value.chatApiKey && String(doc.value.chatApiKey).trim()) {
+        apiKey = String(doc.value.chatApiKey).trim();
+      }
+      if (doc.value.chatModel && String(doc.value.chatModel).trim()) {
+        model = String(doc.value.chatModel).trim();
+      }
     }
   } catch (e) {
     console.warn('Could not load chatbot settings:', e.message);
   }
 
   if (!apiKey) {
-    return res.status(500).json({ error: 'Chatbot API key not configured.' });
+    return res.status(500).json({
+      error: 'Chatbot API key is not configured. Set GROQ_API_KEY on the server or save it in Admin → Settings → Chatbot.',
+    });
   }
 
   let productContext = '';
@@ -96,7 +103,9 @@ Never make up product details not in the list above.`;
 
     const data = await response.json();
     if (!response.ok) {
-      throw new Error(data.error?.message || 'Groq API error');
+      // Surface the exact upstream error (e.g. invalid model name)
+      const upstream = data.error?.message || data.message || `Groq HTTP ${response.status}`;
+      throw new Error(upstream);
     }
 
     const reply = data.choices?.[0]?.message?.content || 'Sorry, I could not generate a response.';
