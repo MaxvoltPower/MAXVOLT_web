@@ -18,6 +18,7 @@
       <nav class="admin-nav">
         <a href="dashboard.html">📊 Dashboard</a>
         <a href="products.html" class="active">📦 Products</a>
+        <a href="sections.html">🏷️ Sections</a>
         <a href="orders.html">🛒 Orders</a>
         <a href="quotes.html">💬 Quotes</a>
         <a href="users.html">👥 Users</a>
@@ -49,7 +50,16 @@
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th style="width:60px;"></th><th>Brand</th><th>Model</th><th>Category</th><th>Price</th><th>Status</th><th>Actions</th></tr>
+            <tr>
+              <th style="width:60px;"></th>
+              <th>Brand</th>
+              <th>Model</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
           </thead>
           <tbody id="products-body"></tbody>
         </table>
@@ -126,10 +136,17 @@
         <div class="form-group"><label>Best For / Suitable For</label><input type="text" id="p-bestFor" /></div>
       </div>
 
-      <div class="form-group">
-        <label style="display:flex;gap:8px;align-items:center;">
-          <input type="checkbox" id="p-active" checked /> Active (visible on website)
-        </label>
+      <div class="form-row">
+        <div class="form-group">
+          <label style="display:flex;gap:8px;align-items:center;">
+            <input type="checkbox" id="p-active" checked /> Active (visible on website)
+          </label>
+        </div>
+        <div class="form-group">
+          <label style="display:flex;gap:8px;align-items:center;">
+            <input type="checkbox" id="p-featured" /> Featured (show on homepage fallback)
+          </label>
+        </div>
       </div>
 
       <div class="modal-actions">
@@ -141,17 +158,29 @@
 
   <script>
     let products = [];
-    let currentImages = []; // array of base64 data URLs or URL strings
+    let currentImages = [];
 
     const tbody = document.getElementById('products-body');
     const modal = document.getElementById('product-modal');
     const form = document.getElementById('product-form');
     const dropzone = document.getElementById('image-dropzone');
-    const imagePreview = document.getElementById('image-preview');
     const imagePlaceholder = document.getElementById('image-placeholder');
     const imageStatus = document.getElementById('image-status');
 
-    // ---------- List + Filter ----------
+    // ---------- Image resolver ----------
+    function resolveImg(img) {
+      if (!img) return null;
+      if (typeof img !== 'string') return null;
+      const s = img.trim();
+      if (!s) return null;
+      if (s.startsWith('data:')) return s;
+      if (/^https?:\/\//i.test(s)) return s;
+      if (s.startsWith('/')) return '..' + s;
+      if (s.startsWith('assets/')) return '../' + s;
+      return '../assets/images/' + s;
+    }
+
+    // ---------- Render list ----------
     function render() {
       const q = document.getElementById('search').value.toLowerCase();
       const cat = document.getElementById('filter-category').value;
@@ -159,20 +188,37 @@
         (!cat || p.category === cat) &&
         (!q || (p.model || '').toLowerCase().includes(q) || (p.brand || '').toLowerCase().includes(q))
       );
+
       if (!filtered.length) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-subtle);">No products found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-subtle);">No products found</td></tr>';
         return;
       }
+
       tbody.innerHTML = filtered.map(p => {
         const img = resolveImg(p.image);
+        const stock = typeof p.stock === 'number' ? p.stock : 0;
+        const priceHtml = p.discountedPrice
+          ? `<span style="text-decoration:line-through;color:var(--text-subtle);font-size:0.85rem;">₹${p.price}</span>
+             <span style="color:var(--success);font-weight:700;margin-left:6px;">₹${p.discountedPrice}</span>`
+          : `₹${p.price || '-'}`;
         return `
           <tr>
-            <td>${img ? `<img src="${img}" alt="" style="width:44px;height:44px;object-fit:contain;background:var(--bg-muted);border-radius:6px;">` : '<div style="width:44px;height:44px;display:grid;place-items:center;background:var(--bg-muted);border-radius:6px;">🔋</div>'}</td>
+            <td>${img
+              ? `<img src="${img}" alt="" style="width:44px;height:44px;object-fit:contain;background:var(--bg-muted);border-radius:6px;">`
+              : '<div style="width:44px;height:44px;display:grid;place-items:center;background:var(--bg-muted);border-radius:6px;">🔋</div>'}</td>
             <td>${p.brand || '-'}</td>
             <td>${p.model || '-'}</td>
             <td>${p.category || '-'}</td>
-            <td>₹${p.price || '-'}</td>
-            <td><span class="badge badge-${p.active !== false ? 'delivered' : 'failed'}">${p.active !== false ? 'Active' : 'Hidden'}</span></td>
+            <td>${priceHtml}</td>
+            <td>
+              <span class="badge badge-${stock > 0 ? 'delivered' : 'failed'}">
+                ${stock > 0 ? `${stock} in stock` : 'Out of stock'}
+              </span>
+            </td>
+            <td>
+              <span class="badge badge-${p.active !== false ? 'delivered' : 'failed'}">${p.active !== false ? 'Active' : 'Hidden'}</span>
+              ${p.featured ? '<span class="badge badge-new" style="margin-left:4px;">Featured</span>' : ''}
+            </td>
             <td>
               <button class="btn btn-outline btn-small" data-edit="${p._id}">Edit</button>
               <button class="btn btn-secondary btn-small" data-del="${p._id}">Delete</button>
@@ -181,27 +227,19 @@
       }).join('');
     }
 
-    function resolveImg(img) {
-      if (!img) return null;
-      if (typeof img !== 'string') return null;
-      if (img.startsWith('data:')) return img;
-      if (/^https?:\/\//i.test(img)) return img;
-      if (img.startsWith('/')) return '..' + img;
-      if (img.startsWith('assets/')) return '../' + img;
-      return '../assets/images/' + img;
-    }
-
-    // ---------- Modal ----------
+    // ---------- Open modal ----------
     function openModal(p = null) {
       document.getElementById('modal-title').textContent = p ? 'Edit Product' : 'Add Product';
       document.getElementById('p-id').value = p?._id || '';
+
       ['brand','model','category','capacity','type','voltage','warranty','price','discountedPrice','availability','bestFor','va','stock'].forEach(k => {
         const el = document.getElementById('p-' + k);
         if (el) el.value = p?.[k] ?? '';
       });
-      document.getElementById('p-active').checked = p ? p.active !== false : true;
 
-      // images
+      document.getElementById('p-active').checked = p ? p.active !== false : true;
+      document.getElementById('p-featured').checked = p ? p.featured === true : false;
+
       currentImages = p?.images || (p?.image ? [p.image] : []);
       updateImagePreview();
 
@@ -216,6 +254,7 @@
       imageStatus.textContent = '';
     }
 
+    // ---------- Image preview ----------
     function updateImagePreview() {
       const grid = document.getElementById('image-preview-grid');
       if (!grid) return;
@@ -228,7 +267,7 @@
       imagePlaceholder.style.display = currentImages.length ? 'none' : 'block';
     }
 
-    // ---------- Clipboard Paste ----------
+    // ---------- Clipboard paste ----------
     dropzone.addEventListener('paste', (e) => {
       const items = e.clipboardData?.items;
       if (!items) return;
@@ -244,7 +283,6 @@
       }
     });
 
-    // Also catch paste anywhere in the modal while it's open
     document.addEventListener('paste', (e) => {
       if (!modal.classList.contains('open')) return;
       const items = e.clipboardData?.items;
@@ -261,7 +299,7 @@
       }
     });
 
-    // ---------- Drag & Drop ----------
+    // ---------- Drag & drop ----------
     ['dragenter','dragover'].forEach(evt =>
       dropzone.addEventListener(evt, (e) => {
         e.preventDefault(); e.stopPropagation();
@@ -292,7 +330,7 @@
       imageStatus.textContent = 'All images removed';
     });
 
-    // ---------- Remove image from preview grid ----------
+    // ---------- Remove image ----------
     document.getElementById('image-preview-grid').addEventListener('click', (e) => {
       const idx = e.target.dataset.removeImg;
       if (idx !== undefined) {
@@ -301,13 +339,13 @@
       }
     });
 
-    // ---------- File → base64 (with size guard) ----------
+    // ---------- File → base64 ----------
     function handleImageFile(file) {
       if (!file.type.startsWith('image/')) {
         imageStatus.textContent = 'Not an image file';
         return;
       }
-      const MAX = 2 * 1024 * 1024; // 2 MB raw
+      const MAX = 2 * 1024 * 1024;
       if (file.size > MAX) {
         imageStatus.textContent = `Too large (${(file.size/1024/1024).toFixed(2)} MB). Max 2 MB.`;
         return;
@@ -322,14 +360,14 @@
       reader.readAsDataURL(file);
     }
 
-    // ---------- Load products ----------
+    // ---------- Load ----------
     async function load() {
       try {
         const res = await window.adminApi.products('?limit=1000&all=1');
         products = res.items || [];
         render();
       } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="7" style="color:var(--danger);padding:24px;">${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="color:var(--danger);padding:24px;">${e.message}</td></tr>`;
       }
     }
 
@@ -348,9 +386,11 @@
         payload[k] = document.getElementById('p-' + k).value;
       });
       payload.price = Number(document.getElementById('p-price').value) || 0;
-      payload.discountedPrice = Number(document.getElementById('p-discountedPrice').value) || null;
+      const dpRaw = document.getElementById('p-discountedPrice').value;
+      payload.discountedPrice = dpRaw === '' ? null : Number(dpRaw);
       payload.stock = Number(document.getElementById('p-stock').value) || 0;
       payload.active = document.getElementById('p-active').checked;
+      payload.featured = document.getElementById('p-featured').checked;
       payload.images = currentImages.length ? currentImages : null;
       payload.image = currentImages[0] || null;
 

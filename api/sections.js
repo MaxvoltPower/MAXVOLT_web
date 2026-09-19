@@ -10,6 +10,8 @@ export default async function handler(req, res) {
   const col = await getCollection(COLLECTION);
 
   if (req.method === 'GET' && !id) {
+    // Public read — homepage needs this. Admin panel also calls it
+    // (with a token, which we simply ignore here).
     const sections = await col.find({ active: { $ne: false } }).sort({ order: 1 }).toArray();
     return ok(res, sections);
   }

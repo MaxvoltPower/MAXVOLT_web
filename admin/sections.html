@@ -32,6 +32,18 @@
         <h1>Website Sections</h1>
         <button class="btn btn-primary" id="add-section">+ Add Section</button>
       </div>
+
+      <div class="surface" style="margin-bottom:20px;border-left:4px solid var(--accent);">
+        <strong>💡 How sections work</strong>
+        <p style="margin-top:8px;color:var(--text-muted);">
+          Sections appear on the homepage in the order you set (lower number = higher up).
+          Use <strong>Featured</strong> for "Featured Products", <strong>Sale</strong> for
+          "Sale / Offers", and <strong>Combo</strong> for package deals.
+          If you create a Featured section, it automatically replaces the default
+          "Featured Home Batteries" fallback on the homepage.
+        </p>
+      </div>
+
       <div id="sections-list"></div>
     </main>
   </div>
@@ -40,32 +52,43 @@
     <form class="modal modal-wide" id="section-form">
       <h2 id="section-modal-title">Add Section</h2>
       <input type="hidden" id="s-id" />
+
       <div class="form-group">
         <label>Section Title *</label>
         <input type="text" id="s-title" required placeholder="e.g., Summer Sale, Featured Products" />
       </div>
-      <div class="form-group">
-        <label>Section Type *</label>
-        <select id="s-type" required>
-          <option value="featured">Featured Products</option>
-          <option value="sale">Sale / Offers</option>
-          <option value="combo">Combo / Package Offers</option>
-          <option value="new">New Arrivals</option>
-        </select>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Section Type *</label>
+          <select id="s-type" required>
+            <option value="featured">Featured Products</option>
+            <option value="sale">Sale / Offers</option>
+            <option value="combo">Combo / Package Offers</option>
+            <option value="new">New Arrivals</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Display Order</label>
+          <input type="number" id="s-order" value="0" />
+        </div>
       </div>
+
       <div class="form-group">
-        <label>Display Order</label>
-        <input type="number" id="s-order" value="0" />
+        <label>
+          Select Products
+          <span id="s-selected-count" style="color:var(--text-subtle);font-weight:400;margin-left:6px;">(0 selected)</span>
+        </label>
+        <input type="text" id="s-product-search" placeholder="🔍 Search by brand or model..." style="margin-bottom:8px;" />
+        <div id="s-product-picker" style="max-height:340px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;background:var(--bg-muted);"></div>
       </div>
-      <div class="form-group">
-        <label>Select Products</label>
-        <div id="s-product-picker" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;"></div>
-      </div>
+
       <div class="form-group">
         <label style="display:flex;gap:8px;align-items:center;">
           <input type="checkbox" id="s-active" checked /> Active
         </label>
       </div>
+
       <div class="modal-actions">
         <button type="button" class="btn btn-outline" id="section-cancel">Cancel</button>
         <button type="submit" class="btn btn-primary" id="section-save">Save</button>
@@ -78,28 +101,100 @@
     let allProducts = [];
     let selectedProducts = [];
 
+    const CATEGORY_LABELS = {
+      homeInverterBatteries: 'Home Inverter Batteries',
+      homeInverters: 'Home Inverters',
+      inverter: 'Inverters',
+      carBatteries: 'Car Batteries',
+      totoErickshawBatteries: 'TOTO / E-Rickshaw',
+      ebikeBatteries: 'E-Bike Batteries',
+      ups: 'UPS Systems',
+      upsOffice: 'UPS Systems',
+    };
+
+    // ---------- Helpers ----------
+    function resolveImg(img) {
+      if (!img) return '';
+      if (typeof img !== 'string') return '';
+      const s = img.trim();
+      if (!s) return '';
+      if (s.startsWith('data:') || /^https?:\/\//i.test(s) || s.startsWith('/')) return s;
+      if (s.startsWith('assets/')) return '../' + s;
+      return '../assets/images/' + s;
+    }
+
+    function updateSelectedCount() {
+      const el = document.getElementById('s-selected-count');
+      if (el) el.textContent = `(${selectedProducts.length} selected)`;
+    }
+
+    // ---------- Load products ----------
     async function loadProducts() {
       try {
         const res = await window.adminApi.products('?limit=1000&all=1');
         allProducts = res.items || [];
       } catch (e) {
-        console.error(e);
+        console.error('Failed to load products:', e);
+        allProducts = [];
       }
     }
 
+    // ---------- Product picker ----------
     function renderProductPicker() {
       const picker = document.getElementById('s-product-picker');
-      picker.innerHTML = allProducts.map(p => `
-        <label style="display:flex;gap:8px;align-items:center;padding:6px;cursor:pointer;">
-          <input type="checkbox" data-pid="${p._id}" ${selectedProducts.includes(p._id) ? 'checked' : ''}>
-          <span>${p.brand} ${p.model} — ₹${p.discountedPrice || p.price}</span>
-        </label>
+      if (!picker) return;
+
+      const search = (document.getElementById('s-product-search')?.value || '').toLowerCase().trim();
+
+      const filtered = allProducts.filter(p => {
+        if (!search) return true;
+        return `${p.brand || ''} ${p.model || ''}`.toLowerCase().includes(search);
+      });
+
+      if (!filtered.length) {
+        picker.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-subtle);">No products match</div>';
+        updateSelectedCount();
+        return;
+      }
+
+      // Group by category
+      const groups = {};
+      filtered.forEach(p => {
+        const c = p.category || 'other';
+        (groups[c] = groups[c] || []).push(p);
+      });
+
+      picker.innerHTML = Object.entries(groups).map(([cat, items]) => `
+        <div style="margin-bottom:8px;">
+          <div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-subtle);padding:6px 8px;font-weight:700;">${CATEGORY_LABELS[cat] || cat}</div>
+          ${items.map(p => {
+            const pid = p._id || p.id;
+            const checked = selectedProducts.includes(pid) ? 'checked' : '';
+            const price = p.discountedPrice || p.price || 0;
+            const img = p.image
+              ? `<img src="${resolveImg(p.image)}" style="width:28px;height:28px;object-fit:contain;background:var(--bg-elevated);border-radius:4px;padding:2px;">`
+              : '<span style="width:28px;display:inline-block;"></span>';
+            return `
+              <label style="display:flex;gap:10px;align-items:center;padding:8px;cursor:pointer;border-radius:6px;transition:background 150ms;" onmouseover="this.style.background='var(--bg-elevated)'" onmouseout="this.style.background=''">
+                <input type="checkbox" data-pid="${pid}" ${checked}>
+                ${img}
+                <span style="flex:1;color:var(--text);">${p.brand || ''} ${p.model || ''}</span>
+                <span style="color:var(--text-subtle);font-size:0.85rem;">₹${price}</span>
+              </label>`;
+          }).join('')}
+        </div>
       `).join('');
+
+      updateSelectedCount();
     }
 
+    // ---------- Load sections ----------
     async function loadSections() {
       try {
-        const res = await fetch('/api/sections');
+        const token = await window.maxvoltAuth.getIdToken();
+        const res = await fetch('/api/sections', {
+          headers: token ? { Authorization: 'Bearer ' + token } : {},
+        });
         const json = await res.json();
         sections = json.data || [];
         renderSections();
@@ -108,6 +203,7 @@
       }
     }
 
+    // ---------- Render sections list ----------
     function renderSections() {
       const el = document.getElementById('sections-list');
       if (!sections.length) {
@@ -121,6 +217,7 @@
             <span class="badge badge-new">${s.type}</span>
             <span class="badge badge-${s.active !== false ? 'delivered' : 'failed'}">${s.active !== false ? 'Active' : 'Hidden'}</span>
             <span style="font-size:0.85rem;color:var(--text-subtle);margin-left:8px;">${(s.products || []).length} product(s)</span>
+            <span style="font-size:0.85rem;color:var(--text-subtle);margin-left:8px;">Order: ${s.order || 0}</span>
           </div>
           <div style="display:flex;gap:8px;">
             <button class="btn btn-outline btn-small" data-edit="${s._id}">Edit</button>
@@ -130,11 +227,19 @@
       `).join('');
     }
 
+    // ---------- Wire up ----------
     document.addEventListener('admin-ready', async () => {
       await loadProducts();
       await loadSections();
     });
 
+    // Search inside picker
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchEl = document.getElementById('s-product-search');
+      if (searchEl) searchEl.addEventListener('input', renderProductPicker);
+    });
+
+    // Add section
     document.getElementById('add-section').addEventListener('click', () => {
       document.getElementById('section-modal-title').textContent = 'Add Section';
       document.getElementById('s-id').value = '';
@@ -142,15 +247,19 @@
       document.getElementById('s-type').value = 'featured';
       document.getElementById('s-order').value = '0';
       document.getElementById('s-active').checked = true;
+      const searchEl = document.getElementById('s-product-search');
+      if (searchEl) searchEl.value = '';
       selectedProducts = [];
       renderProductPicker();
       document.getElementById('section-modal').classList.add('open');
     });
 
+    // Cancel
     document.getElementById('section-cancel').addEventListener('click', () => {
       document.getElementById('section-modal').classList.remove('open');
     });
 
+    // Checkbox change
     document.getElementById('s-product-picker').addEventListener('change', (e) => {
       const pid = e.target.dataset.pid;
       if (!pid) return;
@@ -159,8 +268,10 @@
       } else {
         selectedProducts = selectedProducts.filter(id => id !== pid);
       }
+      updateSelectedCount();
     });
 
+    // Submit
     document.getElementById('section-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const id = document.getElementById('s-id').value;
@@ -174,6 +285,10 @@
       const token = await window.maxvoltAuth.getIdToken();
       const url = id ? `/api/sections/${id}` : '/api/sections';
       const method = id ? 'PUT' : 'POST';
+      const btn = document.getElementById('section-save');
+      const orig = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
       try {
         const res = await fetch(url, {
           method,
@@ -186,9 +301,13 @@
         loadSections();
       } catch (err) {
         alert('Save failed: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = orig;
       }
     });
 
+    // Edit / delete
     document.getElementById('sections-list').addEventListener('click', async (e) => {
       const editId = e.target.dataset.edit;
       const delId = e.target.dataset.del;
@@ -201,7 +320,9 @@
         document.getElementById('s-type').value = s.type;
         document.getElementById('s-order').value = s.order || 0;
         document.getElementById('s-active').checked = s.active !== false;
-        selectedProducts = s.products || [];
+        const searchEl = document.getElementById('s-product-search');
+        if (searchEl) searchEl.value = '';
+        selectedProducts = (s.products || []).slice();
         renderProductPicker();
         document.getElementById('section-modal').classList.add('open');
       }

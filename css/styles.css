@@ -19,7 +19,7 @@
 
   /* Dark neutrals */
   --bg: #0a0f1a;
-  --bg-subtle: #111827;
+  --bg-subtle: #0f172a;
   --bg-muted: #1e293b;
   --bg-elevated: #16213a;
   --border: #1f2b45;
@@ -199,7 +199,7 @@ p { color: var(--text-muted); line-height: 1.7; }
 section { padding: var(--space-16) 0; width: 100%; box-sizing: border-box; }
 
 .light-bg {
-  background: var(--bg-subtle);
+  background: linear-gradient(180deg, var(--bg-subtle) 0%, var(--bg) 100%);
   border-radius: var(--radius-xl);
   margin: var(--space-8) auto;
   max-width: 1280px;
@@ -1580,17 +1580,19 @@ footer::before {
 }
 
 @media (max-width: 640px) {
-  section { padding: var(--space-12) 0; }
-  .light-bg { padding: var(--space-12) var(--space-4); border-radius: var(--radius-lg); width: calc(100% - 24px); }
+  section { padding: var(--space-10) 0; }
+  .section-header { margin-bottom: var(--space-8); }
+  .light-bg { padding: var(--space-10) var(--space-4); border-radius: var(--radius-lg); width: calc(100% - 24px); }
   .container { padding: 0 var(--space-4); }
-
-  /* hero-carousel has its own mobile rules (see HERO CAROUSEL block) */
 
   .product-grid { grid-template-columns: 1fr 1fr; gap: var(--space-3); }
   .product-content { padding: var(--space-3); }
+  .product-brand { font-size: 0.7rem; }
   .product-model { font-size: 0.9rem; }
-  .product-price { font-size: 1.05rem; }
-  .product-actions { flex-direction: column; }
+  .product-price { font-size: 1.05rem; margin: var(--space-2) 0; }
+  .product-specs { font-size: 0.8rem; gap: 4px; margin-bottom: var(--space-2); }
+  .product-actions { flex-direction: row; gap: 6px; }
+  .product-actions .btn { padding: 8px 6px; font-size: 0.78rem; flex: 1; min-width: 0; }
   .product-image { height: 130px; }
   .product-image img { padding: var(--space-2); }
 
