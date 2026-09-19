@@ -28,7 +28,8 @@ export default async function handler(req, res) {
 
   let apiKey = process.env.GROQ_API_KEY;
   // Default model — admin can override by typing any name in Settings.
-  let model = 'llama-3.1-8b-instant';
+  // Note: Groq retired the llama-3.x family in 2025. Use GPT-OSS now.
+  let model = 'openai/gpt-oss-120b';
 
   // Load saved settings (fallback)
   try {
