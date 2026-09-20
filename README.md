@@ -1,457 +1,543 @@
-# MAXVOLT Website - Executive Summary
+# MAXVOLT — Trusted Power Always ⚡
 
-## ✨ What's Included
+Professional battery and power solutions website for **MAXVOLT** (Kolkata, India).
 
-A complete, professional, premium website for MAXVOLT with:
-
-### 🎯 Core Features
-- **Homepage** with hero, categories, and engagement sections
-- **5 Product Category Pages** (home batteries, car, TOTO, e-bike, UPS)
-- **Product Detail Pages** with full specifications
-- **Product Filters** (brand, capacity, type)
-- **Requirement Calculators** (load, battery finder)
-- **Quote Request Form** with WhatsApp integration
-- **Mobile-Optimized** responsive design
-- **SEO-Friendly** structure and meta tags
-
-### 🚀 Technology Stack
-- **HTML5** - Semantic, clean markup
-- **CSS3** - Modern, responsive styling
-- **JavaScript** - No frameworks, pure vanilla JS
-- **JSON** - Easy-to-manage product database
-- **Zero Dependencies** - Fast loading, no bloat
-
-### 📊 Product Data
-- **29 Products** pre-configured across 6 categories
-- **8 Brands** (Exide, Luminous, Amaron, Eastman, APC, Microtek, AMPTEK, UPLUS)
-- **Full Specifications** for each product
-- **Easily Updatable** JSON format
+A modern, full-stack monorepo with a **React 18 + Vite + Tailwind** frontend and a **Node.js serverless backend**, deployed on **Vercel Services** — all under one domain, one repo, one env file.
 
 ---
 
-## 📁 File Structure
+## 🏗️ Architecture
+
+This project uses Vercel's **[Services](https://vercel.com/docs/services)** feature to deploy two independent services from a single repository:
+
+| Service | Location | Purpose |
+|---------|----------|---------|
+| **`frontend/`** | React 18 + Vite + Tailwind CSS | Public website + admin panel (SPA) |
+| **`api/`** | Node.js serverless functions | REST API (auth, products, orders, payments, quotes, admin, chatbot) |
+
+Vercel automatically routes:
+- `/api/*` → **backend** service
+- everything else → **frontend** service (with SPA fallback)
+
+This config lives in [`vercel.json`](./vercel.json).
+
+---
+
+## 🧰 Tech Stack
+
+### Frontend
+- **React 18** — UI library
+- **React Router v6** — client-side routing
+- **Vite 5** — fast build tool & dev server
+- **Tailwind CSS 3** — utility-first styling (custom dark theme)
+- **Firebase Auth (Web SDK)** — user authentication
+- **Razorpay Checkout** — online payments
+- **Custom Context API** — Auth, Cart, Products state
+- **Custom Chatbot widget** — floating AI assistant (Groq-powered)
+
+### Backend (Serverless)
+- **Node.js 24.x** (Vercel runtime)
+- **MongoDB Atlas** — primary data store
+- **Firebase Admin SDK** — token verification & user role management
+- **Razorpay Node SDK** — payment order creation & signature verification
+- **Groq API** — LLM backend for the chatbot
+- **Zod** — schema validation (reserved for future use)
+
+### Infrastructure
+- **Vercel** — hosting, CDN, serverless functions, HTTPS, custom domain
+- **GitHub** — version control, auto-deploy on push
+
+---
+
+## 📁 Project Structure
 
 ```
-maxvolt-website/
-├── index.html                           # Main homepage
-├── product-detail.html                  # Product detail template
-├── products/                            # Product pages (5 files)
-├── css/styles.css                       # Complete styling
-├── js/main.js                           # All functionality
-├── data/products.json                   # Product database
-├── config.json                          # Business config
-├── QUICKSTART.md                        # Quick start guide ⭐ START HERE
-├── SETUP.md                             # Setup instructions
-├── DEPLOYMENT.md                        # Hosting guide
-└── INDEX.md                             # Complete reference
+maxvolt-web/
+├── frontend/                       # React SPA
+│   ├── public/
+│   │   └── assets/                 # Static assets served at /assets/*
+│   │       ├── maxvolt-logo.png
+│   │       └── maxvolt-logo.webp
+│   ├── src/
+│   │   ├── components/             # Reusable UI + feature components
+│   │   │   ├── account/            # Login, Register, Profile forms
+│   │   │   ├── admin/              # Admin dashboard pages
+│   │   │   ├── cart/               # CartItem, CartSummary
+│   │   │   ├── checkout/           # CheckoutForm, OrderSummary
+│   │   │   ├── home/               # Homepage sections
+│   │   │   ├── layout/             # Header, Footer, Layout
+│   │   │   ├── products/           # ProductCard, Grid, Filters
+│   │   │   └── ui/                 # Badge, Button, Card, Input, etc.
+│   │   ├── context/                # AuthContext, CartContext, ProductsContext
+│   │   ├── data/                   # Fallback product catalogue
+│   │   ├── hooks/                  # useLocalStorage, useScrollToTop
+│   │   ├── lib/                    # api.js, firebase.js, razorpay.js, utils.js
+│   │   ├── pages/                  # Route-level page components
+│   │   ├── App.jsx                 # Root routing
+│   │   ├── index.css               # Tailwind + global styles
+│   │   └── main.jsx                # Entry point
+│   ├── index.html
+│   ├── package.json
+│   ├── postcss.config.js
+│   ├── tailwind.config.js
+│   └── vite.config.js
+│
+├── api/                            # Serverless backend
+│   ├── _lib/                       # Shared helpers
+│   │   ├── firebase-admin.js
+│   │   ├── middleware.js
+│   │   ├── mongodb.js
+│   │   └── razorpay.js
+│   ├── admin.js                    # /api/admin/*
+│   ├── auth.js                     # /api/auth/*
+│   ├── chat.js                     # /api/chat
+│   ├── config.js                   # /api/config
+│   ├── contact.js                  # /api/contact
+│   ├── orders.js                   # /api/orders/*
+│   ├── payments.js                 # /api/payments/*
+│   ├── products.js                 # /api/products/*
+│   ├── quotes.js                   # /api/quotes/*
+│   ├── sections.js                 # /api/sections/*
+│   └── webhook.js                  # /api/payments/webhook (Razorpay)
+│
+├── scripts/                        # One-time DB utilities
+│   ├── seed-products.mjs           # Populate MongoDB with product catalogue
+│   └── setup-indexes.mjs           # Create MongoDB indexes
+│
+├── .env.example                    # Environment variable template
+├── .gitignore
+├── package.json                    # Root scripts + backend deps
+├── vercel.json                     # Vercel Services + redirects + rewrites
+└── README.md                       # This file
 ```
 
 ---
 
-## ⚡ Key Sections on Homepage
+## 🚀 Local Development
 
-1. **Hero Section**
-   - Tagline: "Trusted Power. Wherever You Need It"
-   - Clear value proposition
-   - Two CTAs (Get Quote, Find Battery)
+### Prerequisites
+- **Node.js** 20+ (LTS recommended)
+- **npm** 10+
+- **Vercel CLI** — installed globally
+- A **MongoDB Atlas** connection string
+- A **Firebase** project (Web + Admin service account)
+- A **Razorpay** test account (for payments)
+- (Optional) A **Groq API key** for the chatbot
 
-2. **Product Categories**
-   - 6 visual cards with icons
-   - Quick access to product sections
-   - Clear descriptions
+### Step 1 — Install Vercel CLI
 
-3. **What Do You Need?**
-   - Customer-centric flow
-   - 6 quick options
-   - Leads to relevant sections
+```bash
+npm i -g vercel
+```
 
-4. **Home Inverter Solutions**
-   - Explanation of inverter + battery
-   - Capacity options (100-200Ah)
-   - Requirement calculator
+### Step 2 — Clone & install dependencies
 
-5. **Requirement Calculator**
-   - Simple input form
-   - Automatic recommendation
-   - Clear output
+```bash
+git clone https://github.com/MaxvoltPower/MAXVOLT.git
+cd MAXVOLT
 
-6. **Why MAXVOLT**
-   - 6 key benefits
-   - Professional positioning
-   - Trust-building
+# Install root deps (backend)
+npm install
 
-7. **Quotation Section**
-   - Simple form
-   - Multiple contact methods
-   - WhatsApp integration
+# Install frontend deps
+cd frontend && npm install && cd ..
+```
 
----
+### Step 3 — Set up environment variables
 
-## 🛍️ Product Pages
+Copy the template and fill in real values:
 
-### Home Inverter Batteries (`products/home-inverter-batteries.html`)
-- **8 Products** from 3 brands
-- **Filters**: Brand, Capacity, Type
-- **Info**: Battery types, capacity guide
-- **Features**: Brand comparison, selection tips
+```bash
+cp .env.example .env
+```
 
-### Car Batteries (`products/car-batteries.html`)
-- **3 Products** from 2 brands
-- **Finder**: Car brand → Model → Year → Recommendation
-- **Info**: Terminal positions (LEFT/RIGHT), specifications
-- **Features**: Car-specific guide, terminal explanation
+Edit `.env` and provide:
+- `MONGODB_URI` and `MONGODB_DB`
+- Firebase Admin credentials (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`)
+- Firebase Web config (`VITE_FIREBASE_*`)
+- Razorpay keys (`RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`)
+- `ADMIN_EMAILS` (comma-separated)
+- `GROQ_API_KEY` (for the chatbot)
 
-### TOTO / E-Rickshaw (`products/toto-erickshaw.html`)
-- **3 Products** (tubular and lithium)
-- **Finder**: Voltage + Capacity checker
-- **Info**: Voltage configuration (36V/48V/60V/72V)
-- **Features**: Maintenance tips, battery types
+> ⚠️ **`VITE_*` variables** are exposed to the browser. **Never** prefix secrets like `FIREBASE_PRIVATE_KEY` or `RAZORPAY_KEY_SECRET` with `VITE_`.
 
-### E-Bike Batteries (`products/ebike-batteries.html`)
-- **3 Products** from 2 brands
-- **Finder**: System voltage → Range requirements
-- **Info**: Voltage configuration, capacity vs range
-- **Features**: Usage patterns, care & maintenance
+### Step 4 — Link to Vercel (one-time)
 
-### UPS Systems (`products/ups.html`)
-- **3 Products** from 2 brands
-- **Finder**: Devices to protect → Backup time
-- **Info**: VA ratings, waveform types
-- **Features**: Office/home use, benefit explanation
+```bash
+vercel link
+```
 
----
+Choose **Link to existing project** (or create a new one). This creates a `.vercel/` folder locally (gitignored).
 
-## 💡 Smart Features
+### Step 5 — Run locally
 
-### WhatsApp Integration
-- **Contextual Messages**: Different for each product
-- **Auto-Formatting**: Clean, readable messages
-- **One-Click**: Open WhatsApp from any page
-- **Mobile-First**: Perfect for customers on phones
+```bash
+npm run dev
+```
 
-### Product Filters
-- **Brand Filter**: Exide, Luminous, Amaron, etc.
-- **Capacity Filter**: 100Ah, 150Ah, 200Ah, etc.
-- **Type Filter**: Tubular, Flat Plate, etc.
-- **Real-Time**: Updates instantly
+This runs `vercel dev`, which:
+- Builds and serves the React frontend
+- Runs the serverless functions in `api/`
+- Routes `/api/*` to the backend automatically
+- Reads variables from your local `.env`
 
-### Requirement Finders
-- **Home**: Load calculator with appliances
-- **Car**: Brand → Model → Year finder
-- **TOTO**: Voltage + Capacity identifier
-- **E-Bike**: System voltage + Range selector
-- **UPS**: Device checklist + Runtime estimator
+Open **http://localhost:3000**
 
-### Forms
-- **Quote Form**: 7 fields, optional extensions
-- **Smart Validation**: Required fields highlighted
-- **Success Messages**: Confirmation & WhatsApp follow-up
-- **No Account Needed**: One-step inquiries
+### Step 6 — (One-time) Seed MongoDB
+
+```bash
+npm run seed
+npm run setup-indexes
+```
 
 ---
 
-## 🎨 Design Highlights
+## 🛠️ Available Scripts
 
-### Color Scheme
-- **Primary**: #003366 (Professional blue)
-- **Secondary**: #ff6b00 (Energetic orange)
-- **Accent**: #0099cc (Trustworthy cyan)
-- **Backgrounds**: Clean whites and light grays
-- **Borders**: Subtle gray lines
+Run these from the **project root**:
 
-### Typography
-- **Headlines**: Bold, clear hierarchy
-- **Body**: Readable, accessible
-- **Accents**: Strong CTAs stand out
-- **Mobile**: Large enough on small screens
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start local dev (frontend + backend on one port via `vercel dev`) |
+| `npm run deploy` | Deploy to production (`vercel --prod`) |
+| `npm run seed` | Seed MongoDB with the product catalogue |
+| `npm run setup-indexes` | Create MongoDB indexes for performance |
 
-### User Experience
-- **Mobile-First**: Designed for phones first
-- **Sticky Header**: Always accessible navigation
-- **Fast Loading**: No unnecessary assets
-- **Touch-Friendly**: Large tap targets
-- **Clear CTAs**: Always visible and actionable
+Run these from **`frontend/`**:
 
-### Professional Polish
-- **Subtle Shadows**: Modern depth
-- **Rounded Corners**: Contemporary feel
-- **Whitespace**: Breathing room
-- **Consistent Spacing**: Professional alignment
-- **Icon Usage**: Visual clarity
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Run the Vite dev server standalone (needs API proxy) |
+| `npm run build` | Production build → `frontend/dist/` |
+| `npm run preview` | Preview the production build locally |
+| `npm run lint` | Run ESLint on the frontend |
 
 ---
 
-## 📱 Mobile Experience
+## 🌐 API Reference
 
-### Optimization
-- ✅ Responsive grid layouts
-- ✅ Mobile-first CSS
-- ✅ Hamburger menu for navigation
-- ✅ Touch-friendly button sizes (48px+)
-- ✅ Fast loading times
-- ✅ No unnecessary animations
+All endpoints return `{ success: boolean, data?: any, error?: string }`.
 
-### Sticky Elements
-- Floating WhatsApp button
-- Sticky header with menu
-- Scroll-to-top button
-- Quick-access contact options
+### Auth — `/api/auth/*`
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/auth/verify` | Bearer | Verify Firebase ID token, upsert user doc, return profile |
+| GET | `/api/auth/profile` | Bearer | Fetch current user profile |
+| PUT | `/api/auth/profile` | Bearer | Update current user profile |
 
-### Mobile Forms
-- Minimal typing
-- Clear field labels
-- Dropdown selects (not typing)
-- Large input areas
-- Mobile keyboard friendly
+### Products — `/api/products/*`
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/products` | Public | List products (paginated, filterable) |
+| GET | `/api/products/:id` | Public | Get single product |
+| POST | `/api/products` | Admin | Create product |
+| PUT | `/api/products/:id` | Admin | Update product |
+| DELETE | `/api/products/:id` | Admin | Delete product |
 
----
+### Orders — `/api/orders/*`
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/orders` | Bearer | List my orders (or all if admin & `?all=1`) |
+| POST | `/api/orders` | Bearer | Create order |
+| GET | `/api/orders/:id` | Bearer | Get single order |
+| PATCH | `/api/orders/:id` | Bearer | Update order (status, etc.) |
 
-## 🔍 SEO Features
+### Payments — `/api/payments/*`
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/payments/create-order` | Bearer | Create Razorpay order + internal order |
+| POST | `/api/payments/verify` | Bearer | Verify Razorpay signature |
+| POST | `/api/payments/webhook` | Public | Razorpay webhook receiver |
 
-### On-Page SEO
-- Semantic HTML structure
-- Proper heading hierarchy
-- Meta descriptions
-- Alt text for images
-- Internal linking
+### Quotes — `/api/quotes/*`
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/quotes` | Public | Submit a quote request |
+| GET | `/api/quotes` | Admin | List all quotes |
+| PATCH | `/api/quotes/:id` | Admin | Update quote status |
+| DELETE | `/api/quotes/:id` | Admin | Delete quote |
 
-### Local SEO
-- Kolkata focus
-- Location-specific content
-- Local business schema ready
-- Service area highlighted
-- Address and contact info
+### Admin — `/api/admin/*`
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/admin/stats` | Admin | Dashboard statistics |
+| GET | `/api/admin/users` | Admin | List users (with optional `?q=` search) |
+| PATCH | `/api/admin/users` | Admin | Change user role (`admin` / `customer`) |
+| GET | `/api/admin/settings` | Admin | Get site + chatbot settings |
+| PUT | `/api/admin/settings` | Admin | Save site + chatbot settings |
 
-### Technical SEO
-- Fast loading times
-- Mobile responsive
-- Clean URLs
-- Structured data ready
-- Sitemap-ready structure
+### Sections — `/api/sections/*`
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/sections` | Public | List active homepage sections |
+| POST | `/api/sections` | Admin | Create section |
+| PUT | `/api/sections/:id` | Admin | Update section |
+| DELETE | `/api/sections/:id` | Admin | Delete section |
 
----
+### Chat — `/api/chat`
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/chat` | Public | Send message to AI assistant (Groq) |
 
-## 🛠️ Easy Management
+### Contact — `/api/contact`
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/contact` | Public | Submit contact form |
+| GET | `/api/contact` | Admin | List contact submissions |
 
-### Updating Products
-1. Edit `data/products.json`
-2. Add/remove products
-3. Update prices
-4. Upload new images
-5. Done! Website updates automatically
-
-### Adding Categories
-1. Create new array in `products.json`
-2. Create new product page (copy existing)
-3. Add navigation link
-4. Update footer
-
-### Changing Content
-1. Edit relevant HTML file
-2. Update text
-3. Save and refresh
-4. Changes live immediately
-
-### Customizing Design
-1. Edit `css/styles.css`
-2. Adjust colors, fonts, spacing
-3. Update CSS variables for quick changes
-4. Test on mobile
-
----
-
-## 📈 Performance
-
-### Speed
-- Homepage: < 2 seconds
-- Product pages: < 2 seconds
-- Mobile optimized: < 3 seconds
-- Minimal JavaScript: Fast interactions
-
-### Compatibility
-- All modern browsers ✅
-- Mobile Safari iOS 14+ ✅
-- Chrome Android ✅
-- Firefox, Safari, Edge ✅
-- IE11: Not supported (acceptable)
-
-### Lighthouse Scores (Target)
-- Performance: 95+
-- Accessibility: 90+
-- Best Practices: 95+
-- SEO: 100
+### Config — `/api/config`
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/config` | Public | Return public Firebase + Razorpay config |
 
 ---
 
-## 💼 Business Benefits
+## 🔐 Environment Variables
 
-### Lead Generation
-- Simple quote form
-- WhatsApp direct contact
-- Multiple touchpoints
-- Low friction inquiry
+A **single `.env` file** at the project root holds all secrets.
 
-### Customer Trust
-- Professional design
-- Genuine product focus
-- Transparent pricing
-- Local presence
-- Clear communication
+### Backend variables (no prefix)
+| Variable | Purpose |
+|----------|---------|
+| `MONGODB_URI` | MongoDB Atlas connection string |
+| `MONGODB_DB` | Database name (default: `maxvolt`) |
+| `FIREBASE_PROJECT_ID` | Firebase project ID (Admin SDK) |
+| `FIREBASE_CLIENT_EMAIL` | Firebase service account email |
+| `FIREBASE_PRIVATE_KEY` | Firebase service account private key (keep `\n` escapes) |
+| `FIREBASE_API_KEY` | Firebase Web API key (also served via `/api/config`) |
+| `FIREBASE_AUTH_DOMAIN` | Firebase auth domain |
+| `FIREBASE_STORAGE_BUCKET` | Firebase storage bucket |
+| `FIREBASE_MESSAGING_SENDER_ID` | Firebase sender ID |
+| `FIREBASE_APP_ID` | Firebase app ID |
+| `RAZORPAY_KEY_ID` | Razorpay API key ID |
+| `RAZORPAY_KEY_SECRET` | Razorpay API secret |
+| `RAZORPAY_WEBHOOK_SECRET` | Razorpay webhook signature secret |
+| `ADMIN_EMAILS` | Comma-separated admin emails |
+| `GROQ_API_KEY` | Groq API key for the chatbot |
+| `SITE_URL` | Public site URL (for absolute links) |
 
-### Search Visibility
-- SEO-optimized
-- Local Kolkata focus
-- Fast loading
-- Mobile-first
-- Schema-ready
+### Frontend variables (must start with `VITE_`)
+| Variable | Purpose |
+|----------|---------|
+| `VITE_FIREBASE_API_KEY` | Firebase Web API key |
+| `VITE_FIREBASE_AUTH_DOMAIN` | Firebase auth domain |
+| `VITE_FIREBASE_PROJECT_ID` | Firebase project ID |
+| `VITE_FIREBASE_STORAGE_BUCKET` | Firebase storage bucket |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | Firebase sender ID |
+| `VITE_FIREBASE_APP_ID` | Firebase app ID |
+| `VITE_RAZORPAY_KEY_ID` | Razorpay public key ID |
+| `VITE_WHATSAPP_NUMBER` | Business WhatsApp number (with country code) |
+| `VITE_CONTACT_EMAIL` | Public contact email |
+| `VITE_CONTACT_PHONE` | Public contact phone |
+| `VITE_API_BASE_URL` | Leave blank to use same-origin `/api` |
 
-### Easy Management
-- No coding needed
-- JSON-based updates
-- Fast changes
-- Scalable structure
+**On Vercel:** Set each variable in **Project → Settings → Environment Variables** for **Production**, **Preview**, and **Development** environments.
 
----
+**Locally:** Set them once in `.env`, or pull them from Vercel:
 
-## 🚀 Getting Started
-
-### Step 1: Customize (5 min)
-- Update phone & WhatsApp number
-- Update email address
-- Customize business info
-
-### Step 2: Add Images (5 min)
-- Create product images
-- Place in `assets/images/`
-- Reference in JSON
-
-### Step 3: Update Data (5 min)
-- Edit `data/products.json`
-- Update prices & products
-- Add new items
-
-### Step 4: Deploy (10 min)
-- Choose hosting (Netlify, Hostinger, etc.)
-- Upload files
-- Point domain
-- Go live!
+```bash
+vercel env pull .env
+```
 
 ---
 
-## 📚 Documentation
+## 🚢 Deployment
 
-### QUICKSTART.md ⭐
-- 30 minutes to live
-- Beginner-friendly steps
-- All essentials covered
+### Automatic (recommended)
 
-### SETUP.md
-- Detailed configuration
-- Product management
-- Development guide
+1. Push your changes to `main` on GitHub.
+2. Vercel automatically builds and deploys both services.
+3. Done — live in ~1 minute.
 
-### DEPLOYMENT.md
-- Hosting options
-- Domain setup
-- Performance tips
-- Monitoring
+### Manual
 
-### INDEX.md
-- Complete reference
-- File structure
-- Feature map
+```bash
+vercel --prod
+```
 
----
+### What Vercel does
+1. Reads `vercel.json` → sees two services (`frontend`, `backend`)
+2. Builds `frontend/` with Vite → static assets
+3. Bundles `api/*.js` → serverless functions
+4. Applies `redirects` (old `.html` URLs → new React routes, 301)
+5. Applies `rewrites` (`/api/*` → backend, everything else → frontend)
+6. Provisions HTTPS + global CDN
 
-## ✅ Quality Checklist
-
-### Design ✅
-- [x] Premium, professional look
-- [x] Consistent branding
-- [x] Mobile-optimized
-- [x] Accessibility compliant
-
-### Functionality ✅
-- [x] All links working
-- [x] Forms functional
-- [x] Filters operational
-- [x] WhatsApp integration
-- [x] Responsive design
-
-### Content ✅
-- [x] Professional copy
-- [x] Clear CTAs
-- [x] Helpful information
-- [x] Trust-building
-- [x] Local focus
-
-### Performance ✅
-- [x] Fast loading
-- [x] Minimal dependencies
-- [x] Optimized assets
-- [x] Clean code
-
-### SEO ✅
-- [x] Meta tags complete
-- [x] Keyword optimized
-- [x] Mobile-friendly
-- [x] Fast loading
+### Adding a custom domain
+1. Go to **Vercel → Project → Settings → Domains**
+2. Add your domain (e.g. `maxvoltbatteries.in`)
+3. Update DNS records as instructed
+4. Vercel auto-provisions a free SSL certificate
 
 ---
 
-## 🎁 What You Get
+## 🔄 Redirects (Vanilla → React)
 
-✅ 10+ HTML pages
-✅ Complete CSS styling
-✅ JavaScript functionality
-✅ Product database (JSON)
-✅ 29 pre-configured products
-✅ Mobile responsive design
-✅ WhatsApp integration
-✅ Quote forms
-✅ Product calculators
-✅ Complete documentation
-✅ Deployment guides
-✅ SEO optimization
-✅ Zero ongoing fees (except hosting)
-✅ Fully editable
-✅ No coding required
+Legacy URLs from the pre-React version are **301-redirected** to the new routes:
 
----
+| Old URL | New URL |
+|---------|---------|
+| `/products/home-inverter-batteries.html` | `/products?category=homeInverterBatteries` |
+| `/products/car-batteries.html` | `/products?category=carBatteries` |
+| `/products/toto-erickshaw.html` | `/products?category=totoErickshawBatteries` |
+| `/products/ebike-batteries.html` | `/products?category=ebikeBatteries` |
+| `/products/ups.html` | `/products?category=ups` |
+| `/product-detail.html` | `/products` |
+| `/cart.html` | `/cart` |
+| `/checkout.html` | `/checkout` |
+| `/order-success.html` | `/order-success` |
+| `/privacy-policy.html` | `/privacy-policy` |
+| `/terms-conditions.html` | `/terms-conditions` |
+| `/account/:page.html` | `/account/:page` |
+| `/admin/:page.html` | `/admin/:page` |
+| `/admin/index.html` | `/admin` |
 
-## 🌟 Next Steps
-
-1. **Read QUICKSTART.md** (start here!)
-2. **Customize your details**
-3. **Add product images**
-4. **Update product data**
-5. **Deploy to web**
-6. **Monitor & optimize**
-7. **Grow your business!**
+All defined in [`vercel.json`](./vercel.json).
 
 ---
 
-## 📞 Support
+## 👥 User Roles
 
-All documentation included:
-- QUICKSTART.md for getting started
-- SETUP.md for technical details
-- DEPLOYMENT.md for hosting
-- INDEX.md for complete reference
+| Role | Access |
+|------|--------|
+| **Guest** | Homepage, products, product detail, privacy, terms, chatbot, quote form |
+| **Customer** | + Cart, checkout, order history, profile |
+| **Admin** | + `/admin` panel (dashboard, products, sections, orders, quotes, users, settings) |
 
-Code is well-commented for easy customization.
-
----
-
-## 💪 You're All Set!
-
-Everything you need for a professional, high-converting website is ready to go.
-
-**Trusted Power. Always.** ⚡
+Admin access is determined by:
+1. `ADMIN_EMAILS` env var, **or**
+2. A custom `role: 'admin'` claim set via the Admin → Users page
 
 ---
 
-**Built with ❤️ for MAXVOLT**
+## 🧪 Testing Checklist (Before Deploy)
 
-Your professional battery and power solutions website.
-Ready to serve Kolkata and beyond.
+### Homepage
+- [ ] Hero carousel rotates through 4 slides
+- [ ] Marquee scrolls product names
+- [ ] Category cards navigate correctly
+- [ ] Calculator returns a recommendation
+- [ ] Dynamic sections render (if any exist)
+- [ ] Featured products show (fallback if no dynamic featured)
+- [ ] Quotation form submits
+
+### Products
+- [ ] `/products` lists all products
+- [ ] Filters (category, brand, search, sort) work
+- [ ] `/product/:id` shows detail + related products
+- [ ] "Add to Cart" and "Buy Now" work
+
+### Cart & Checkout
+- [ ] Cart badge updates on header
+- [ ] Quantity + / − works
+- [ ] Checkout requires login
+- [ ] COD order completes
+- [ ] Razorpay order opens + verifies
+
+### Account
+- [ ] Register, login, logout work
+- [ ] Forgot password sends email
+- [ ] Profile updates save
+
+### Admin (login as admin)
+- [ ] Dashboard shows stats
+- [ ] Products CRUD works
+- [ ] Sections CRUD works
+- [ ] Orders status can be updated
+- [ ] Quotes can be updated/deleted
+- [ ] Users can be promoted/demoted
+- [ ] Settings save + chatbot test works
+
+### Redirects
+- [ ] `/products/car-batteries.html` → 301 → `/products?category=carBatteries`
+- [ ] `/cart.html` → 301 → `/cart`
+- [ ] `/admin/index.html` → 301 → `/admin`
+
+### Chatbot
+- [ ] Floating widget opens
+- [ ] Sends message, receives AI reply
+
+---
+
+## 🐛 Troubleshooting
+
+| Symptom | Cause / Fix |
+|---------|-------------|
+| `MONGODB_URI is not defined` | Missing `.env` or variable not set on Vercel |
+| `Firebase Admin credentials missing` | Missing `FIREBASE_PRIVATE_KEY` — remember to keep `\n` escapes |
+| `Failed to parse private key` | `FIREBASE_PRIVATE_KEY` pasted without `\n` or without quotes |
+| `/api/*` returns 404 in dev | Run `npm run dev` (which uses `vercel dev`) — not `vite dev` |
+| Frontend shows old build | Run `vercel --prod` again, or hard-refresh (Cmd/Ctrl + Shift + R) |
+| Chatbot fails with model error | Check `GROQ_API_KEY` and the model name in Admin → Settings |
+| Razorpay signature fails | `RAZORPAY_KEY_SECRET` mismatch between server and Razorpay dashboard |
+| Products empty on production | Run `npm run seed` with production `MONGODB_URI` |
+| `vercel dev` runs but `/api` fails | Ensure `vercel link` succeeded and you're in the repo root |
+| Custom domain shows 404 | Wait for DNS propagation (up to 48 h) |
+
+---
+
+## 📸 Key Features
+
+### Storefront
+- 🎠 Animated 4-slide hero carousel (brand, home, TOTO, UPS)
+- 📜 Auto-scrolling product marquee
+- 🏠 6-category product grid
+- 🧮 Interactive inverter + battery calculator with real product recommendations
+- 🛒 Cart with persistent localStorage state
+- 💳 Checkout with Razorpay + Cash on Delivery
+- 💬 Floating AI chatbot (Groq-powered)
+- 📱 Fully responsive, mobile-first, dark theme
+
+### Admin Panel
+- 📊 Dashboard with revenue, orders, quotes, users, recent activity
+- 📦 Full CRUD for products (with multi-image paste-from-clipboard support)
+- 🏷️ Homepage section manager (Featured / Sale / Combo / New Arrivals)
+- 🛒 Order management with status updates
+- 💬 Quote request inbox
+- 👥 User management with role control
+- ⚙️ Site + chatbot settings with live test button
+
+### Trust & Localization
+- 🇮🇳 Kolkata-focused, GST-inclusive pricing
+- ✅ Genuine branded products only
+- 📞 Multiple contact channels (Phone, WhatsApp, Email)
+- 📄 Privacy Policy + Terms & Conditions
+
+---
+
+## 🤝 Contributing
+
+1. Create a feature branch: `git checkout -b feature/your-feature`
+2. Commit: `git commit -m "feat: description"`
+3. Push: `git push origin feature/your-feature`
+4. Open a Pull Request
+
+### Commit Convention
+- `feat:` — new feature
+- `fix:` — bug fix
+- `docs:` — documentation only
+- `refactor:` — code change that neither fixes a bug nor adds a feature
+- `chore:` — build / tooling / dependency updates
+
+---
+
+## 📞 Contact
+
+**MAXVOLT**
+- 📍 Kolkata, West Bengal, India
+- 📱 Phone: **+91 7595941311**
+- 💬 WhatsApp: **+91 7595941311**
+- 📧 Email: **maxvolt.power@gmail.com**
+- 🌐 Website: https://maxvolt-web.vercel.app
+
+---
+
+## 📄 License
+
+© MAXVOLT. All rights reserved.  
+This codebase is proprietary and confidential. Unauthorized reproduction or distribution is prohibited.
+
+---
+
+**MAXVOLT — Trusted Power Always** ⚡  
+Built with ❤️ for Kolkata and beyond.

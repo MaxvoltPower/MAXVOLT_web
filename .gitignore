@@ -143,3 +143,11 @@ ENV/
 .eslintcache
 .stylelintcache
 combined_project_files.txt
+
+# ---------- Monorepo: frontend build output ----------
+frontend/dist/
+frontend/node_modules/
+frontend/.vite/
+
+# ---------- Vercel CLI ----------
+.vercel/

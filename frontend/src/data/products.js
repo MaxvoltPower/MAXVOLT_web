@@ -1,24 +1,4 @@
-// ============================================
-// MAXVOLT — One-time product seed script
-// Usage:  node scripts/seed-products.mjs
-// Requires .env with MONGODB_URI and MONGODB_DB
-// ============================================
-
-import 'dotenv/config';
-import { MongoClient } from 'mongodb';
-
-const uri = process.env.MONGODB_URI;
-const dbName = process.env.MONGODB_DB || 'maxvolt';
-
-if (!uri) {
-  console.error('MONGODB_URI is not set. Add it to .env');
-  process.exit(1);
-}
-
-// Inline fallback products — mirrors frontend/src/data/products.js
-// (kept in sync manually). If you want to load from the frontend file,
-// see the note at the bottom of this script.
-const PRODUCTS = {
+export const fallbackProducts = {
   homeInverterBatteries: [
     { id: 'BAT-LUM-001', brand: 'Luminous', model: 'ILSF 12042', capacity: '120Ah', type: 'Flat Plate', voltage: '12V', warranty: '36 Months', price: '9500 - 10500', availability: 'Available', bestFor: 'Basic home backup', image: 'lum-ilsf12042.jpg' },
     { id: 'BAT-LUM-002', brand: 'Luminous', model: 'RC18000 PRO', capacity: '150Ah', type: 'Tall Tubular', voltage: '12V', warranty: '48 Months', price: '12000 - 13500', availability: 'Usually Available', bestFor: 'Medium homes', image: 'lum-rc18000pro.jpg' },
@@ -68,70 +48,84 @@ const PRODUCTS = {
     { id: 'UPS-MTK-001', brand: 'Microtek', model: 'Legend 650', va: '650VA / 360W', waveType: 'Line Interactive', runtime: '~10-15 mins', warranty: '24 Months', price: '3200 - 4000', availability: 'Available', suitableFor: 'Desktop PC, Monitor', image: 'ups-mtk-legend650.jpg' },
     { id: 'UPS-MTK-002', brand: 'Microtek', model: 'Legend 1000', va: '1000VA / 600W', waveType: 'Line Interactive', runtime: '~15-20 mins', warranty: '24 Months', price: '4500 - 5500', availability: 'Available', suitableFor: 'Office workstation', image: 'ups-mtk-legend1000.jpg' },
     { id: 'UPS-APC-001', brand: 'APC', model: 'BX600C-IN', va: '600VA / 360W', waveType: 'Line Interactive', runtime: '~10-15 mins', warranty: '24 Months', price: '3500 - 4300', availability: 'Available', suitableFor: 'Desktop protection', image: 'ups-apc-bx600c.jpg' },
-    { id: 'UPS-APC-002', brand: 'APC', model: 'BX1100C-IN', va: '1100VA / 660W', waveType: 'Line Interactive', runtime: '~18-25 mins', warranty: '24 Months', price: '5500 - 6500', availability: 'Available', suitableFor: 'Office setup', image: 'ups-APC-bx1100c.jpg' },
+    { id: 'UPS-APC-002', brand: 'APC', model: 'BX1100C-IN', va: '1100VA / 660W', waveType: 'Line Interactive', runtime: '~18-25 mins', warranty: '24 Months', price: '5500 - 6500', availability: 'Available', suitableFor: 'Office setup', image: 'ups-apc-bx1100c.jpg' },
   ],
 };
 
-const CATEGORY_MAP = {
-  homeInverterBatteries: 'homeInverterBatteries',
-  homeInverters: 'homeInverters',
-  carBatteries: 'carBatteries',
-  totoErickshawBatteries: 'totoErickshawBatteries',
-  ebikeBatteries: 'ebikeBatteries',
-  ups: 'ups',
-};
+export const applianceList = [
+  { id: 'fan', name: 'Ceiling Fan', icon: '🌀', watts: 70, default: 2 },
+  { id: 'light', name: 'LED Light', icon: '💡', watts: 12, default: 5 },
+  { id: 'tube', name: 'Tube Light', icon: '🔆', watts: 40, default: 0 },
+  { id: 'tv', name: 'Television', icon: '📺', watts: 110, default: 0 },
+  { id: 'fridge', name: 'Refrigerator', icon: '🧊', watts: 180, default: 0 },
+  { id: 'router', name: 'Wi-Fi Router', icon: '📶', watts: 15, default: 0 },
+  { id: 'computer', name: 'Desktop Computer', icon: '💻', watts: 200, default: 0 },
+  { id: 'laptop', name: 'Laptop', icon: '💻', watts: 60, default: 0 },
+  { id: 'ac', name: 'Air Conditioner (1.5T)', icon: '❄️', watts: 1500, default: 0 },
+  { id: 'microwave', name: 'Microwave', icon: '📡', watts: 1200, default: 0 },
+  { id: 'mixer', name: 'Mixer/Grinder', icon: '🥤', watts: 500, default: 0 },
+  { id: 'iron', name: 'Iron', icon: '👔', watts: 1000, default: 0 },
+  { id: 'waterpump', name: 'Water Pump', icon: '🚰', watts: 750, default: 0 },
+  { id: 'cctv', name: 'CCTV Camera', icon: '📹', watts: 10, default: 0 },
+  { id: 'printer', name: 'Printer', icon: '🖨️', watts: 300, default: 0 },
+];
 
-async function main() {
-  const flat = [];
-  for (const key in PRODUCTS) {
-    if (!Array.isArray(PRODUCTS[key])) continue;
-    const category = CATEGORY_MAP[key] || key;
-    PRODUCTS[key].forEach(p => flat.push({ ...p, category }));
-  }
+export const heroSlides = [
+  {
+    id: 'brand',
+    type: 'center',
+    tagline: '⚡ TRUSTED POWER ALWAYS',
+    title: 'Trusted Power.',
+    titleAccent: 'Wherever You Need It.',
+    description: 'Reliable inverter, battery, automotive, TOTO, e-bike and UPS solutions for homes, vehicles and businesses in Kolkata.',
+    ctaPrimary: { text: 'Get a Quote', href: '#quotation' },
+    ctaSecondary: { text: 'Find the Right Battery', href: '#what-do-you-need' },
+  },
+  {
+    id: 'home',
+    type: 'split',
+    tagline: '🏠 HOME BACKUP',
+    title: 'Never Sit in the Dark Again.',
+    description: 'Inverter + battery combinations sized for your actual load. Genuine Exide, Luminous and Amaron products — with honest advice.',
+    ctaPrimary: { text: 'Browse Home Batteries', href: '/products?category=homeInverterBatteries' },
+    ctaSecondary: { text: 'Calculate My Requirement', href: '#calculator' },
+  },
+  {
+    id: 'toto',
+    type: 'bold',
+    tagline: '🛺 TOTO & E-RICKSHAW',
+    title: 'Keep Your Rickshaw Running.',
+    description: 'Heavy-duty tubular batteries built for daily e-rickshaw duty. Fast replacement, professional installation, warranty support.',
+    ctaPrimary: { text: 'View TOTO Batteries', href: '/products?category=totoErickshawBatteries' },
+    ctaSecondary: { text: 'Ask on WhatsApp', href: 'whatsapp' },
+  },
+  {
+    id: 'ups',
+    type: 'center',
+    tagline: '💻 OFFICE & UPS',
+    title: 'Protect Your Work. Protect Your Data.',
+    description: 'APC and Microtek UPS systems for desktops, workstations and small offices. Safe shutdown power, every time.',
+    features: ['⚡ 600VA – 1100VA', '🔌 Line Interactive', '🏢 Home & Office'],
+    ctaPrimary: { text: 'Browse UPS Systems', href: '/products?category=ups' },
+    ctaSecondary: { text: 'Get a Quote', href: '#quotation' },
+  },
+];
 
-  console.log(`Loaded ${flat.length} products from inline data`);
+export const marqueeItems = [
+  '⚡ Luminous RC18000 PRO — 150Ah',
+  '⚡ Exide IMST1500 — Tall Tubular',
+  '⚡ Amaron AR200TT54 — 200Ah Premium',
+  '⚡ Eastman EM1622ER — TOTO Battery',
+  '⚡ APC BX600C — 600VA UPS',
+  '⚡ AMPTEK AT12-24 — E-Bike 24Ah',
+  '⚡ Microtek Legend 1000 — 1000VA',
+];
 
-  const client = new MongoClient(uri);
-  try {
-    await client.connect();
-    const db = client.db(dbName);
-    const col = db.collection('products');
-
-    let inserted = 0, updated = 0;
-
-    for (const p of flat) {
-      const filter = { id: p.id };
-      const existing = await col.findOne(filter);
-      const now = new Date();
-
-      const doc = {
-        ...p,
-        active: p.active !== false,
-        updatedAt: now,
-      };
-
-      if (existing) {
-        await col.updateOne(filter, { $set: doc });
-        updated++;
-      } else {
-        doc.createdAt = now;
-        await col.insertOne(doc);
-        inserted++;
-      }
-    }
-
-    console.log(`✅ Seed complete: ${inserted} inserted, ${updated} updated`);
-
-    await col.createIndex({ category: 1, active: 1 });
-    await col.createIndex({ brand: 1 });
-    await col.createIndex({ id: 1 }, { unique: true, sparse: true });
-    console.log('✅ Indexes created');
-  } finally {
-    await client.close();
-  }
-}
-
-main().catch(err => {
-  console.error('Seed failed:', err);
-  process.exit(1);
-});
+export const categoryData = [
+  { id: 'home-inverter', name: 'Home Inverter & Battery', icon: '🏠', description: 'Reliable backup power for homes and small businesses.', link: '/products?category=homeInverterBatteries' },
+  { id: 'car-battery', name: 'Car Batteries', icon: '🚗', description: 'Reliable starting power for cars and commercial vehicles.', link: '/products?category=carBatteries' },
+  { id: 'toto', name: 'TOTO / E-Rickshaw', icon: '🛺', description: 'Heavy-duty battery solutions for electric rickshaws.', link: '/products?category=totoErickshawBatteries' },
+  { id: 'ebike', name: 'E-Bike Batteries', icon: '🚲', description: 'Battery solutions for electric two-wheelers.', link: '/products?category=ebikeBatteries' },
+  { id: 'ups', name: 'UPS Systems', icon: '💻', description: 'Backup power and protection for PCs, offices and businesses.', link: '/products?category=ups' },
+  { id: 'solar', name: 'Solar & Power Solutions', icon: '☀️', description: 'Solutions for renewable and backup power options.', link: '/#contact' },
+];

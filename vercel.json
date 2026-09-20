@@ -1,67 +1,31 @@
 {
-  "cleanUrls": true,
-  "trailingSlash": false,
-  "functions": {
-    "api/**/*.js": {
-      "maxDuration": 30
+  "services": {
+    "frontend": {
+      "root": "frontend/",
+      "framework": "vite"
+    },
+    "backend": {
+      "root": "api/"
     }
   },
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-XSS-Protection", "value": "1; mode=block" },
-        { "key": "Referrer-Policy", "value": "no-referrer-when-downgrade" }
-      ]
-    },
-    {
-      "source": "/css/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" },
-        { "key": "Vary", "value": "Accept-Encoding" }
-      ]
-    },
-    {
-      "source": "/js/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" },
-        { "key": "Vary", "value": "Accept-Encoding" }
-      ]
-    },
-    {
-      "source": "/assets/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-      ]
-    },
-    {
-      "source": "/(.*).html",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
-      ]
-    },
-    {
-      "source": "/products",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
-      ]
-    }
+  "redirects": [
+    { "source": "/products/home-inverter-batteries.html", "destination": "/products?category=homeInverterBatteries", "permanent": true },
+    { "source": "/products/car-batteries.html", "destination": "/products?category=carBatteries", "permanent": true },
+    { "source": "/products/toto-erickshaw.html", "destination": "/products?category=totoErickshawBatteries", "permanent": true },
+    { "source": "/products/ebike-batteries.html", "destination": "/products?category=ebikeBatteries", "permanent": true },
+    { "source": "/products/ups.html", "destination": "/products?category=ups", "permanent": true },
+    { "source": "/product-detail.html", "destination": "/products", "permanent": true },
+    { "source": "/cart.html", "destination": "/cart", "permanent": true },
+    { "source": "/checkout.html", "destination": "/checkout", "permanent": true },
+    { "source": "/order-success.html", "destination": "/order-success", "permanent": true },
+    { "source": "/privacy-policy.html", "destination": "/privacy-policy", "permanent": true },
+    { "source": "/terms-conditions.html", "destination": "/terms-conditions", "permanent": true },
+    { "source": "/account/:page.html", "destination": "/account/:page", "permanent": true },
+    { "source": "/admin/:page.html", "destination": "/admin/:page", "permanent": true },
+    { "source": "/admin/index.html", "destination": "/admin", "permanent": true }
   ],
   "rewrites": [
-    { "source": "/api/auth/:path*",      "destination": "/api/auth" },
-    { "source": "/api/products/:path*",  "destination": "/api/products" },
-    { "source": "/api/orders/:path*",    "destination": "/api/orders" },
-    { "source": "/api/quotes/:path*",    "destination": "/api/quotes" },
-    { "source": "/api/admin/:path*",     "destination": "/api/admin" },
-    { "source": "/api/sections/:path*",  "destination": "/api/sections" },
-    { "source": "/api/chat",             "destination": "/api/chat" },
-    { "source": "/api/payments/webhook", "destination": "/api/webhook" },
-    { "source": "/api/payments/:path*",  "destination": "/api/payments" },
-    { "source": "/products/:page",       "destination": "/products/:page.html" },
-    { "source": "/account/:page",        "destination": "/account/:page.html" },
-    { "source": "/admin/:page",          "destination": "/admin/:page.html" },
-    { "source": "/admin",                "destination": "/admin/index.html" }
+    { "source": "/api/(.*)", "destination": { "service": "backend" } },
+    { "source": "/(.*)", "destination": { "service": "frontend" } }
   ]
 }
