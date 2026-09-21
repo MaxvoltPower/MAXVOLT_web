@@ -23,20 +23,28 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
-      
+
       if (firebaseUser) {
         try {
           const profileData = await api.verify();
-          setProfile(profileData.profile);
-          setIsAdmin(profileData.isAdmin);
+          // Defensive: ensure profileData is an object before accessing .profile
+          if (profileData && typeof profileData === 'object') {
+            setProfile(profileData.profile || null);
+            setIsAdmin(Boolean(profileData.isAdmin));
+          } else {
+            setProfile(null);
+            setIsAdmin(false);
+          }
         } catch (err) {
           console.warn('Failed to verify user:', err);
+          setProfile(null);
+          setIsAdmin(false);
         }
       } else {
         setProfile(null);
         setIsAdmin(false);
       }
-      
+
       setLoading(false);
     });
 

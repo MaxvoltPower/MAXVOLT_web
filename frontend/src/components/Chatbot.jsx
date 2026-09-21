@@ -45,11 +45,22 @@ export default function Chatbot() {
       }));
 
       const data = await api.chat({ message: text, history });
+
+      // Handle both response shapes defensively:
+      //   { reply: "..." }  OR  "..." (if backend returns raw string)
+      let replyText = 'Sorry, I could not generate a response.';
+      if (data && typeof data === 'object' && typeof data.reply === 'string') {
+        replyText = data.reply;
+      } else if (typeof data === 'string') {
+        replyText = data;
+      }
+
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: data.reply || 'Sorry, I could not generate a response.' },
+        { role: 'assistant', content: replyText },
       ]);
     } catch (err) {
+      console.error('Chatbot error:', err);
       setMessages((prev) => [
         ...prev,
         {

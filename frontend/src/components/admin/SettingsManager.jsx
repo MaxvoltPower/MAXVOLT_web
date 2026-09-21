@@ -39,7 +39,7 @@ export default function SettingsManager() {
         const merged = { ...values };
         for (const id in KEYS) {
           const key = KEYS[id];
-          if (data[key] !== undefined && data[key] !== null) {
+          if (data && data[key] !== undefined && data[key] !== null) {
             merged[key] = data[key];
           }
         }
@@ -47,6 +47,7 @@ export default function SettingsManager() {
       })
       .catch((err) => console.warn('Failed to load settings:', err.message))
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleChange = (key, value) => {
@@ -76,7 +77,15 @@ export default function SettingsManager() {
         apiKeyOverride: values.chatApiKey?.trim() || undefined,
         modelOverride: values.chatModel?.trim() || undefined,
       });
-      setTestResult('✓ Bot replied: ' + data.reply);
+      // data is the unwrapped payload from api.request() → { reply, model }
+      const reply =
+        data && typeof data === 'object' && typeof data.reply === 'string'
+          ? data.reply
+          : typeof data === 'string'
+          ? data
+          : '(empty reply)';
+      const usedModel = data?.model ? ` [${data.model}]` : '';
+      setTestResult('✓ Bot replied' + usedModel + ': ' + reply);
       setTestStatus('success');
     } catch (err) {
       setTestResult('✗ ' + err.message);
@@ -148,10 +157,10 @@ export default function SettingsManager() {
             type="text"
             value={values.chatModel}
             onChange={(e) => handleChange('chatModel', e.target.value)}
-            placeholder="e.g. openai/gpt-oss-120b"
+            placeholder="llama-3.3-70b-versatile"
           />
           <small className="text-xs text-[var(--text-subtle)]">
-            Type any Groq model name. See{' '}
+            Leave blank to use the default. See{' '}
             <a
               href="https://console.groq.com/docs/models"
               target="_blank"
@@ -160,7 +169,8 @@ export default function SettingsManager() {
             >
               console.groq.com/docs/models
             </a>
-            .
+            . If the model fails, the server will automatically fall back to a
+            known-good model.
           </small>
         </div>
 

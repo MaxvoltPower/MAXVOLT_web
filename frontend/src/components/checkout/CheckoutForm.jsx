@@ -73,11 +73,24 @@ export default function CheckoutForm({ onSuccess }) {
           total,
           paymentMethod: 'cod',
         });
+
+        // Defensive: order ID might be missing if the API response was malformed
+        const orderId = result?._id || result?.id || null;
+        if (!orderId) {
+          throw new Error(
+            'Order was created but no ID was returned. Please contact support.'
+          );
+        }
+
         clearCart();
-        if (onSuccess) onSuccess({ orderId: result._id, method: 'cod' });
+        if (onSuccess) onSuccess({ orderId, method: 'cod' });
       } else {
         await loadRazorpay();
         const payData = await api.createPayment({ amount: total, items, shipping });
+
+        if (!payData?.razorpayOrderId || !payData?.orderId) {
+          throw new Error('Failed to create Razorpay order — invalid response.');
+        }
 
         const options = {
           key: payData.keyId,
@@ -101,7 +114,8 @@ export default function CheckoutForm({ onSuccess }) {
                 orderId: payData.orderId,
               });
               clearCart();
-              if (onSuccess) onSuccess({ orderId: payData.orderId, method: 'razorpay' });
+              if (onSuccess)
+                onSuccess({ orderId: payData.orderId, method: 'razorpay' });
             } catch (err) {
               setError('Payment verification failed: ' + err.message);
               setLoading(false);

@@ -25,6 +25,10 @@ async function request(path, options = {}) {
     throw new Error(data.error || `Request failed: ${res.status}`);
   }
 
+  // Always return an object (never undefined) so callers can safely destructure
+  if (data.data === undefined || data.data === null) {
+    return {};
+  }
   return data.data;
 }
 

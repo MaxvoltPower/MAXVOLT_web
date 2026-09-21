@@ -1,6 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default defineConfig({
   plugins: [react()],
@@ -17,17 +21,18 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    // No proxy needed — `vercel dev` serves both frontend and /api
-    // on the same port. If you ever run `npm run dev` inside frontend/
-    // standalone, temporarily enable the proxy below and run your API
-    // on a separate port.
+    // In local dev (npm run dev:frontend), Vite proxies /api/* to the
+    // standalone backend running on port 3001 (npm run dev:api).
     //
-    // proxy: {
-    //   '/api': {
-    //     target: 'http://localhost:3001',
-    //     changeOrigin: true,
-    //   },
-    // },
+    // In production on Vercel, this proxy is NOT used — Vercel routes
+    // /api/* to the backend service automatically (see vercel.json).
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   build: {
     outDir: 'dist',

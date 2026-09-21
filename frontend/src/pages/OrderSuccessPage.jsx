@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { api } from '@lib/api';
 import { formatPrice, openWhatsapp } from '@lib/utils';
-import Button from '@components/ui/Button';
 
 export default function OrderSuccessPage() {
   const [searchParams] = useSearchParams();

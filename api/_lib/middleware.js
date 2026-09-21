@@ -33,7 +33,7 @@ export async function authenticate(req) {
 export async function requireAuth(req, res) {
   const user = await authenticate(req);
   if (!user) {
-    res.status(401).json({ error: 'Unauthorized' });
+    res.status(401).json({ success: false, error: 'Unauthorized' });
     return null;
   }
   return user;
@@ -43,7 +43,7 @@ export async function requireAdmin(req, res) {
   const user = await requireAuth(req, res);
   if (!user) return null;
   if (!user.isAdmin) {
-    res.status(403).json({ error: 'Admin access required' });
+    res.status(403).json({ success: false, error: 'Admin access required' });
     return null;
   }
   return user;
@@ -80,7 +80,8 @@ export function parseBody(req) {
 
 /** Standard response helpers */
 export function ok(res, data, status = 200) {
-  return res.status(status).json({ success: true, data });
+  // Always wrap in { success: true, data } — even if data is undefined
+  return res.status(status).json({ success: true, data: data === undefined ? null : data });
 }
 
 export function fail(res, message, status = 400, code = null) {
