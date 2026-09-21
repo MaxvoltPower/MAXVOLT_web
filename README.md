@@ -100,6 +100,11 @@ maxvolt-web/
 │   ├── sections.js                 # /api/sections/*
 │   └── webhook.js                  # /api/payments/webhook (Razorpay)
 │
+├── server/                         # Local dev backend (mirrors Vercel routing)
+│   ├── index.mjs                   # Node HTTP server on :3001
+│   ├── router.mjs                  # Maps /api/* → api/*.js handlers
+│   └── vercel-adapter.mjs          # Wraps Vercel handlers for plain Node
+│
 ├── scripts/                        # One-time DB utilities
 │   ├── seed-products.mjs           # Populate MongoDB with product catalogue
 │   └── setup-indexes.mjs           # Create MongoDB indexes
@@ -115,102 +120,312 @@ maxvolt-web/
 
 ## 🚀 Local Development
 
-### Prerequisites
-- **Node.js** 20+ (LTS recommended)
-- **npm** 10+
-- **Vercel CLI** — installed globally
-- A **MongoDB Atlas** connection string
-- A **Firebase** project (Web + Admin service account)
-- A **Razorpay** test account (for payments)
-- (Optional) A **Groq API key** for the chatbot
+This project runs **two processes locally**:
 
-### Step 1 — Install Vercel CLI
+| Process | Port | What it does |
+|---------|------|--------------|
+| **API** (`server/index.mjs`) | `3001` | Serves all `/api/*` routes by importing the Vercel handlers from `api/` |
+| **Frontend** (Vite dev server) | `3000` | Serves the React SPA and proxies `/api/*` → `localhost:3001` |
 
-```bash
-npm i -g vercel
-```
+The root `npm run dev` script launches **both** with `concurrently`, so you only need one terminal.
 
-### Step 2 — Clone & install dependencies
+---
+
+### ✅ Prerequisites
+
+| Tool | Version | Notes |
+|------|---------|-------|
+| **Node.js** | **20 LTS or 24.x** | Matches `engines.node: "24.x"` in `package.json` |
+| **npm** | 10+ | Ships with Node 20+ |
+| **Git** | Any | To clone the repo |
+| **MongoDB Atlas** account | — | Free tier is fine |
+| **Firebase** project | — | Web + Admin service account |
+| **Razorpay** test account | — | For payment testing (optional) |
+| **Groq** API key | — | For the chatbot (optional) |
+
+> 💡 **Windows users**: All commands below work in PowerShell, Git Bash, and CMD. If you use PowerShell and hit an "execution policy" error, run once: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+
+---
+
+### 1️⃣ Clone the repository
 
 ```bash
 git clone https://github.com/MaxvoltPower/MAXVOLT.git
 cd MAXVOLT
+```
 
-# Install root deps (backend)
+(Or `cd` into your local folder if you already have it, e.g. `cd "D:/72 projects of python/MAXVOLT_web"`.)
+
+---
+
+### 2️⃣ Install dependencies
+
+Install **both** root (backend) and frontend deps:
+
+```bash
+# Root deps — firebase-admin, mongodb, razorpay, zod, concurrently, dotenv
 npm install
 
-# Install frontend deps
+# Frontend deps — react, vite, tailwind, firebase web SDK, etc.
 cd frontend && npm install && cd ..
 ```
 
-### Step 3 — Set up environment variables
+> On Windows, if you're using PowerShell and want to chain: `npm install; cd frontend; npm install; cd ..`
 
-Copy the template and fill in real values:
+---
+
+### 3️⃣ Create your local `.env`
+
+Copy the template and open it in your editor:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` and provide:
-- `MONGODB_URI` and `MONGODB_DB`
-- Firebase Admin credentials (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`)
-- Firebase Web config (`VITE_FIREBASE_*`)
-- Razorpay keys (`RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`)
-- `ADMIN_EMAILS` (comma-separated)
-- `GROQ_API_KEY` (for the chatbot)
+**Edit `.env`** and fill in **real** values for at least these variables. The app will boot without some of them, but features will be broken:
 
-> ⚠️ **`VITE_*` variables** are exposed to the browser. **Never** prefix secrets like `FIREBASE_PRIVATE_KEY` or `RAZORPAY_KEY_SECRET` with `VITE_`.
+#### Required for the API to connect
 
-### Step 4 — Link to Vercel (one-time)
+| Variable | Where to get it |
+|----------|-----------------|
+| `MONGODB_URI` | MongoDB Atlas → Connect → Drivers. Format: `mongodb+srv://user:pass@cluster.mongodb.net/maxvolt?retryWrites=true&w=majority` |
+| `MONGODB_DB` | Any name, e.g. `maxvolt` |
 
-```bash
-vercel link
-```
+#### Required for Firebase Auth (login/register/admin)
 
-Choose **Link to existing project** (or create a new one). This creates a `.vercel/` folder locally (gitignored).
+| Variable | Where to get it |
+|----------|-----------------|
+| `FIREBASE_PROJECT_ID` | Firebase Console → Project Settings → General |
+| `FIREBASE_CLIENT_EMAIL` | Firebase Console → Project Settings → **Service Accounts** → Generate new private key |
+| `FIREBASE_PRIVATE_KEY` | Same JSON as above — copy the `private_key` field, keep the literal `\n` sequences, wrap the whole thing in double quotes |
+| `VITE_FIREBASE_API_KEY` | Firebase Console → Project Settings → General → Web API Key |
+| `VITE_FIREBASE_AUTH_DOMAIN` | e.g. `your-project.firebaseapp.com` |
+| `VITE_FIREBASE_PROJECT_ID` | Same as `FIREBASE_PROJECT_ID` |
+| `VITE_FIREBASE_STORAGE_BUCKET` | e.g. `your-project.firebasestorage.app` |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | From Firebase web config |
+| `VITE_FIREBASE_APP_ID` | From Firebase web config |
 
-### Step 5 — Run locally
+> ⚠️ **`FIREBASE_PRIVATE_KEY` gotcha:** paste the **whole** key including `-----BEGIN PRIVATE KEY-----` and `-----END PRIVATE KEY-----\n`, keep all `\n` as **two characters** (backslash + n), and wrap the entire value in **double quotes** on a **single line**. The backend does `.replace(/\\n/g, '\n')` to unescape it.
 
-```bash
-npm run dev
-```
+#### Required for the Chatbot
 
-This runs `vercel dev`, which:
-- Builds and serves the React frontend
-- Runs the serverless functions in `api/`
-- Routes `/api/*` to the backend automatically
-- Reads variables from your local `.env`
+| Variable | Where to get it |
+|----------|-----------------|
+| `GROQ_API_KEY` | https://console.groq.com/keys — starts with `gsk_` |
 
-Open **http://localhost:3000**
+#### Required for Payments (only if testing checkout)
 
-### Step 6 — (One-time) Seed MongoDB
+| Variable | Where to get it |
+|----------|-----------------|
+| `RAZORPAY_KEY_ID` | https://dashboard.razorpay.com/app/keys |
+| `RAZORPAY_KEY_SECRET` | Same page |
+| `RAZORPAY_WEBHOOK_SECRET` | Only needed in production; for local dev use any string |
+| `VITE_RAZORPAY_KEY_ID` | Same as `RAZORPAY_KEY_ID` |
+
+#### Recommended for Admin access
+
+| Variable | Value |
+|----------|-------|
+| `ADMIN_EMAILS` | Comma-separated (no spaces!): `you@gmail.com,partner@gmail.com` |
+
+#### Public contact info (safe to commit)
+
+| Variable | Value |
+|----------|-------|
+| `VITE_WHATSAPP_NUMBER` | e.g. `917595941311` |
+| `VITE_CONTACT_EMAIL` | e.g. `maxvolt.power@gmail.com` |
+| `VITE_CONTACT_PHONE` | e.g. `+91 7595941311` |
+
+> 🔒 **Never** prefix secrets like `FIREBASE_PRIVATE_KEY` or `RAZORPAY_KEY_SECRET` with `VITE_`. Anything prefixed with `VITE_` is embedded into the browser bundle.
+
+---
+
+### 4️⃣ (One-time) Seed the database
+
+Populate MongoDB with the product catalogue and create the recommended indexes:
 
 ```bash
 npm run seed
 npm run setup-indexes
 ```
 
+Both scripts read `MONGODB_URI` and `MONGODB_DB` from your `.env`. You should see:
+
+```
+Loaded 41 products from inline data
+✅ Seed complete: 41 inserted, 0 updated
+✅ Indexes created
+```
+
 ---
 
-## 🛠️ Available Scripts
+### 5️⃣ Run the dev servers
 
-Run these from the **project root**:
+From the **project root**:
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start local dev (frontend + backend on one port via `vercel dev`) |
-| `npm run deploy` | Deploy to production (`vercel --prod`) |
-| `npm run seed` | Seed MongoDB with the product catalogue |
-| `npm run setup-indexes` | Create MongoDB indexes for performance |
+```bash
+npm run dev
+```
 
-Run these from **`frontend/`**:
+You should see output similar to:
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Run the Vite dev server standalone (needs API proxy) |
+```
+[api]   ⚡ MAXVOLT — local backend
+[api]   ➜  http://localhost:3001
+[api]   ➜  Health: http://localhost:3001/api/health
+[api]   ➜  Handlers: admin, auth, chat, config, contact, orders, payments, products, quotes, sections, webhook
+[web]   VITE v5.x.x  ready in 400 ms
+[web]   ➜  Local:   http://localhost:3000/
+```
+
+Open **http://localhost:3000** in your browser.
+
+#### What `npm run dev` actually does
+
+The root `package.json` defines:
+
+```json
+"dev": "concurrently -n api,web -c cyan,magenta \"npm:dev:api\" \"npm:dev:frontend\"",
+"dev:api": "node server/index.mjs",
+"dev:frontend": "npm --prefix frontend run dev"
+```
+
+| Step | Command | Result |
+|------|---------|--------|
+| 1 | `node server/index.mjs` | Boots a plain Node HTTP server on port **3001** that imports `api/*.js` handlers and routes `/api/*` to them |
+| 2 | `npm --prefix frontend run dev` | Boots the Vite dev server on port **3000** with a proxy: `/api/*` → `http://localhost:3001` |
+
+So when the browser requests `/api/products`, Vite forwards it to your local backend — you get the exact same URL structure as on Vercel.
+
+---
+
+### 6️⃣ Quick smoke tests
+
+With the dev server running, verify:
+
+| Check | URL / Action | Expected |
+|-------|--------------|----------|
+| Health check | http://localhost:3001/api/health | `{ "ok": true, "service": "maxvolt-api", ... }` |
+| Public config | http://localhost:3000/api/config | `{ "success": true, "data": { "firebase": {...}, "razorpayKeyId": "..." } }` |
+| Products list | http://localhost:3000/api/products | `{ "success": true, "data": { "items": [...], "total": N } }` |
+| Homepage | http://localhost:3000/ | Hero carousel + marquee + categories render |
+| Chatbot | Click the orange chat button (bottom-right) → type `hi` | An AI reply appears (not the "Sorry, I could not generate a response" message) |
+| Admin login | Log in with an email listed in `ADMIN_EMAILS` → http://localhost:3000/admin | Dashboard loads with stats |
+
+If the chatbot still fails, see the **Troubleshooting → Chatbot** section below.
+
+---
+
+### 🔁 Available scripts (root)
+
+| Command | What it does |
+|---------|--------------|
+| `npm run dev` | Runs API (`:3001`) + Vite (`:3000`) via `concurrently` |
+| `npm run dev:api` | Runs **only** the local API server on `:3001` |
+| `npm run dev:frontend` | Runs **only** the Vite dev server on `:3000` (expects API at `:3001`) |
+| `npm run seed` | Seeds MongoDB with the fallback product catalogue |
+| `npm run setup-indexes` | Creates MongoDB indexes |
+| `npm run deploy` | Deploys to Vercel production (`vercel --prod`) |
+
+### 🔁 Available scripts (frontend)
+
+Run from `frontend/` (or via `npm --prefix frontend run <cmd>`):
+
+| Command | What it does |
+|---------|--------------|
+| `npm run dev` | Vite dev server (standalone) |
 | `npm run build` | Production build → `frontend/dist/` |
 | `npm run preview` | Preview the production build locally |
-| `npm run lint` | Run ESLint on the frontend |
+| `npm run lint` | ESLint on the frontend |
+
+---
+
+### 🎛️ Running the API and frontend separately
+
+If you prefer two terminals:
+
+**Terminal 1 — API:**
+```bash
+npm run dev:api
+# → http://localhost:3001
+```
+
+**Terminal 2 — Frontend:**
+```bash
+npm run dev:frontend
+# → http://localhost:3000
+```
+
+The Vite proxy in `frontend/vite.config.js` handles the `/api` forwarding.
+
+---
+
+### 🌐 Trying production-build locally
+
+To test the built frontend against your local API:
+
+```bash
+cd frontend
+npm run build
+npm run preview     # serves the built SPA on :4173 by default
+```
+
+> ⚠️ `vite preview` **does not** proxy `/api`. For a full prod-like run, either point `VITE_API_BASE_URL=http://localhost:3001` in `.env` and rebuild, or use `vercel dev` (see below).
+
+---
+
+### 🧪 Using `vercel dev` instead (optional)
+
+If you have the Vercel CLI installed and prefer Vercel's own local runtime:
+
+```bash
+npm i -g vercel
+vercel link         # link to the existing project
+vercel dev          # serves frontend + api on the same port (default :3000)
+```
+
+This is closer to production but slower to restart than the `concurrently` setup. Either workflow works.
+
+---
+
+## 🛠️ Troubleshooting (Local Dev)
+
+| Symptom | Cause / Fix |
+|---------|-------------|
+| `MONGODB_URI is not defined` | `.env` missing at project root, or the variable isn't set. Copy `.env.example` → `.env` and fill it in. |
+| `Firebase Admin credentials missing` | One of `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` is empty. |
+| `Failed to parse private key` | `FIREBASE_PRIVATE_KEY` pasted with real newlines instead of `\n`, or missing the surrounding quotes. Paste as a single line with `\n` escapes and wrap in `"..."`. |
+| `/api/*` returns 404 | You ran `npm run dev:frontend` alone without the API running. Start both with `npm run dev`, or start `npm run dev:api` in another terminal. |
+| `EADDRINUSE :3001` | Something else is already on port 3001. Kill it or set `PORT=3002` (and update the proxy target in `frontend/vite.config.js`). |
+| Vite crashes with `__dirname is not defined` | Old Node version. Use Node 20+. `vite.config.js` already handles ESM `__dirname` via `fileURLToPath`. |
+| Frontend shows old build | Hard-refresh: **Cmd/Ctrl + Shift + R**. |
+| Admin page redirects to `/login` | Your email isn't in `ADMIN_EMAILS`, or `ADMIN_EMAILS` has spaces after commas. Use `a@x.com,b@y.com` (no spaces). |
+| Products list is empty | You haven't seeded. Run `npm run seed` with the correct `MONGODB_URI`. |
+| Razorpay signature fails | `RAZORPAY_KEY_SECRET` mismatch between server and Razorpay dashboard. |
+| Custom domain shows 404 (prod only) | Wait for DNS propagation (up to 48 h). |
+
+### 🐛 Chatbot returns "Sorry, I could not generate a response."
+
+The chatbot (`/api/chat`) tries your configured Groq model, then falls back through a list of known-good models. If **all** fail, it returns an error. To diagnose:
+
+1. Open the browser **Network** tab, trigger a chat message, and inspect the **`/api/chat`** response.
+   - If `success: true` and `data.reply` is present → the frontend should render it. Hard-refresh if not.
+   - If `success: false` → the `error` field contains the exact upstream reason (invalid key, unknown model, rate limit, etc.).
+
+2. Check the **API terminal** where `npm run dev:api` is running. You'll see lines like:
+   ```
+   [chat] Trying Groq model: llama-3.3-70b-versatile
+   [chat] Model "llama-3.3-70b-versatile" failed: Invalid API Key
+   [chat] Trying Groq model: llama-3.1-8b-instant
+   ...
+   ```
+
+3. Common fixes:
+   - **Invalid API Key** → set a fresh `GROQ_API_KEY` in `.env`, or clear the saved key in Admin → Settings → Chatbot.
+   - **Model not found** → clear the **Model Name** field in Admin → Settings → Chatbot (leave blank to use the default).
+   - **Key saved in DB overrides `.env`** → Admin → Settings → Chatbot shows a saved key. Clearing it makes the server fall back to `GROQ_API_KEY`.
+
+4. Restart the API (`Ctrl+C` in the dev terminal, then `npm run dev` again) after editing `.env`.
 
 ---
 
@@ -294,7 +509,7 @@ All endpoints return `{ success: boolean, data?: any, error?: string }`.
 
 ## 🔐 Environment Variables
 
-A **single `.env` file** at the project root holds all secrets.
+A **single `.env` file** at the project root holds all secrets for local dev. On Vercel, set them in **Project → Settings → Environment Variables**.
 
 ### Backend variables (no prefix)
 | Variable | Purpose |
@@ -312,9 +527,10 @@ A **single `.env` file** at the project root holds all secrets.
 | `RAZORPAY_KEY_ID` | Razorpay API key ID |
 | `RAZORPAY_KEY_SECRET` | Razorpay API secret |
 | `RAZORPAY_WEBHOOK_SECRET` | Razorpay webhook signature secret |
-| `ADMIN_EMAILS` | Comma-separated admin emails |
+| `ADMIN_EMAILS` | Comma-separated admin emails (no spaces) |
 | `GROQ_API_KEY` | Groq API key for the chatbot |
 | `SITE_URL` | Public site URL (for absolute links) |
+| `PORT` | Local API port (default: `3001`) |
 
 ### Frontend variables (must start with `VITE_`)
 | Variable | Purpose |
@@ -331,17 +547,11 @@ A **single `.env` file** at the project root holds all secrets.
 | `VITE_CONTACT_PHONE` | Public contact phone |
 | `VITE_API_BASE_URL` | Leave blank to use same-origin `/api` |
 
-**On Vercel:** Set each variable in **Project → Settings → Environment Variables** for **Production**, **Preview**, and **Development** environments.
-
-**Locally:** Set them once in `.env`, or pull them from Vercel:
-
-```bash
-vercel env pull .env
-```
+> ⚠️ **`VITE_*` vars are baked at build time.** After changing them, restart the dev server (or redeploy on Vercel).
 
 ---
 
-## 🚢 Deployment
+## 🚢 Deployment (Vercel)
 
 ### Automatic (recommended)
 
@@ -356,6 +566,7 @@ vercel --prod
 ```
 
 ### What Vercel does
+
 1. Reads `vercel.json` → sees two services (`frontend`, `backend`)
 2. Builds `frontend/` with Vite → static assets
 3. Bundles `api/*.js` → serverless functions
@@ -363,7 +574,23 @@ vercel --prod
 5. Applies `rewrites` (`/api/*` → backend, everything else → frontend)
 6. Provisions HTTPS + global CDN
 
+### Vercel environment variables
+
+Set **every** variable from the `.env` tables above in **Project → Settings → Environment Variables** for **Production**, **Preview**, and **Development**.
+
+**Important gotchas on Vercel:**
+
+| Variable | Rule |
+|----------|------|
+| `FIREBASE_PRIVATE_KEY` | Paste **without** surrounding quotes. Keep the literal `\n` sequences. |
+| `ADMIN_EMAILS` | No spaces after commas. |
+| `MONGODB_URI` | Add `?retryWrites=true&w=majority` and URL-encode special characters in the password. |
+| `VITE_*` | Baked at build time — after changing, **redeploy**. |
+
+After adding all variables, go to **Deployments → ⋯ → Redeploy**.
+
 ### Adding a custom domain
+
 1. Go to **Vercel → Project → Settings → Domains**
 2. Add your domain (e.g. `maxvoltbatteries.in`)
 3. Update DNS records as instructed
@@ -373,26 +600,7 @@ vercel --prod
 
 ## 🔄 Redirects (Vanilla → React)
 
-Legacy URLs from the pre-React version are **301-redirected** to the new routes:
-
-| Old URL | New URL |
-|---------|---------|
-| `/products/home-inverter-batteries.html` | `/products?category=homeInverterBatteries` |
-| `/products/car-batteries.html` | `/products?category=carBatteries` |
-| `/products/toto-erickshaw.html` | `/products?category=totoErickshawBatteries` |
-| `/products/ebike-batteries.html` | `/products?category=ebikeBatteries` |
-| `/products/ups.html` | `/products?category=ups` |
-| `/product-detail.html` | `/products` |
-| `/cart.html` | `/cart` |
-| `/checkout.html` | `/checkout` |
-| `/order-success.html` | `/order-success` |
-| `/privacy-policy.html` | `/privacy-policy` |
-| `/terms-conditions.html` | `/terms-conditions` |
-| `/account/:page.html` | `/account/:page` |
-| `/admin/:page.html` | `/admin/:page` |
-| `/admin/index.html` | `/admin` |
-
-All defined in [`vercel.json`](./vercel.json).
+Legacy URLs from the pre-React version are **301-redirected** to the new routes. See [`vercel.json`](./vercel.json) for the full list — e.g. `/cart.html` → `/cart`, `/admin/index.html` → `/admin`.
 
 ---
 
@@ -459,20 +667,18 @@ Admin access is determined by:
 
 ---
 
-## 🐛 Troubleshooting
+## 🐛 Troubleshooting (Production)
 
 | Symptom | Cause / Fix |
 |---------|-------------|
-| `MONGODB_URI is not defined` | Missing `.env` or variable not set on Vercel |
-| `Firebase Admin credentials missing` | Missing `FIREBASE_PRIVATE_KEY` — remember to keep `\n` escapes |
-| `Failed to parse private key` | `FIREBASE_PRIVATE_KEY` pasted without `\n` or without quotes |
-| `/api/*` returns 404 in dev | Run `npm run dev` (which uses `vercel dev`) — not `vite dev` |
-| Frontend shows old build | Run `vercel --prod` again, or hard-refresh (Cmd/Ctrl + Shift + R) |
-| Chatbot fails with model error | Check `GROQ_API_KEY` and the model name in Admin → Settings |
-| Razorpay signature fails | `RAZORPAY_KEY_SECRET` mismatch between server and Razorpay dashboard |
-| Products empty on production | Run `npm run seed` with production `MONGODB_URI` |
-| `vercel dev` runs but `/api` fails | Ensure `vercel link` succeeded and you're in the repo root |
-| Custom domain shows 404 | Wait for DNS propagation (up to 48 h) |
+| `MONGODB_URI is not defined` | Variable not set on Vercel. Add it and redeploy. |
+| `Firebase Admin credentials missing` | Missing `FIREBASE_PRIVATE_KEY` on Vercel — remember to keep `\n` escapes and drop the outer quotes. |
+| `Failed to parse private key` | `FIREBASE_PRIVATE_KEY` pasted with real newlines. Repaste as a single line with literal `\n`. |
+| `/api/*` returns 404 | The `rewrites` in `vercel.json` aren't being applied — check that the project root is the repo root. |
+| Frontend shows old build | `vercel --prod` again, or hard-refresh. |
+| Chatbot fails with model error | Check `GROQ_API_KEY` on Vercel, or clear the DB-saved key in Admin → Settings → Chatbot. |
+| Razorpay signature fails | `RAZORPAY_KEY_SECRET` mismatch between Vercel and Razorpay dashboard. |
+| Products empty on production | Run `npm run seed` against the production `MONGODB_URI`. |
 
 ---
 
@@ -485,7 +691,7 @@ Admin access is determined by:
 - 🧮 Interactive inverter + battery calculator with real product recommendations
 - 🛒 Cart with persistent localStorage state
 - 💳 Checkout with Razorpay + Cash on Delivery
-- 💬 Floating AI chatbot (Groq-powered)
+- 💬 Floating AI chatbot (Groq-powered, with multi-model fallback)
 - 📱 Fully responsive, mobile-first, dark theme
 
 ### Admin Panel
@@ -518,6 +724,7 @@ Admin access is determined by:
 - `docs:` — documentation only
 - `refactor:` — code change that neither fixes a bug nor adds a feature
 - `chore:` — build / tooling / dependency updates
+- `security:` — security-related fix (e.g. rotating leaked keys)
 
 ---
 
