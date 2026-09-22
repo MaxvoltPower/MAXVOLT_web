@@ -1,10 +1,13 @@
+// ============================================================
+// MAXVOLT — Products listing page
+// ============================================================
+
 import { useState, useMemo, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { useProducts } from '@context/ProductsContext';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useProducts, normalizeCategory } from '@context/ProductsContext';
 import ProductGrid from '@components/products/ProductGrid';
 import ProductFilters from '@components/products/ProductFilters';
 import { parsePriceToNumber } from '@lib/utils';
-import { normalizeCategory } from '@context/ProductsContext';
 
 const CATEGORY_LABELS = {
   homeInverterBatteries: 'Home Inverter Batteries',
@@ -26,7 +29,6 @@ export default function ProductsPage() {
   const [brand, setBrand] = useState('');
   const [sort, setSort] = useState('default');
 
-  // Sync category from URL
   useEffect(() => {
     const cat = searchParams.get('category') || '';
     setCategory(cat);
@@ -50,51 +52,88 @@ export default function ProductsPage() {
   const filtered = useMemo(() => {
     let list = category ? getProductsByCategory(category) : [...products];
 
-    if (brand) {
-      list = list.filter((p) => p.brand === brand);
-    }
+    if (brand) list = list.filter((p) => p.brand === brand);
 
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter((p) => {
-        const hay = `${p.brand || ''} ${p.model || ''} ${p.capacity || ''} ${p.type || ''} ${p.va || ''}`.toLowerCase();
+        const hay = `${p.brand || ''} ${p.model || ''} ${p.capacity || ''} ${
+          p.type || ''
+        } ${p.va || ''}`.toLowerCase();
         return hay.includes(q);
       });
     }
 
     // Sort
+    const sorted = [...list];
     if (sort === 'price-asc') {
-      list.sort((a, b) => parsePriceToNumber(a.discountedPrice || a.price) - parsePriceToNumber(b.discountedPrice || b.price));
+      sorted.sort(
+        (a, b) =>
+          parsePriceToNumber(a.discountedPrice || a.price) -
+          parsePriceToNumber(b.discountedPrice || b.price)
+      );
     } else if (sort === 'price-desc') {
-      list.sort((a, b) => parsePriceToNumber(b.discountedPrice || b.price) - parsePriceToNumber(a.discountedPrice || a.price));
+      sorted.sort(
+        (a, b) =>
+          parsePriceToNumber(b.discountedPrice || b.price) -
+          parsePriceToNumber(a.discountedPrice || a.price)
+      );
     } else if (sort === 'name-asc') {
-      list.sort((a, b) => `${a.brand || ''} ${a.model || ''}`.localeCompare(`${b.brand || ''} ${b.model || ''}`));
+      sorted.sort((a, b) =>
+        `${a.brand || ''} ${a.model || ''}`.localeCompare(
+          `${b.brand || ''} ${b.model || ''}`
+        )
+      );
     } else if (sort === 'name-desc') {
-      list.sort((a, b) => `${b.brand || ''} ${b.model || ''}`.localeCompare(`${a.brand || ''} ${a.model || ''}`));
+      sorted.sort((a, b) =>
+        `${b.brand || ''} ${b.model || ''}`.localeCompare(
+          `${a.brand || ''} ${a.model || ''}`
+        )
+      );
     }
 
-    return list;
+    return sorted;
   }, [products, category, brand, search, sort, getProductsByCategory]);
 
   const handleCategoryChange = (cat) => {
     setCategory(cat);
-    if (cat) {
-      setSearchParams({ category: cat });
-    } else {
-      setSearchParams({});
-    }
+    if (cat) setSearchParams({ category: cat });
+    else setSearchParams({});
   };
+
+  const activeCategoryLabel = CATEGORY_LABELS[category] || '';
 
   return (
     <>
-      <section className="bg-gradient-to-br from-[#001f3f] to-[#003366] text-white py-10 px-4 text-center">
+      {/* Hero / breadcrumb */}
+      <section className="bg-gradient-to-br from-[#001f3f] to-[#003366] text-white py-8 sm:py-10">
         <div className="container-custom">
-          <h1 className="text-white mb-3">All Products</h1>
-          <p>Browse our complete range of batteries, inverters, and power solutions</p>
+          <nav
+            className="flex items-center gap-2 text-xs sm:text-sm mb-3 opacity-90 flex-wrap"
+            aria-label="Breadcrumb"
+          >
+            <Link to="/" className="hover:text-secondary-light transition-colors">
+              Home
+            </Link>
+            <span>/</span>
+            <span className="text-white/80">Products</span>
+            {activeCategoryLabel && (
+              <>
+                <span>/</span>
+                <span className="text-white/80">{activeCategoryLabel}</span>
+              </>
+            )}
+          </nav>
+          <h1 className="text-white mb-2">
+            {activeCategoryLabel || 'All Products'}
+          </h1>
+          <p className="text-sm sm:text-base opacity-90">
+            Browse our complete range of batteries, inverters, and power solutions
+          </p>
         </div>
       </section>
 
-      <section className="container-custom py-10">
+      <section className="container-custom py-8 sm:py-10">
         <ProductFilters
           search={search}
           onSearchChange={setSearch}
@@ -109,7 +148,7 @@ export default function ProductsPage() {
           categoryLabels={CATEGORY_LABELS}
         />
 
-        <div className="text-center text-sm text-[var(--text-subtle)] mb-4">
+        <div className="text-center text-xs sm:text-sm text-[var(--text-subtle)] mb-5">
           {filtered.length
             ? `${filtered.length} product${filtered.length === 1 ? '' : 's'} found`
             : 'No products found'}

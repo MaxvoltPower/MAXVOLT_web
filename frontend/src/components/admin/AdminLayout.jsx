@@ -1,3 +1,8 @@
+// ============================================================
+// MAXVOLT — Admin layout (responsive sidebar)
+// ============================================================
+
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@context/AuthContext';
 import { useToast } from '@components/ui/Toast';
@@ -7,21 +12,36 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const { user, isAdmin, signOutUser } = useAuth();
   const { showToast } = useToast();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navItems = [
-    { path: '/admin', label: '📊 Dashboard', exact: true },
-    { path: '/admin/products', label: '📦 Products' },
-    { path: '/admin/sections', label: '🏷️ Sections' },
-    { path: '/admin/orders', label: '🛒 Orders' },
-    { path: '/admin/quotes', label: '💬 Quotes' },
-    { path: '/admin/users', label: '👥 Users' },
-    { path: '/admin/settings', label: '⚙️ Settings' },
+    { path: '/admin', label: 'Dashboard', icon: '📊', exact: true },
+    { path: '/admin/products', label: 'Products', icon: '📦' },
+    { path: '/admin/sections', label: 'Sections', icon: '🏷️' },
+    { path: '/admin/orders', label: 'Orders', icon: '🛒' },
+    { path: '/admin/quotes', label: 'Quotes', icon: '💬' },
+    { path: '/admin/users', label: 'Users', icon: '👥' },
+    { path: '/admin/settings', label: 'Settings', icon: '⚙️' },
   ];
 
-  const isActive = (path, exact) => {
-    if (exact) return location.pathname === path;
-    return location.pathname.startsWith(path);
-  };
+  const isActive = (path, exact) =>
+    exact ? location.pathname === path : location.pathname.startsWith(path);
+
+  // Close on route change
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
+
+  // Lock scroll when sidebar open on mobile
+  useEffect(() => {
+    if (sidebarOpen && window.innerWidth < 1024) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+    return undefined;
+  }, [sidebarOpen]);
 
   const handleLogout = async () => {
     await signOutUser();
@@ -31,19 +51,49 @@ export default function AdminLayout() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] min-h-screen">
-      {/* Sidebar */}
-      <aside className="bg-dark-subtle border-r border-dark-border p-6 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto">
-        <Link
-          to="/"
-          className="flex items-center gap-3 mb-8 px-2 hover:opacity-85 transition-opacity"
+      {/* Mobile top bar */}
+      <div className="lg:hidden sticky top-16 z-40 bg-dark-subtle border-b border-dark-border px-4 py-2 flex items-center justify-between">
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-dark-muted"
+          aria-label="Open admin menu"
         >
-          <img
-            src="/assets/maxvolt-logo.png"
-            alt="MAXVOLT"
-            className="h-10 bg-white rounded-lg p-1"
-          />
-          <strong>Admin</strong>
-        </Link>
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+          <span className="text-sm font-semibold">Admin Menu</span>
+        </button>
+        <span className="text-xs text-[var(--text-subtle)] truncate max-w-[140px]">
+          {user?.email}
+        </span>
+      </div>
+
+      {/* Sidebar */}
+      <aside
+        className={`bg-dark-subtle border-r border-dark-border p-5 lg:p-6 fixed lg:sticky top-0 h-screen overflow-y-auto z-[1001] w-[280px] max-w-[85vw] transition-transform duration-300 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
+      >
+        <div className="flex items-center justify-between mb-6">
+          <Link to="/" className="flex items-center gap-3 hover:opacity-85 transition-opacity">
+            <img
+              src="/assets/maxvolt-logo.png"
+              alt="MAXVOLT"
+              className="h-9 bg-white rounded-lg p-1"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+            <strong className="text-sm">Admin</strong>
+          </Link>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden p-2 rounded-lg hover:bg-dark-muted"
+            aria-label="Close admin menu"
+          >
+            ✕
+          </button>
+        </div>
 
         <nav className="flex flex-col gap-1">
           {navItems.map((item) => (
@@ -56,7 +106,8 @@ export default function AdminLayout() {
                   : 'text-[var(--text-muted)] hover:bg-dark-muted hover:text-[var(--text)]'
               }`}
             >
-              {item.label}
+              <span className="text-base">{item.icon}</span>
+              <span>{item.label}</span>
             </Link>
           ))}
 
@@ -67,20 +118,20 @@ export default function AdminLayout() {
               rel="noopener noreferrer"
               className="flex items-center gap-2.5 px-4 py-3 rounded-xl font-medium text-sm text-accent hover:bg-accent/10 transition-all"
             >
-              🌐 View Site ↗
+              <span>🌐</span> View Site ↗
             </a>
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-2.5 px-4 py-3 rounded-xl font-medium text-sm text-red-400 hover:bg-red-500/10 transition-all"
             >
-              🚪 Logout
+              <span>🚪</span> Logout
             </button>
           </div>
         </nav>
 
         {user && (
           <div className="mt-6 px-3 py-3 rounded-xl bg-dark-muted border border-dark-border">
-            <p className="text-[0.7rem] uppercase tracking-widest text-[var(--text-subtle)] mb-1">
+            <p className="text-[0.65rem] uppercase tracking-widest text-[var(--text-subtle)] mb-1">
               Signed in as
             </p>
             <p className="text-xs font-semibold truncate">{user.email}</p>
@@ -91,8 +142,17 @@ export default function AdminLayout() {
         )}
       </aside>
 
+      {/* Backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-[1000] lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Main */}
-      <main className="p-6 lg:p-8 max-w-7xl">
+      <main className="p-4 sm:p-6 lg:p-8 max-w-7xl w-full overflow-x-hidden">
         <Outlet />
       </main>
     </div>

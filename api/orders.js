@@ -1,16 +1,34 @@
+// ============================================================
+// MAXVOLT — Orders API
+// ============================================================
+
 import { requireAuth, ok, fail, parseBody } from './_lib/middleware.js';
 import { getCollection, COLLECTIONS } from './_lib/mongodb.js';
 import { ObjectId } from 'mongodb';
 
-const VALID_STATUSES = ['placed', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
+const VALID_STATUSES = [
+  'placed',
+  'pending_payment',
+  'confirmed',
+  'processing',
+  'shipped',
+  'delivered',
+  'cancelled',
+];
 
 /**
- * Router for /api/orders/*
- *  GET    /api/orders         → list my orders (or all if admin & ?all=1)
- *  POST   /api/orders         → create order
- *  GET    /api/orders/:id     → get single
- *  PATCH  /api/orders/:id     → update status
+ * Find a product by either Mongo _id or the custom string `id`.
  */
+async function findProductById(productsCol, productId) {
+  if (!productId) return null;
+  if (ObjectId.isValid(productId)) {
+    const byOid = await productsCol.findOne({ _id: new ObjectId(productId) });
+    if (byOid) return byOid;
+  }
+  // Fall back to custom string `id`
+  return productsCol.findOne({ id: productId });
+}
+
 export default async function handler(req, res) {
   const user = await requireAuth(req, res);
   if (!user) return;
@@ -37,7 +55,8 @@ export default async function handler(req, res) {
       const update = {};
       if (user.isAdmin) {
         if (body.status) {
-          if (!VALID_STATUSES.includes(body.status)) return fail(res, 'Invalid status');
+          if (!VALID_STATUSES.includes(body.status))
+            return fail(res, 'Invalid status');
           update.status = body.status;
         }
         if (body.paymentStatus) update.paymentStatus = body.paymentStatus;
@@ -47,15 +66,18 @@ export default async function handler(req, res) {
         if (body.status === 'cancelled') {
           const existing = await orders.findOne({ _id, uid: user.uid });
           if (!existing) return fail(res, 'Order not found', 404);
-          if (existing.status !== 'placed') return fail(res, 'Only placed orders can be cancelled');
+          if (existing.status !== 'placed')
+            return fail(res, 'Only placed orders can be cancelled');
           update.status = 'cancelled';
         } else {
-          return fail(res, 'Unauthorized update');
+          return fail(res, 'Unauthorized update', 403);
         }
       }
       update.updatedAt = new Date();
       const result = await orders.findOneAndUpdate(
-        { _id }, { $set: update }, { returnDocument: 'after' }
+        { _id },
+        { $set: update },
+        { returnDocument: 'after' }
       );
       return ok(res, result);
     }
@@ -65,7 +87,8 @@ export default async function handler(req, res) {
 
   // ---- /api/orders (root) ----
   if (method === 'GET') {
-    const query = user.isAdmin && req.query.all === '1' ? {} : { uid: user.uid };
+    const query =
+      user.isAdmin && req.query.all === '1' ? {} : { uid: user.uid };
     const items = await orders.find(query).sort({ createdAt: -1 }).toArray();
     return ok(res, items);
   }
@@ -82,12 +105,14 @@ export default async function handler(req, res) {
 
     const productsCol = await getCollection(COLLECTIONS.PRODUCTS);
 
+    // Stock validation (by custom id or _id)
     for (const item of items) {
-      if (item.productId && ObjectId.isValid(item.productId)) {
-        const p = await productsCol.findOne({ _id: new ObjectId(item.productId) });
-        if (p && typeof p.stock === 'number' && p.stock < item.qty) {
-          return fail(res, `Insufficient stock for ${p.brand || ''} ${p.model || ''}. Available: ${p.stock}`);
-        }
+      const p = await findProductById(productsCol, item.productId);
+      if (p && typeof p.stock === 'number' && p.stock < item.qty) {
+        return fail(
+          res,
+          `Insufficient stock for ${p.brand || ''} ${p.model || ''}. Available: ${p.stock}`
+        );
       }
     }
 
@@ -106,10 +131,12 @@ export default async function handler(req, res) {
 
     const result = await orders.insertOne(doc);
 
+    // Decrement stock (best-effort)
     for (const item of items) {
-      if (item.productId && ObjectId.isValid(item.productId)) {
+      const p = await findProductById(productsCol, item.productId);
+      if (p && typeof p.stock === 'number') {
         await productsCol.updateOne(
-          { _id: new ObjectId(item.productId), stock: { $gte: item.qty } },
+          { _id: p._id, stock: { $gte: item.qty } },
           { $inc: { stock: -item.qty } }
         );
       }

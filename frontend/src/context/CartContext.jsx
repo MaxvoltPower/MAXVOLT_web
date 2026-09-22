@@ -1,113 +1,137 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+// ============================================================
+// MAXVOLT — Cart context
+// ============================================================
+
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+} from 'react';
 import { useToast } from '@components/ui/Toast';
+import { parsePriceToNumber } from '@lib/utils';
 
 const CartContext = createContext(null);
-const CART_KEY = 'maxvolt_cart';
+const CART_KEY = 'maxvolt_cart_v2';
 
-function parsePriceToNumber(priceStr) {
-  if (!priceStr) return 0;
-  if (typeof priceStr === 'number') return priceStr;
-  const str = String(priceStr).replace(/[₹,\s]/g, '').trim();
-  const match = str.match(/(\d+)/);
-  return match ? parseInt(match[1], 10) : 0;
+function readCartFromStorage() {
+  try {
+    const raw = localStorage.getItem(CART_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 export function CartProvider({ children }) {
-  const [cart, setCart] = useState(() => {
-    try {
-      const raw = localStorage.getItem(CART_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [cart, setCart] = useState(readCartFromStorage);
   const { showToast } = useToast();
 
-  // Persist cart to localStorage
+  // Persist
   useEffect(() => {
     try {
       localStorage.setItem(CART_KEY, JSON.stringify(cart));
     } catch (err) {
-      console.error('Failed to save cart:', err);
+      // Quota exceeded — silently ignore
     }
   }, [cart]);
 
-  // Listen for storage events (multi-tab sync)
+  // Multi-tab sync (no toast)
   useEffect(() => {
     const handleStorage = (e) => {
-      if (e.key === CART_KEY) {
-        try {
-          setCart(e.newValue ? JSON.parse(e.newValue) : []);
-        } catch {
-          setCart([]);
-        }
+      if (e.key !== CART_KEY) return;
+      try {
+        const next = e.newValue ? JSON.parse(e.newValue) : [];
+        if (Array.isArray(next)) setCart(next);
+      } catch {
+        /* ignore */
       }
     };
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
-  const addToCart = useCallback((product, qty = 1) => {
-    const id = product?.id || product?._id;
-    if (!product || !id) return;
+  const addToCart = useCallback(
+    (product, qty = 1) => {
+      const id = product?.id || product?._id;
+      if (!product || !id) return;
 
-    setCart((prev) => {
-      const existing = prev.find((item) => item.id === id);
-      const numericPrice = parsePriceToNumber(product.discountedPrice || product.price);
+      const numericPrice = parsePriceToNumber(
+        product.discountedPrice || product.price
+      );
 
-      if (existing) {
-        return prev.map((item) =>
-          item.id === id ? { ...item, qty: item.qty + qty } : item
-        );
-      }
+      setCart((prev) => {
+        const existing = prev.find((item) => item.id === id);
+        if (existing) {
+          return prev.map((item) =>
+            item.id === id
+              ? { ...item, qty: Math.max(1, item.qty + qty) }
+              : item
+          );
+        }
+        return [
+          ...prev,
+          {
+            id,
+            brand: product.brand || '',
+            model: product.model || '',
+            capacity: product.capacity || '',
+            price: product.price || null,
+            discountedPrice: product.discountedPrice || null,
+            numericPrice,
+            image: product.images?.[0] || product.image || null,
+            qty: Math.max(1, qty),
+          },
+        ];
+      });
 
-      return [
-        ...prev,
-        {
-          id,
-          brand: product.brand,
-          model: product.model,
-          capacity: product.capacity,
-          price: product.price,
-          discountedPrice: product.discountedPrice || null,
-          numericPrice,
-          image: product.images?.[0] || product.image || null,
-          qty,
-        },
-      ];
-    });
-
-    showToast(`${product.brand} ${product.model} added to cart`, 'success');
-  }, [showToast]);
+      showToast(
+        `${product.brand || ''} ${product.model || 'Item'} added to cart`.trim(),
+        'success'
+      );
+    },
+    [showToast]
+  );
 
   const removeFromCart = useCallback((productId) => {
     setCart((prev) => prev.filter((item) => item.id !== productId));
   }, []);
 
-  const updateQty = useCallback((productId, qty) => {
-    if (qty < 1) {
-      removeFromCart(productId);
-      return;
-    }
-    setCart((prev) =>
-      prev.map((item) => (item.id === productId ? { ...item, qty } : item))
-    );
-  }, [removeFromCart]);
+  const updateQty = useCallback(
+    (productId, qty) => {
+      if (qty < 1) {
+        removeFromCart(productId);
+        return;
+      }
+      setCart((prev) =>
+        prev.map((item) =>
+          item.id === productId ? { ...item, qty: Math.min(qty, 99) } : item
+        )
+      );
+    },
+    [removeFromCart]
+  );
 
-  const clearCart = useCallback(() => {
-    setCart([]);
-  }, []);
+  const clearCart = useCallback(() => setCart([]), []);
 
-  const getCartTotal = useCallback(() => {
-    return cart.reduce(
-      (sum, item) => sum + (Number(item.numericPrice) || 0) * (Number(item.qty) || 0),
-      0
-    );
-  }, [cart]);
+  const cartTotal = useMemo(
+    () =>
+      cart.reduce(
+        (sum, item) =>
+          sum + (Number(item.numericPrice) || 0) * (Number(item.qty) || 0),
+        0
+      ),
+    [cart]
+  );
 
-  const getCartCount = useCallback(() => {
-    return cart.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
-  }, [cart]);
+  const cartCount = useMemo(
+    () => cart.reduce((sum, item) => sum + (Number(item.qty) || 0), 0),
+    [cart]
+  );
 
   const value = {
     cart,
@@ -115,8 +139,10 @@ export function CartProvider({ children }) {
     removeFromCart,
     updateQty,
     clearCart,
-    getCartTotal,
-    getCartCount,
+    getCartTotal: () => cartTotal,
+    getCartCount: () => cartCount,
+    cartTotal,
+    cartCount,
     parsePriceToNumber,
   };
 
@@ -124,9 +150,7 @@ export function CartProvider({ children }) {
 }
 
 export function useCart() {
-  const context = useContext(CartContext);
-  if (!context) {
-    throw new Error('useCart must be used within a CartProvider');
-  }
-  return context;
+  const ctx = useContext(CartContext);
+  if (!ctx) throw new Error('useCart must be used within a CartProvider');
+  return ctx;
 }

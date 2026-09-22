@@ -1,14 +1,8 @@
 // server/vercel-adapter.mjs
 // Wraps Vercel-style serverless handlers so they can run on a plain Node HTTP server.
-// It adds: req.body, req.query, res.status(), res.json(), res.send(), res.end(),
-// res.setHeader() passthrough, and a normalized req.url / req.method.
 
 import { URL } from 'url';
 
-/**
- * Parse the query string from a URL into a plain object.
- * Repeated keys become arrays (matching Vercel's behavior).
- */
 function parseQuery(urlString) {
   const url = new URL(urlString, 'http://localhost');
   const query = {};
@@ -23,9 +17,6 @@ function parseQuery(urlString) {
   return query;
 }
 
-/**
- * Read the raw body from the incoming request as a Buffer.
- */
 function readRawBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -35,17 +26,14 @@ function readRawBody(req) {
   });
 }
 
-/**
- * Enhance a Node req object with Vercel-like fields and a raw body Buffer.
- * Returns the raw body so the caller can decide whether to JSON-parse it.
- */
 async function decorateRequest(req) {
-  const rawBody = await readRawBody(req);
+  // Only read if not already read
+  let rawBody = req.rawBody;
+  if (!Buffer.isBuffer(rawBody)) {
+    rawBody = await readRawBody(req);
+    req.rawBody = rawBody;
+  }
 
-  // Preserve raw body for webhook signature verification
-  req.rawBody = rawBody;
-
-  // Parse JSON body if content-type says so (and not empty)
   const contentType = (req.headers['content-type'] || '').toLowerCase();
   if (rawBody.length > 0 && contentType.includes('application/json')) {
     try {
@@ -53,25 +41,18 @@ async function decorateRequest(req) {
     } catch {
       req.body = {};
     }
-  } else if (rawBody.length > 0) {
-    // Non-JSON body: keep as string (some handlers read req.body as string)
+  } else if (rawBody.length > 0 && !req.body) {
     req.body = rawBody.toString('utf8');
-  } else {
+  } else if (!req.body) {
     req.body = {};
   }
 
-  // Query params (Vercel provides this)
-  req.query = parseQuery(req.url || '/');
-
-  // Vercel provides req.cookies; give a minimal shim
+  req.query = req.query || parseQuery(req.url || '/');
   req.cookies = req.cookies || {};
 
   return rawBody;
 }
 
-/**
- * Enhance a Node res object with Vercel-like helpers.
- */
 function decorateResponse(res) {
   res.status = function (code) {
     res.statusCode = code;
@@ -113,15 +94,8 @@ function decorateResponse(res) {
   return res;
 }
 
-/**
- * Run a Vercel handler given a Node req/res.
- * Handles both default exports and named `handler` exports.
- */
 export async function runVercelHandler(handlerModule, req, res) {
-  const handler =
-    handlerModule?.default ||
-    handlerModule?.handler ||
-    handlerModule;
+  const handler = handlerModule?.default || handlerModule?.handler || handlerModule;
 
   if (typeof handler !== 'function') {
     res.statusCode = 500;

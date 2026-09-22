@@ -1,3 +1,7 @@
+// ============================================================
+// MAXVOLT — Quotation request form
+// ============================================================
+
 import { useState } from 'react';
 import { api } from '@lib/api';
 import { useToast } from '@components/ui/Toast';
@@ -6,16 +10,18 @@ import Input from '@components/ui/Input';
 import Select from '@components/ui/Select';
 import { openWhatsapp } from '@lib/utils';
 
+const EMPTY = {
+  name: '',
+  phone: '',
+  email: '',
+  location: '',
+  requirement: '',
+  message: '',
+};
+
 export default function QuotationForm() {
   const { showToast } = useToast();
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    location: '',
-    requirement: '',
-    message: '',
-  });
+  const [formData, setFormData] = useState(EMPTY);
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -31,36 +37,16 @@ export default function QuotationForm() {
     }
 
     setLoading(true);
-
     try {
       await api.submitQuote(formData);
       showToast('Quote request submitted! We will contact you shortly.', 'success');
-      
-      const waMessage = `Hello MAXVOLT, My name is ${formData.name}. I need: ${formData.requirement}. Please contact me at ${formData.phone}.`;
-      setTimeout(() => openWhatsapp(waMessage), 800);
-
-      setFormData({
-        name: '',
-        phone: '',
-        email: '',
-        location: '',
-        requirement: '',
-        message: '',
-      });
     } catch (err) {
-      // Even if API fails, still show success (data is captured in WhatsApp)
+      // Even if API fails, still allow WhatsApp handoff
       showToast('Quote request submitted! We will contact you shortly.', 'success');
-      const waMessage = `Hello MAXVOLT, My name is ${formData.name}. I need: ${formData.requirement}. Please contact me at ${formData.phone}.`;
-      setTimeout(() => openWhatsapp(waMessage), 800);
-      setFormData({
-        name: '',
-        phone: '',
-        email: '',
-        location: '',
-        requirement: '',
-        message: '',
-      });
     } finally {
+      const waMessage = `Hello MAXVOLT, My name is ${formData.name}. I need: ${formData.requirement}. Please contact me at ${formData.phone}.`;
+      setTimeout(() => openWhatsapp(waMessage), 600);
+      setFormData(EMPTY);
       setLoading(false);
     }
   };
@@ -73,10 +59,7 @@ export default function QuotationForm() {
           <p>Simple. Quick. No hassle. We'll contact you within 24 hours.</p>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="max-w-2xl mx-auto surface"
-        >
+        <form onSubmit={handleSubmit} className="max-w-2xl mx-auto surface">
           <Input
             label="Name"
             name="name"
@@ -84,6 +67,7 @@ export default function QuotationForm() {
             value={formData.name}
             onChange={handleChange}
             placeholder="Your full name"
+            autoComplete="name"
           />
 
           <Input
@@ -94,6 +78,7 @@ export default function QuotationForm() {
             value={formData.phone}
             onChange={handleChange}
             placeholder="+91 XXXXX XXXXX"
+            autoComplete="tel"
           />
 
           <Input
@@ -103,6 +88,7 @@ export default function QuotationForm() {
             value={formData.email}
             onChange={handleChange}
             placeholder="you@example.com"
+            autoComplete="email"
           />
 
           <Input
@@ -143,12 +129,18 @@ export default function QuotationForm() {
             />
           </div>
 
-          <Button type="submit" variant="primary" className="w-full" loading={loading}>
+          <Button
+            type="submit"
+            variant="primary"
+            className="w-full py-3.5"
+            loading={loading}
+          >
             Request Quote
           </Button>
 
-          <p className="text-center text-sm text-[var(--text-subtle)] mt-3">
-            We'll contact you via WhatsApp or phone to confirm details and provide pricing.
+          <p className="text-center text-xs sm:text-sm text-[var(--text-subtle)] mt-3">
+            We'll contact you via WhatsApp or phone to confirm details and provide
+            pricing.
           </p>
         </form>
       </div>

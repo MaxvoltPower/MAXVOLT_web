@@ -1,3 +1,7 @@
+// ============================================================
+// MAXVOLT — Razorpay webhook
+// ============================================================
+
 import crypto from 'crypto';
 import { getCollection, COLLECTIONS } from './_lib/mongodb.js';
 
@@ -9,6 +13,7 @@ export const config = {
 };
 
 async function readRawBody(req) {
+  if (req.rawBody && Buffer.isBuffer(req.rawBody)) return req.rawBody;
   if (req.body && Buffer.isBuffer(req.body)) return req.body;
   if (typeof req.body === 'string') return Buffer.from(req.body);
   return new Promise((resolve, reject) => {
@@ -30,10 +35,33 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Webhook secret not configured' });
   }
 
-  const raw = await readRawBody(req);
-  const expected = crypto.createHmac('sha256', secret).update(raw).digest('hex');
+  if (!signature) {
+    return res.status(400).json({ error: 'Missing signature' });
+  }
 
-  if (expected !== signature) {
+  let raw;
+  try {
+    raw = await readRawBody(req);
+  } catch (err) {
+    return res.status(400).json({ error: 'Failed to read body' });
+  }
+
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(raw)
+    .digest('hex');
+
+  // Constant-time compare
+  let valid = false;
+  try {
+    valid =
+      expected.length === signature.length &&
+      crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+  } catch {
+    valid = false;
+  }
+
+  if (!valid) {
     console.warn('Razorpay webhook signature mismatch');
     return res.status(400).json({ error: 'Invalid signature' });
   }
@@ -52,42 +80,47 @@ export default async function handler(req, res) {
   const rpOrderId = entity?.order_id;
   const rpPaymentId = entity?.id;
 
-  switch (event.event) {
-    case 'payment.captured':
-      if (rpOrderId) {
-        await orders.updateOne(
-          { razorpayOrderId: rpOrderId },
-          {
-            $set: {
-              paymentStatus: 'paid',
-              status: 'confirmed',
-              razorpayPaymentId: rpPaymentId,
-              paidAt: new Date(),
-              updatedAt: new Date(),
-            },
-          }
-        );
-      }
-      break;
+  try {
+    switch (event.event) {
+      case 'payment.captured':
+        if (rpOrderId) {
+          await orders.updateOne(
+            { razorpayOrderId: rpOrderId },
+            {
+              $set: {
+                paymentStatus: 'paid',
+                status: 'confirmed',
+                razorpayPaymentId: rpPaymentId,
+                paidAt: new Date(),
+                updatedAt: new Date(),
+              },
+            }
+          );
+        }
+        break;
 
-    case 'payment.failed':
-      if (rpOrderId) {
-        await orders.updateOne(
-          { razorpayOrderId: rpOrderId },
-          { $set: { paymentStatus: 'failed', updatedAt: new Date() } }
-        );
-      }
-      break;
+      case 'payment.failed':
+        if (rpOrderId) {
+          await orders.updateOne(
+            { razorpayOrderId: rpOrderId },
+            { $set: { paymentStatus: 'failed', updatedAt: new Date() } }
+          );
+        }
+        break;
 
-    default:
-      break;
+      default:
+        break;
+    }
+
+    await payments.insertOne({
+      event: event.event,
+      payload: event.payload,
+      createdAt: new Date(),
+    });
+  } catch (err) {
+    console.error('[webhook] DB error:', err);
+    return res.status(500).json({ error: 'Processing failed' });
   }
-
-  await payments.insertOne({
-    event: event.event,
-    payload: event.payload,
-    createdAt: new Date(),
-  });
 
   return res.status(200).json({ received: true });
 }

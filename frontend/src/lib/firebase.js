@@ -1,3 +1,7 @@
+// ============================================================
+// MAXVOLT — Firebase client init
+// ============================================================
+
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 
@@ -10,9 +14,6 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// Fail loudly if any required env var is missing.
-// (Falling back to hard-coded keys is a security risk — the fallback value
-// gets bundled into the production JS even after you rotate keys.)
 const missing = Object.entries(firebaseConfig)
   .filter(([, v]) => !v)
   .map(([k]) => `VITE_${k.replace(/([A-Z])/g, '_$1').toUpperCase()}`);
@@ -22,10 +23,25 @@ if (missing.length) {
   console.error(
     '[firebase] Missing required env vars:',
     missing.join(', '),
-    '\nCopy .env.example to .env and fill in real values, then restart the dev server.'
+    '\nCopy .env.example to .env, fill in real values, then restart the dev server.'
   );
 }
 
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+let app;
+let auth;
+
+try {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+} catch (err) {
+  // eslint-disable-next-line no-console
+  console.error('[firebase] Failed to initialize:', err?.message);
+  // Provide a stub so imports don't crash the whole app.
+  auth = {
+    currentUser: null,
+    onAuthStateChanged: () => () => {},
+  };
+}
+
+export { auth };
 export default app;
