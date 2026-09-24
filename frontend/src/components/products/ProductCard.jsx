@@ -15,8 +15,8 @@ import {
 function PlaceholderImage({ model }) {
   const letter = (model || 'M').trim().charAt(0).toUpperCase();
   return (
-    <div className="w-full h-full grid place-items-center bg-gradient-to-br from-[#0d1526] via-[#12203a] to-[#16213a] relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_25%,rgba(56,189,248,0.10),transparent_60%)]" />
+    <div className="w-full h-full grid place-items-center bg-gradient-to-br from-[#0B1220] via-[#0E1A2E] to-[#121A2A] relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_25%,rgba(11,95,255,0.14),transparent_60%)]" />
       <div className="relative text-center">
         <div className="text-5xl mb-1">🔋</div>
         <div className="text-[10px] tracking-[0.3em] text-[var(--text-subtle)] font-bold">
@@ -37,8 +37,6 @@ export default function ProductCard({ product }) {
   const hasDiscount =
     !discounted.invalid && !base.invalid && discounted.min < base.min;
 
-  const displayPrice = hasDiscount ? product.discountedPrice : product.price;
-
   const availability = outOfStock
     ? 'Out of Stock'
     : product.availability || 'Available';
@@ -51,8 +49,8 @@ export default function ProductCard({ product }) {
       : 'bg-red-500/15 text-red-400 border-red-500/30';
 
   return (
-    <article className="group bg-dark-elevated border border-dark-border rounded-2xl overflow-hidden shadow-sm flex flex-col transition-all duration-200 hover:-translate-y-1.5 hover:shadow-xl hover:border-accent">
-      <div className="relative h-44 sm:h-48 lg:h-52 border-b border-dark-border overflow-hidden">
+    <article className="group bg-[var(--bg-elev)] border border-[var(--border)] rounded-2xl overflow-hidden shadow-card flex flex-col transition-all duration-200 hover:-translate-y-1 hover:shadow-card-lg hover:border-brand/60">
+      <div className="relative h-44 sm:h-48 lg:h-52 border-b border-[var(--border)] overflow-hidden">
         <Link
           to={`/product/${productId}`}
           className="block w-full h-full"
@@ -63,7 +61,7 @@ export default function ProductCard({ product }) {
               src={imageSrc}
               alt={`${product.brand || ''} ${product.model || ''}`.trim()}
               loading="lazy"
-              className="w-full h-full object-contain p-3 bg-gradient-to-br from-[#0d1526] to-[#16213a] transition-transform duration-500 group-hover:scale-105"
+              className="w-full h-full object-contain p-3 bg-gradient-to-br from-[#0B1220] to-[#121A2A] transition-transform duration-500 group-hover:scale-105"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
                 const parent = e.currentTarget.parentElement;
@@ -71,7 +69,7 @@ export default function ProductCard({ product }) {
                   const div = document.createElement('div');
                   div.className = 'img-fallback absolute inset-0';
                   div.innerHTML =
-                    '<div class="w-full h-full grid place-items-center bg-gradient-to-br from-[#0d1526] via-[#12203a] to-[#16213a]"><div class="text-center"><div class="text-5xl mb-1">🔋</div><div class="text-[10px] tracking-[0.3em] text-[var(--text-subtle)] font-bold">MAXVOLT</div></div></div>';
+                    '<div class="w-full h-full grid place-items-center bg-gradient-to-br from-[#0B1220] via-[#0E1A2E] to-[#121A2A]"><div class="text-center"><div class="text-5xl mb-1">🔋</div><div class="text-[10px] tracking-[0.3em] text-[var(--text-subtle)] font-bold">MAXVOLT</div></div></div>';
                   parent.appendChild(div);
                 }
               }}
@@ -82,26 +80,23 @@ export default function ProductCard({ product }) {
         </Link>
 
         {hasDiscount && (
-          <span className="absolute top-3 left-3 px-2 py-1 rounded-md bg-gradient-to-br from-secondary to-secondary-light text-white text-[10px] font-bold uppercase tracking-wider shadow-md">
+          <span className="absolute top-3 left-3 px-2.5 py-1 rounded-md bg-gradient-to-b from-accent to-accent-dark text-white text-[10px] font-bold uppercase tracking-wider shadow-md">
             Sale
           </span>
         )}
         {outOfStock && (
-          <span className="absolute top-3 right-3 px-2 py-1 rounded-md bg-red-500/90 text-white text-[10px] font-bold uppercase tracking-wider">
+          <span className="absolute top-3 right-3 px-2.5 py-1 rounded-md bg-red-500/90 text-white text-[10px] font-bold uppercase tracking-wider">
             Out of Stock
           </span>
         )}
       </div>
 
       <div className="p-4 sm:p-5 flex flex-col flex-1">
-        <div className="text-[11px] font-bold uppercase tracking-wider text-accent mb-1">
+        <div className="text-[11px] font-bold uppercase tracking-wider text-brand-light mb-1">
           {product.brand}
         </div>
         <h3 className="text-sm sm:text-base font-bold text-[var(--text)] mb-3 leading-snug line-clamp-2 min-h-[2.5rem]">
-          <Link
-            to={`/product/${productId}`}
-            className="hover:text-secondary-light transition-colors"
-          >
+          <Link to={`/product/${productId}`} className="hover:text-accent-light transition-colors">
             {product.model}
           </Link>
         </h3>
@@ -144,7 +139,7 @@ export default function ProductCard({ product }) {
               </span>
             </div>
           ) : (
-            <div className="text-lg font-extrabold text-secondary-light">
+            <div className="text-lg font-extrabold text-accent-light">
               {formatPrice(product.price)}
             </div>
           )}
@@ -160,21 +155,21 @@ export default function ProductCard({ product }) {
         <div className="flex gap-2 mt-auto">
           <Link
             to={`/product/${productId}`}
-            className="flex-1 inline-flex items-center justify-center px-3 py-2.5 rounded-xl bg-gradient-to-br from-primary-light to-primary text-white text-xs sm:text-sm font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all"
+            className="flex-1 inline-flex items-center justify-center px-3 py-2.5 rounded-xl bg-gradient-to-b from-brand to-brand-dark text-white text-xs sm:text-sm font-semibold hover:shadow-lg hover:shadow-brand/40 hover:-translate-y-0.5 transition-all"
           >
             View Details
           </Link>
           {outOfStock ? (
             <button
               disabled
-              className="flex-1 inline-flex items-center justify-center px-3 py-2.5 rounded-xl border-2 border-dark-border-strong text-xs sm:text-sm font-semibold opacity-50 cursor-not-allowed"
+              className="flex-1 inline-flex items-center justify-center px-3 py-2.5 rounded-xl border-[1.5px] border-[var(--border-strong)] text-xs sm:text-sm font-semibold opacity-50 cursor-not-allowed"
             >
               Out of Stock
             </button>
           ) : (
             <button
               onClick={() => openWhatsapp(getWhatsappMessage(product))}
-              className="flex-1 inline-flex items-center justify-center px-3 py-2.5 rounded-xl bg-gradient-to-br from-secondary to-secondary-light text-white text-xs sm:text-sm font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all"
+              className="flex-1 inline-flex items-center justify-center px-3 py-2.5 rounded-xl bg-gradient-to-b from-accent to-accent-dark text-white text-xs sm:text-sm font-semibold hover:shadow-lg hover:shadow-accent/40 hover:-translate-y-0.5 transition-all"
             >
               WhatsApp
             </button>

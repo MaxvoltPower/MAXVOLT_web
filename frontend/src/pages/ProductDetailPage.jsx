@@ -13,34 +13,38 @@ export default function ProductDetailPage() {
     getProductsByCategory,
     normalizeCategory,
     loading,
+    products,
   } = useProducts();
   const [product, setProduct] = useState(null);
-  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
+    // Wait until products have finished loading before deciding
+    // whether the product exists.
+    if (loading) return;
+
     const p = findProductById(id);
     if (p) {
       setProduct(p);
-      setNotFound(false);
-    } else if (!loading) {
-      setNotFound(true);
+    } else {
+      setProduct(null);
     }
-  }, [id, findProductById, loading]);
+  }, [id, findProductById, loading, products]);
 
   if (loading) {
     return (
       <div className="container-custom py-20 text-center">
-        <div className="text-4xl mb-4">🔋</div>
-        <p>Loading product...</p>
+        <div className="text-4xl mb-4 animate-pulse">🔋</div>
+        <p className="text-[var(--text-muted)]">Loading product...</p>
       </div>
     );
   }
 
-  if (notFound || !product) {
+  if (!product) {
     return (
       <div className="container-custom py-20 text-center">
+        <div className="text-5xl mb-4 opacity-60">🔍</div>
         <h1 className="mb-4">Product Not Found</h1>
-        <p className="mb-6">
+        <p className="mb-6 text-[var(--text-muted)]">
           The product you're looking for doesn't exist or has been removed.
         </p>
         <Button onClick={() => navigate('/products')} variant="primary">
@@ -50,7 +54,6 @@ export default function ProductDetailPage() {
     );
   }
 
-  // Related products
   const cat = normalizeCategory(product.category);
   const pool = getProductsByCategory(cat).filter(
     (p) => (p.id || p._id) !== (product.id || product._id)
@@ -60,17 +63,13 @@ export default function ProductDetailPage() {
 
   return (
     <>
-      {/* Breadcrumb */}
-      <div className="bg-dark-subtle border-b border-dark-border py-4">
+      <div className="bg-[var(--bg-subtle)] border-b border-[var(--border)] py-4">
         <div className="container-custom flex items-center gap-2 text-sm flex-wrap">
-          <Link to="/" className="text-accent hover:text-secondary-light font-medium">
+          <Link to="/" className="text-brand-light hover:text-accent-light font-medium">
             Home
           </Link>
           <span className="text-[var(--text-subtle)]">/</span>
-          <Link
-            to="/products"
-            className="text-accent hover:text-secondary-light font-medium"
-          >
+          <Link to="/products" className="text-brand-light hover:text-accent-light font-medium">
             Products
           </Link>
           <span className="text-[var(--text-subtle)]">/</span>
@@ -82,9 +81,8 @@ export default function ProductDetailPage() {
         <ProductDetail product={product} />
       </section>
 
-      {/* Related */}
       {related.length > 0 && (
-        <section className="light-bg">
+        <section className="band">
           <div className="section-header">
             <h2>Related Products</h2>
             <p>You might also be interested in</p>

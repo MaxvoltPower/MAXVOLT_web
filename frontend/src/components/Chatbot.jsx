@@ -25,13 +25,11 @@ export default function Chatbot() {
 
   useEffect(() => {
     if (isOpen) {
-      // Small delay so the panel finishes opening before focus
       const t = setTimeout(() => inputRef.current?.focus(), 250);
       return () => clearTimeout(t);
     }
   }, [isOpen]);
 
-  // Lock scroll on very small screens when chat open
   useEffect(() => {
     if (isOpen && window.innerWidth < 480) {
       document.body.style.overflow = 'hidden';
@@ -49,15 +47,18 @@ export default function Chatbot() {
 
     setInput('');
     const userMessage = { role: 'user', content: text };
+
+    // Build history from the CURRENT state BEFORE we add the new user message.
+    // Otherwise the new message is sent twice (once in history, once as message).
+    const history = messages
+      .slice(-6)
+      .filter((m) => m.role === 'user' || m.role === 'assistant')
+      .map((m) => ({ role: m.role, content: m.content }));
+
     setMessages((prev) => [...prev, userMessage]);
     setIsTyping(true);
 
     try {
-      const history = messages.slice(-6).map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
-
       const data = await api.chat({ message: text, history });
 
       let replyText = 'Sorry, I could not generate a response.';
@@ -88,7 +89,7 @@ export default function Chatbot() {
       {/* Toggle button */}
       <button
         onClick={() => setIsOpen((v) => !v)}
-        className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[1000] w-14 h-14 rounded-full bg-gradient-to-br from-secondary to-secondary-light text-white shadow-2xl shadow-secondary/40 grid place-items-center transition-all hover:scale-110 ${
+        className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[1000] w-14 h-14 rounded-full bg-gradient-to-br from-accent to-accent-dark text-white shadow-2xl shadow-accent/40 grid place-items-center transition-all hover:scale-110 ${
           isOpen ? 'rotate-90' : ''
         }`}
         aria-label={isOpen ? 'Close chat' : 'Open chat'}
@@ -111,14 +112,14 @@ export default function Chatbot() {
       {/* Chat window */}
       {isOpen && (
         <div
-          className="fixed z-[1000] bg-dark-elevated border border-dark-border rounded-2xl shadow-2xl flex flex-col overflow-hidden
+          className="fixed z-[1000] bg-[var(--bg-elev)] border border-[var(--border)] rounded-2xl shadow-2xl flex flex-col overflow-hidden
             right-2 left-2 bottom-20 max-h-[75vh]
             sm:right-6 sm:left-auto sm:bottom-24 sm:w-[380px] sm:max-w-[calc(100vw-48px)] sm:h-[540px]"
           role="dialog"
           aria-label="MAXVOLT Assistant chat"
         >
           {/* Header */}
-          <div className="px-4 py-3 bg-gradient-to-br from-primary-light to-primary text-white flex items-center justify-between shrink-0">
+          <div className="px-4 py-3 bg-gradient-to-br from-brand to-brand-dark text-white flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-white/15 grid place-items-center text-lg">
                 ⚡
@@ -147,15 +148,15 @@ export default function Chatbot() {
                 key={i}
                 className={`max-w-[85%] px-3.5 py-2.5 rounded-xl text-sm leading-relaxed break-words ${
                   m.role === 'user'
-                    ? 'ml-auto bg-secondary text-white rounded-br-sm'
-                    : 'bg-dark-muted text-[var(--text)] rounded-bl-sm'
+                    ? 'ml-auto bg-accent text-white rounded-br-sm'
+                    : 'bg-[var(--bg-muted)] text-[var(--text)] rounded-bl-sm'
                 }`}
               >
                 {m.content}
               </div>
             ))}
             {isTyping && (
-              <div className="max-w-[85%] px-3.5 py-2.5 rounded-xl text-sm bg-dark-muted rounded-bl-sm inline-flex gap-1 items-center">
+              <div className="max-w-[85%] px-3.5 py-2.5 rounded-xl text-sm bg-[var(--bg-muted)] rounded-bl-sm inline-flex gap-1 items-center">
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-subtle)] animate-bounce" />
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-subtle)] animate-bounce [animation-delay:0.15s]" />
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-subtle)] animate-bounce [animation-delay:0.3s]" />
@@ -167,7 +168,7 @@ export default function Chatbot() {
           {/* Input */}
           <form
             onSubmit={handleSubmit}
-            className="flex gap-2 p-3 border-t border-dark-border bg-dark-subtle shrink-0"
+            className="flex gap-2 p-3 border-t border-[var(--border)] bg-[var(--bg-subtle)] shrink-0"
           >
             <input
               ref={inputRef}
@@ -175,14 +176,14 @@ export default function Chatbot() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type your message..."
-              className="flex-1 px-3.5 py-2.5 rounded-full border-[1.5px] border-dark-border bg-dark-muted text-sm"
+              className="flex-1 px-3.5 py-2.5 rounded-full border-[1.5px] border-[var(--border)] bg-[var(--bg-muted)] text-sm"
               disabled={isTyping}
               aria-label="Message"
             />
             <button
               type="submit"
               disabled={isTyping || !input.trim()}
-              className="w-11 h-11 shrink-0 rounded-full bg-secondary text-white grid place-items-center hover:scale-105 transition-transform disabled:opacity-50 disabled:scale-100"
+              className="w-11 h-11 shrink-0 rounded-full bg-accent text-white grid place-items-center hover:scale-105 transition-transform disabled:opacity-50 disabled:scale-100"
               aria-label="Send"
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">

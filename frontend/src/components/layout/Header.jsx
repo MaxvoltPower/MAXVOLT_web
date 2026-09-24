@@ -8,6 +8,15 @@ import { useAuth } from '@context/AuthContext';
 import { useCart } from '@context/CartContext';
 import { openWhatsapp, initialsFrom } from '@lib/utils';
 
+const NAV_LINKS = [
+  { to: '/',            label: 'Home' },
+  { to: '/products',    label: 'Products' },
+  { to: '/#solutions',  label: 'Solutions' },
+  { to: '/#calculator', label: 'Calculator' },
+  { to: '/#why-maxvolt',label: 'Why MAXVOLT' },
+  { to: '/#contact',    label: 'Contact' },
+];
+
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -25,88 +34,98 @@ export default function Header() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Close mobile menu on route change
   useEffect(() => {
     setIsMenuOpen(false);
   }, [location.pathname, location.hash]);
 
-  // Lock body scroll when mobile menu open
   useEffect(() => {
     document.body.style.overflow = isMenuOpen ? 'hidden' : '';
-    return () => {
-      document.body.style.overflow = '';
-    };
+    return () => { document.body.style.overflow = ''; };
   }, [isMenuOpen]);
 
-  const navLinks = [
-    { to: '/', label: 'Home' },
-    { to: '/products', label: 'Products' },
-    { to: '/#solutions', label: 'Solutions' },
-    { to: '/#calculator', label: 'Calculator' },
-    { to: '/#why-maxvolt', label: 'Why MAXVOLT' },
-    { to: '/#contact', label: 'Contact' },
-  ];
-
-  const handleNavClick = (to) => {
+  // Smooth-scroll to hash sections
+  const handleNavClick = (to, e) => {
     setIsMenuOpen(false);
-    // If link has a hash and we're not on home, navigate home first
-    if (to.includes('#') && location.pathname !== '/') {
-      navigate(to);
+
+    if (!to.includes('#')) return;
+
+    const [path, hash] = to.split('#');
+    const targetPath = path || '/';
+
+    if (location.pathname !== targetPath) {
+      // Let React Router navigate; HomePage will pick up hash on mount
+      return;
+    }
+
+    // Already on the page — scroll manually
+    if (e) e.preventDefault();
+    const el = document.getElementById(hash);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Update URL without full nav
+      navigate(to, { replace: true });
     }
   };
 
   return (
     <>
+      {/* Announcement bar */}
+      <div className="hidden md:block bg-gradient-to-r from-brand-dark via-brand to-accent text-white text-xs">
+        <div className="container-custom flex items-center justify-between py-2">
+          <span className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
+            Genuine batteries · GST-inclusive pricing · Same-day delivery in Kolkata
+          </span>
+          <a
+            href="tel:+917595941311"
+            className="font-semibold hover:opacity-90 transition-opacity"
+          >
+            📞 +91 75959 41311
+          </a>
+        </div>
+      </div>
+
       <header
-        className={`sticky top-0 z-[1000] border-b border-dark-border transition-shadow duration-200 backdrop-blur-xl ${
+        className={`sticky top-0 z-[1000] transition-all duration-200 backdrop-blur-xl border-b ${
           isScrolled
-            ? 'shadow-lg bg-[rgba(10,15,26,0.95)]'
-            : 'shadow-sm bg-[rgba(10,15,26,0.85)]'
+            ? 'bg-[rgba(5,7,13,0.92)] border-[var(--border-strong)] shadow-[0_8px_30px_-12px_rgba(0,0,0,0.8)]'
+            : 'bg-[rgba(5,7,13,0.78)] border-[var(--border)]'
         }`}
       >
         <div className="container-custom">
-          <div className="flex items-center justify-between gap-2 h-16 lg:h-[72px]">
+          <div className="flex items-center justify-between gap-3 h-16 lg:h-[72px]">
             {/* Hamburger */}
             <button
-              className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-dark-muted transition-colors"
+              className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-[var(--bg-muted)] transition-colors"
               onClick={() => setIsMenuOpen((v) => !v)}
               aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={isMenuOpen}
             >
-              <div className="flex flex-col gap-1.5">
-                <span
-                  className={`w-5 h-0.5 bg-[var(--text)] rounded-full transition-all duration-200 ${
-                    isMenuOpen ? 'translate-y-2 rotate-45' : ''
-                  }`}
-                />
-                <span
-                  className={`w-5 h-0.5 bg-[var(--text)] rounded-full transition-all duration-200 ${
-                    isMenuOpen ? 'opacity-0' : ''
-                  }`}
-                />
-                <span
-                  className={`w-5 h-0.5 bg-[var(--text)] rounded-full transition-all duration-200 ${
-                    isMenuOpen ? '-translate-y-2 -rotate-45' : ''
-                  }`}
-                />
+              <div className="flex flex-col gap-1.5 w-5">
+                <span className={`h-0.5 bg-[var(--text)] rounded-full transition-all duration-200 ${isMenuOpen ? 'translate-y-2 rotate-45' : ''}`} />
+                <span className={`h-0.5 bg-[var(--text)] rounded-full transition-all duration-200 ${isMenuOpen ? 'opacity-0' : ''}`} />
+                <span className={`h-0.5 bg-[var(--text)] rounded-full transition-all duration-200 ${isMenuOpen ? '-translate-y-2 -rotate-45' : ''}`} />
               </div>
             </button>
 
             {/* Logo */}
             <Link
               to="/"
-              className="flex items-center shrink-0 hover:scale-105 transition-transform"
+              className="flex items-center gap-2 shrink-0 group"
               aria-label="MAXVOLT home"
             >
               <img
                 src="/assets/maxvolt-logo.png"
-                alt="MAXVOLT"
-                className="h-9 sm:h-10 lg:h-12 w-auto"
+                alt=""
+                className="h-8 sm:h-9 lg:h-10 w-auto transition-transform group-hover:scale-105"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
-                  if (e.currentTarget.parentElement) {
-                    e.currentTarget.parentElement.innerHTML =
-                      '<span class="text-xl font-black text-secondary-light">MAXVOLT</span>';
+                  const parent = e.currentTarget.parentElement;
+                  if (parent && !parent.querySelector('.logo-fallback')) {
+                    const span = document.createElement('span');
+                    span.className = 'logo-fallback text-lg sm:text-xl font-black tracking-tight text-gradient-brand';
+                    span.textContent = 'MAXVOLT';
+                    parent.appendChild(span);
                   }
                 }}
               />
@@ -114,16 +133,15 @@ export default function Header() {
 
             {/* Desktop nav */}
             <nav className="hidden lg:flex flex-1 justify-center">
-              <ul className="flex items-center gap-5 xl:gap-6">
-                {navLinks.map((link) => (
+              <ul className="flex items-center gap-6 xl:gap-7">
+                {NAV_LINKS.map((link) => (
                   <li key={link.to}>
                     <Link
                       to={link.to}
-                      onClick={() => handleNavClick(link.to)}
-                      className="relative text-[var(--text)] font-medium text-sm py-1.5 whitespace-nowrap transition-colors hover:text-secondary-light group"
+                      onClick={(e) => handleNavClick(link.to, e)}
+                      className="nav-link"
                     >
                       {link.label}
-                      <span className="absolute left-0 right-0 -bottom-0.5 h-0.5 bg-gradient-to-r from-secondary to-secondary-light scale-x-0 group-hover:scale-x-100 transition-transform origin-center rounded-full" />
                     </Link>
                   </li>
                 ))}
@@ -131,22 +149,22 @@ export default function Header() {
             </nav>
 
             {/* Right actions */}
-            <div className="flex items-center gap-1.5 lg:gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               {user ? (
                 <>
                   {!isAdmin && (
                     <Link
                       to="/account/orders"
-                      className="hidden md:inline-flex items-center px-3 lg:px-4 py-2 rounded-xl border-2 border-dark-border-strong text-[var(--text)] text-sm font-semibold hover:bg-dark-muted hover:border-accent transition-all"
+                      className="hidden md:inline-flex items-center px-3.5 py-2 rounded-xl border-[1.5px] border-[var(--border-strong)] text-[var(--text)] text-[0.85rem] font-semibold hover:bg-[var(--bg-muted)] hover:border-brand transition-all"
                     >
                       My Orders
                     </Link>
                   )}
                   <Link
                     to={isAdmin ? '/admin' : '/account/profile'}
-                    className="hidden sm:inline-flex items-center gap-2 px-3 lg:px-4 py-2 rounded-xl border-2 border-dark-border-strong text-[var(--text)] text-sm font-semibold hover:bg-dark-muted hover:border-accent transition-all"
+                    className="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border-[1.5px] border-[var(--border-strong)] text-[var(--text)] text-[0.85rem] font-semibold hover:bg-[var(--bg-muted)] hover:border-brand transition-all"
                   >
-                    <span className="w-6 h-6 rounded-full bg-gradient-to-br from-primary-light to-primary grid place-items-center text-[10px] font-bold text-white">
+                    <span className="w-6 h-6 rounded-full bg-gradient-to-br from-brand to-brand-dark grid place-items-center text-[10px] font-bold text-white">
                       {initialsFrom(user.displayName || user.email)}
                     </span>
                     <span className="hidden lg:inline">
@@ -157,22 +175,26 @@ export default function Header() {
               ) : (
                 <Link
                   to="/account/login"
-                  className="hidden sm:inline-flex items-center px-3 lg:px-4 py-2 rounded-xl border-2 border-dark-border-strong text-[var(--text)] text-sm font-semibold hover:bg-dark-muted hover:border-accent transition-all"
+                  className="hidden sm:inline-flex items-center px-3.5 py-2 rounded-xl border-[1.5px] border-[var(--border-strong)] text-[var(--text)] text-[0.85rem] font-semibold hover:bg-[var(--bg-muted)] hover:border-brand transition-all"
                 >
-                  Login
+                  Sign in
                 </Link>
               )}
 
               {/* Cart */}
               <Link
                 to="/cart"
-                className="relative inline-flex items-center gap-1.5 px-2.5 lg:px-4 py-2 rounded-xl border-2 border-dark-border-strong text-[var(--text)] text-sm font-semibold hover:bg-dark-muted hover:border-accent transition-all"
+                className="relative inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border-[1.5px] border-[var(--border-strong)] text-[var(--text)] text-[0.85rem] font-semibold hover:bg-[var(--bg-muted)] hover:border-brand transition-all"
                 aria-label={`Cart with ${cartCount} items`}
               >
-                <span className="text-base">🛒</span>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="9" cy="21" r="1" />
+                  <circle cx="20" cy="21" r="1" />
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                </svg>
                 <span className="hidden lg:inline">Cart</span>
                 {cartCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1.5 bg-secondary text-white text-[0.65rem] font-bold rounded-full grid place-items-center">
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-accent text-white text-[0.65rem] font-bold rounded-full grid place-items-center">
                     {cartCount > 99 ? '99+' : cartCount}
                   </span>
                 )}
@@ -181,7 +203,7 @@ export default function Header() {
               {/* WhatsApp */}
               <button
                 onClick={() => openWhatsapp()}
-                className="hidden md:inline-flex items-center gap-2 px-3 lg:px-4 py-2 rounded-xl bg-gradient-to-br from-[#25d366] to-[#1faa50] text-white text-sm font-semibold shadow-md shadow-[#25d366]/35 hover:shadow-lg hover:shadow-[#25d366]/50 hover:-translate-y-0.5 transition-all"
+                className="hidden md:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-b from-[#25D366] to-[#1FAA50] text-white text-[0.85rem] font-semibold shadow-md shadow-[#25D366]/25 hover:shadow-lg hover:shadow-[#25D366]/40 hover:-translate-y-0.5 transition-all"
                 aria-label="Chat on WhatsApp"
               >
                 <WhatsAppIcon className="w-4 h-4" />
@@ -191,8 +213,8 @@ export default function Header() {
               {/* Get Quote */}
               <Link
                 to="/#quotation"
-                onClick={() => handleNavClick('/#quotation')}
-                className="hidden md:inline-flex items-center px-3 lg:px-5 py-2 rounded-xl bg-gradient-to-br from-secondary to-secondary-light text-white text-sm font-semibold shadow-md shadow-secondary/35 hover:shadow-lg hover:shadow-secondary/50 hover:-translate-y-0.5 transition-all"
+                onClick={(e) => handleNavClick('/#quotation', e)}
+                className="hidden md:inline-flex items-center px-4 py-2 rounded-xl bg-gradient-to-b from-accent to-accent-dark text-white text-[0.85rem] font-semibold shadow-md shadow-accent/25 hover:shadow-lg hover:shadow-accent/40 hover:-translate-y-0.5 transition-all"
               >
                 Get a Quote
               </Link>
@@ -202,30 +224,30 @@ export default function Header() {
 
         {/* Mobile nav */}
         <nav
-          className={`lg:hidden border-t border-dark-border bg-[rgba(10,15,26,0.98)] backdrop-blur-xl shadow-lg overflow-hidden transition-[max-height,opacity] duration-300 ${
+          className={`lg:hidden border-t border-[var(--border)] bg-[rgba(5,7,13,0.98)] backdrop-blur-xl overflow-hidden transition-[max-height,opacity] duration-300 ${
             isMenuOpen ? 'max-h-[80vh] opacity-100' : 'max-h-0 opacity-0'
           }`}
           aria-hidden={!isMenuOpen}
         >
           <div className="container-custom py-5 max-h-[75vh] overflow-y-auto">
             <ul className="flex flex-col gap-1">
-              {navLinks.map((link) => (
+              {NAV_LINKS.map((link) => (
                 <li key={link.to}>
                   <Link
                     to={link.to}
-                    className="block px-4 py-3 rounded-xl text-[var(--text)] font-medium hover:bg-dark-muted transition-colors"
-                    onClick={() => handleNavClick(link.to)}
+                    className="block px-4 py-3 rounded-xl text-[var(--text)] font-medium hover:bg-[var(--bg-muted)] transition-colors"
+                    onClick={(e) => handleNavClick(link.to, e)}
                   >
                     {link.label}
                   </Link>
                 </li>
               ))}
-              <li className="pt-3 mt-3 border-t border-dark-border flex flex-col gap-2">
+              <li className="pt-3 mt-3 border-t border-[var(--border)] flex flex-col gap-2">
                 {user ? (
                   <>
                     <Link
                       to={isAdmin ? '/admin' : '/account/profile'}
-                      className="block px-4 py-3 rounded-xl text-center border-2 border-dark-border-strong font-semibold"
+                      className="block px-4 py-3 rounded-xl text-center border-[1.5px] border-[var(--border-strong)] font-semibold"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       {isAdmin ? 'Admin Panel' : 'My Account'}
@@ -233,7 +255,7 @@ export default function Header() {
                     {isAdmin && (
                       <Link
                         to="/account/profile"
-                        className="block px-4 py-3 rounded-xl text-center border-2 border-dark-border-strong font-semibold"
+                        className="block px-4 py-3 rounded-xl text-center border-[1.5px] border-[var(--border-strong)] font-semibold"
                         onClick={() => setIsMenuOpen(false)}
                       >
                         My Profile
@@ -242,7 +264,7 @@ export default function Header() {
                     {!isAdmin && (
                       <Link
                         to="/account/orders"
-                        className="block px-4 py-3 rounded-xl text-center border-2 border-dark-border-strong font-semibold"
+                        className="block px-4 py-3 rounded-xl text-center border-[1.5px] border-[var(--border-strong)] font-semibold"
                         onClick={() => setIsMenuOpen(false)}
                       >
                         My Orders
@@ -252,26 +274,23 @@ export default function Header() {
                 ) : (
                   <Link
                     to="/account/login"
-                    className="block px-4 py-3 rounded-xl text-center border-2 border-dark-border-strong font-semibold"
+                    className="block px-4 py-3 rounded-xl text-center border-[1.5px] border-[var(--border-strong)] font-semibold"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    Login / Register
+                    Sign in / Register
                   </Link>
                 )}
                 <button
-                  onClick={() => {
-                    openWhatsapp();
-                    setIsMenuOpen(false);
-                  }}
-                  className="block w-full px-4 py-3 rounded-xl text-center bg-gradient-to-br from-[#25d366] to-[#1faa50] text-white font-semibold"
+                  onClick={() => { openWhatsapp(); setIsMenuOpen(false); }}
+                  className="block w-full px-4 py-3 rounded-xl text-center bg-gradient-to-b from-[#25D366] to-[#1FAA50] text-white font-semibold"
                 >
                   <WhatsAppIcon className="w-4 h-4 inline mr-2" />
                   WhatsApp
                 </button>
                 <Link
                   to="/#quotation"
-                  className="block px-4 py-3 rounded-xl text-center bg-gradient-to-br from-secondary to-secondary-light text-white font-semibold"
-                  onClick={() => handleNavClick('/#quotation')}
+                  className="block px-4 py-3 rounded-xl text-center bg-gradient-to-b from-accent to-accent-dark text-white font-semibold"
+                  onClick={(e) => handleNavClick('/#quotation', e)}
                 >
                   Get a Quote
                 </Link>
@@ -284,7 +303,7 @@ export default function Header() {
       {/* Backdrop */}
       {isMenuOpen && (
         <div
-          className="fixed inset-0 top-16 bg-black/50 z-[999] lg:hidden"
+          className="fixed inset-0 top-16 bg-black/60 z-[999] lg:hidden backdrop-blur-sm"
           onClick={() => setIsMenuOpen(false)}
           aria-hidden="true"
         />

@@ -17,12 +17,14 @@ export default function HomePage() {
   const { hash } = useLocation();
 
   useEffect(() => {
-    if (hash) {
-      const el = document.querySelector(hash);
-      if (el) {
-        setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 100);
-      }
-    }
+    if (!hash) return;
+    const id = hash.replace(/^#/, '');
+    // Defer so section components have mounted
+    const t = setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 150);
+    return () => clearTimeout(t);
   }, [hash]);
 
   return (

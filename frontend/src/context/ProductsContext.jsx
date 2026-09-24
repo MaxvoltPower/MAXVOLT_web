@@ -25,6 +25,14 @@ export function normalizeCategory(cat) {
   return CATEGORY_KEYS[cat] || cat;
 }
 
+/** Attach a stable `id` to every product so callers don't have to juggle id/_id. */
+function withStableId(p) {
+  if (!p) return p;
+  if (p.id) return p;
+  if (p._id) return { ...p, id: String(p._id) };
+  return p;
+}
+
 export function ProductsProvider({ children }) {
   const [products, setProducts] = useState([]);
   const [groupedProducts, setGroupedProducts] = useState({});
@@ -33,8 +41,9 @@ export function ProductsProvider({ children }) {
   const [sections, setSections] = useState([]);
 
   const hydrateProducts = useCallback((items) => {
-    setProducts(items);
-    
+    const normalized = items.map(withStableId);
+    setProducts(normalized);
+
     const grouped = {
       homeInverterBatteries: [],
       homeInverters: [],
@@ -43,22 +52,21 @@ export function ProductsProvider({ children }) {
       ebikeBatteries: [],
       ups: [],
     };
-    
-    items.forEach((p) => {
+
+    normalized.forEach((p) => {
       const key = normalizeCategory(p.category);
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(p);
     });
-    
+
     setGroupedProducts(grouped);
   }, []);
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      // Try API first
       const data = await api.getProducts('?limit=1000');
       if (data?.items?.length) {
         hydrateProducts(data.items);
@@ -69,7 +77,7 @@ export function ProductsProvider({ children }) {
       console.warn('API unavailable, using fallback:', err.message);
     }
 
-    // Fallback to static data
+    // Fallback
     try {
       const flat = [];
       for (const key in fallbackProducts) {
@@ -84,16 +92,17 @@ export function ProductsProvider({ children }) {
       setError(err.message);
       console.error('Failed to load products:', err);
     }
-    
+
     setLoading(false);
   }, [hydrateProducts]);
 
   const loadSections = useCallback(async () => {
     try {
       const data = await api.getSections();
-      setSections(data || []);
+      setSections(Array.isArray(data) ? data : []);
     } catch (err) {
       console.warn('Failed to load sections:', err.message);
+      setSections([]);
     }
   }, []);
 
@@ -102,30 +111,39 @@ export function ProductsProvider({ children }) {
     loadSections();
   }, [loadProducts, loadSections]);
 
-  const findProductById = useCallback((id) => {
-    if (!id) return null;
-    return products.find((p) => p.id === id || p._id === id) || null;
-  }, [products]);
+  const findProductById = useCallback(
+    (id) => {
+      if (!id) return null;
+      return products.find((p) => p.id === id || p._id === id) || null;
+    },
+    [products]
+  );
 
-  const getProductsByCategory = useCallback((category) => {
-    const key = normalizeCategory(category);
-    return groupedProducts[key] || [];
-  }, [groupedProducts]);
+  const getProductsByCategory = useCallback(
+    (category) => {
+      const key = normalizeCategory(category);
+      return groupedProducts[key] || [];
+    },
+    [groupedProducts]
+  );
 
-  const getFeaturedProducts = useCallback((limit = 4) => {
-    const flagged = products.filter((p) => p.featured === true);
-    if (flagged.length >= limit) return flagged.slice(0, limit);
-    
-    const homePool = (groupedProducts.homeInverterBatteries || []).filter(
-      (p) => !flagged.includes(p)
-    );
-    const combined = [...flagged, ...homePool];
-    
-    if (combined.length >= limit) return combined.slice(0, limit);
-    
-    const extraAny = products.filter((p) => !combined.includes(p));
-    return [...combined, ...extraAny].slice(0, limit);
-  }, [products, groupedProducts]);
+  const getFeaturedProducts = useCallback(
+    (limit = 4) => {
+      const flagged = products.filter((p) => p.featured === true);
+      if (flagged.length >= limit) return flagged.slice(0, limit);
+
+      const homePool = (groupedProducts.homeInverterBatteries || []).filter(
+        (p) => !flagged.includes(p)
+      );
+      const combined = [...flagged, ...homePool];
+
+      if (combined.length >= limit) return combined.slice(0, limit);
+
+      const extraAny = products.filter((p) => !combined.includes(p));
+      return [...combined, ...extraAny].slice(0, limit);
+    },
+    [products, groupedProducts]
+  );
 
   const value = {
     products,
@@ -137,6 +155,7 @@ export function ProductsProvider({ children }) {
     getProductsByCategory,
     getFeaturedProducts,
     reload: loadProducts,
+    reloadSections: loadSections,
     normalizeCategory,
   };
 

@@ -1,17 +1,12 @@
 import { classNames } from '@lib/utils';
 
 export default function Skeleton({ className, ...props }) {
-  return (
-    <div
-      className={classNames('skeleton rounded-lg', className)}
-      {...props}
-    />
-  );
+  return <div className={classNames('skeleton rounded-lg', className)} {...props} />;
 }
 
 export function ProductCardSkeleton() {
   return (
-    <div className="bg-dark-elevated border border-dark-border rounded-2xl overflow-hidden">
+    <div className="bg-[var(--bg-elev)] border border-[var(--border)] rounded-2xl overflow-hidden">
       <div className="h-48 skeleton" />
       <div className="p-5 space-y-3">
         <Skeleton className="h-3 w-1/3" />

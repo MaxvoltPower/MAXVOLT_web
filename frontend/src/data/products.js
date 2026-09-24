@@ -77,16 +77,18 @@ export const heroSlides = [
     tagline: '⚡ TRUSTED POWER ALWAYS',
     title: 'Trusted Power.',
     titleAccent: 'Wherever You Need It.',
-    description: 'Reliable inverter, battery, automotive, TOTO, e-bike and UPS solutions for homes, vehicles and businesses in Kolkata.',
+    description:
+      'Reliable inverter, battery, automotive, TOTO, e-bike and UPS solutions for homes, vehicles and businesses in Kolkata.',
     ctaPrimary: { text: 'Get a Quote', href: '#quotation' },
-    ctaSecondary: { text: 'Find the Right Battery', href: '#what-do-you-need' },
+    ctaSecondary: { text: 'Find the Right Battery', href: '#products' },
   },
   {
     id: 'home',
     type: 'split',
     tagline: '🏠 HOME BACKUP',
     title: 'Never Sit in the Dark Again.',
-    description: 'Inverter + battery combinations sized for your actual load. Genuine Exide, Luminous and Amaron products — with honest advice.',
+    description:
+      'Inverter + battery combinations sized for your actual load. Genuine Exide, Luminous and Amaron products — with honest advice.',
     ctaPrimary: { text: 'Browse Home Batteries', href: '/products?category=homeInverterBatteries' },
     ctaSecondary: { text: 'Calculate My Requirement', href: '#calculator' },
   },
@@ -95,7 +97,8 @@ export const heroSlides = [
     type: 'bold',
     tagline: '🛺 TOTO & E-RICKSHAW',
     title: 'Keep Your Rickshaw Running.',
-    description: 'Heavy-duty tubular batteries built for daily e-rickshaw duty. Fast replacement, professional installation, warranty support.',
+    description:
+      'Heavy-duty tubular batteries built for daily e-rickshaw duty. Fast replacement, professional installation, warranty support.',
     ctaPrimary: { text: 'View TOTO Batteries', href: '/products?category=totoErickshawBatteries' },
     ctaSecondary: { text: 'Ask on WhatsApp', href: 'whatsapp' },
   },
@@ -104,7 +107,8 @@ export const heroSlides = [
     type: 'center',
     tagline: '💻 OFFICE & UPS',
     title: 'Protect Your Work. Protect Your Data.',
-    description: 'APC and Microtek UPS systems for desktops, workstations and small offices. Safe shutdown power, every time.',
+    description:
+      'APC and Microtek UPS systems for desktops, workstations and small offices. Safe shutdown power, every time.',
     features: ['⚡ 600VA – 1100VA', '🔌 Line Interactive', '🏢 Home & Office'],
     ctaPrimary: { text: 'Browse UPS Systems', href: '/products?category=ups' },
     ctaSecondary: { text: 'Get a Quote', href: '#quotation' },

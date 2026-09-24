@@ -45,6 +45,10 @@ function scoreProduct(product, targets) {
   return 9999;
 }
 
+function productUrl(p) {
+  return `/product/${p.id || p._id}`;
+}
+
 export default function CalculatorSection() {
   const { groupedProducts } = useProducts();
   const { showToast } = useToast();
@@ -118,8 +122,9 @@ export default function CalculatorSection() {
   };
 
   return (
-    <section className="light-bg" id="calculator">
+    <section className="band" id="calculator">
       <div className="section-header">
+        <span className="eyebrow">Backup Planner</span>
         <h2>Find the Right Inverter &amp; Battery</h2>
         <p>
           Tell us what you need to power, and we'll recommend the best combination
@@ -129,7 +134,7 @@ export default function CalculatorSection() {
 
       <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
         <div className="surface">
-          <h4 className="text-lg sm:text-xl font-bold text-center mb-5 sm:mb-6">
+          <h4 className="text-lg sm:text-xl font-bold text-center mb-5 sm:mb-6 text-[var(--text)]">
             Select Your Appliances
           </h4>
 
@@ -139,8 +144,8 @@ export default function CalculatorSection() {
                 key={appliance.id}
                 className={`grid grid-cols-[36px_1fr_76px_40px] sm:grid-cols-[40px_1fr_100px_60px] gap-2 sm:gap-3 items-center px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border-[1.5px] transition-all ${
                   appliance.enabled
-                    ? 'border-secondary bg-secondary/5'
-                    : 'border-dark-border bg-dark-muted'
+                    ? 'border-brand/60 bg-brand/5'
+                    : 'border-[var(--border)] bg-[var(--bg-muted)]'
                 }`}
               >
                 <div className="text-lg sm:text-xl text-center">{appliance.icon}</div>
@@ -158,9 +163,7 @@ export default function CalculatorSection() {
                   max="20"
                   inputMode="numeric"
                   value={appliance.qty}
-                  onChange={(e) =>
-                    updateQty(appliance.id, parseInt(e.target.value, 10) || 0)
-                  }
+                  onChange={(e) => updateQty(appliance.id, parseInt(e.target.value, 10) || 0)}
                   disabled={!appliance.enabled}
                   aria-label={`Quantity for ${appliance.name}`}
                   className="w-full px-2 py-1.5 sm:py-2 text-center text-xs sm:text-sm rounded-lg disabled:opacity-50"
@@ -170,7 +173,7 @@ export default function CalculatorSection() {
                     type="checkbox"
                     checked={appliance.enabled}
                     onChange={() => toggleAppliance(appliance.id)}
-                    className="w-5 h-5 accent-secondary cursor-pointer"
+                    className="w-5 h-5 accent-accent cursor-pointer"
                     aria-label={`Enable ${appliance.name}`}
                   />
                 </label>
@@ -178,7 +181,7 @@ export default function CalculatorSection() {
             ))}
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-dark-muted border-[1.5px] border-dark-border mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-[var(--bg-muted)] border-[1.5px] border-[var(--border)] mb-6">
             <label className="font-semibold text-sm text-[var(--text)]">
               Required Backup Time (hours)
             </label>
@@ -189,14 +192,12 @@ export default function CalculatorSection() {
               step="0.5"
               inputMode="decimal"
               value={backupHours}
-              onChange={(e) =>
-                setBackupHours(parseFloat(e.target.value) || 3)
-              }
+              onChange={(e) => setBackupHours(parseFloat(e.target.value) || 3)}
               className="w-24 sm:w-28 px-3 py-2 text-center text-base font-semibold rounded-lg"
             />
           </div>
 
-          <Button type="submit" variant="primary" className="w-full py-3.5 sm:py-4 text-sm sm:text-base">
+          <Button type="submit" variant="secondary" className="w-full py-3.5 sm:py-4 text-sm sm:text-base">
             ⚡ Find My Best Match
           </Button>
 
@@ -227,16 +228,13 @@ function ResultCard({ result, onReset }) {
         <p className="text-sm sm:text-base">
           Your estimated load of <strong>{totalWatts}W</strong> requires ~
           <strong>{targets.va}VA</strong> inverter and ~
-          <strong>{targets.ah}Ah</strong> battery, which is beyond our current
-          stock.
+          <strong>{targets.ah}Ah</strong> battery, which is beyond our current stock.
         </p>
-        <p className="mt-3 text-sm">
-          Please contact us directly for a custom solution.
-        </p>
+        <p className="mt-3 text-sm">Please contact us directly for a custom solution.</p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Link
             to="/#quotation"
-            className="inline-flex px-4 sm:px-5 py-2.5 rounded-xl bg-gradient-to-br from-primary-light to-primary text-white font-semibold text-sm"
+            className="inline-flex px-4 sm:px-5 py-2.5 rounded-xl bg-gradient-to-b from-brand to-brand-dark text-white font-semibold text-sm"
           >
             Get Custom Quote
           </Link>
@@ -246,7 +244,7 @@ function ResultCard({ result, onReset }) {
                 `Hi MAXVOLT, I need a custom power solution for ${totalWatts}W load. Please help.`
               )
             }
-            className="inline-flex px-4 sm:px-5 py-2.5 rounded-xl bg-gradient-to-br from-secondary to-secondary-light text-white font-semibold text-sm"
+            className="inline-flex px-4 sm:px-5 py-2.5 rounded-xl bg-gradient-to-b from-accent to-accent-dark text-white font-semibold text-sm"
           >
             Contact on WhatsApp
           </button>
@@ -265,77 +263,59 @@ function ResultCard({ result, onReset }) {
     <div className="p-5 sm:p-6 rounded-2xl bg-emerald-500/10 border-l-4 border-emerald-500 text-[var(--text)]">
       <h3 className="text-emerald-400 mb-4 text-lg">✓ Best Match Found</h3>
 
-      <div className="p-4 rounded-xl bg-dark-elevated border border-dark-border mb-4 space-y-2 text-sm sm:text-base">
-        <div>
-          <strong>Your items:</strong> {itemsSummary}
-        </div>
-        <div>
-          <strong>Estimated Load:</strong> {totalWatts}W
-        </div>
-        <div>
-          <strong>Backup Time:</strong> {hours} hour(s)
-        </div>
+      <div className="p-4 rounded-xl bg-[var(--bg-elev)] border border-[var(--border)] mb-4 space-y-2 text-sm sm:text-base">
+        <div><strong>Your items:</strong> {itemsSummary}</div>
+        <div><strong>Estimated Load:</strong> {totalWatts}W</div>
+        <div><strong>Backup Time:</strong> {hours} hour(s)</div>
         <div>
           <strong>Recommended Inverter:</strong>{' '}
           {inverter ? (
             <>
-              <Link
-                to={`/product/${inverter.id || inverter._id}`}
-                className="text-accent hover:text-secondary-light"
-              >
+              <Link to={productUrl(inverter)} className="text-brand-light hover:text-accent-light">
                 {inverter.brand} {inverter.model}
               </Link>{' '}
               <span className="text-[var(--text-subtle)]">({inverter.va})</span>
             </>
           ) : (
-            <>
-              ~{targets.va}VA{' '}
-              <span className="text-[var(--text-subtle)]">(contact us)</span>
-            </>
+            <>~{targets.va}VA <span className="text-[var(--text-subtle)]">(contact us)</span></>
           )}
         </div>
         <div>
           <strong>Recommended Battery:</strong>{' '}
           {battery ? (
             <>
-              <Link
-                to={`/product/${battery.id || battery._id}`}
-                className="text-accent hover:text-secondary-light"
-              >
+              <Link to={productUrl(battery)} className="text-brand-light hover:text-accent-light">
                 {battery.brand} {battery.model}
               </Link>{' '}
               <span className="text-[var(--text-subtle)]">({battery.capacity})</span>
             </>
           ) : (
-            <>
-              ~{targets.ah}Ah{' '}
-              <span className="text-[var(--text-subtle)]">(contact us)</span>
-            </>
+            <>~{targets.ah}Ah <span className="text-[var(--text-subtle)]">(contact us)</span></>
           )}
         </div>
       </div>
 
       <p className="text-[var(--text-muted)] text-xs sm:text-sm mb-4">
-        This is an estimate based on typical usage. For precise sizing and
-        pricing, contact our experts.
+        This is an estimate based on typical usage. For precise sizing and pricing,
+        contact our experts.
       </p>
 
       <div className="flex flex-wrap gap-2">
         <Link
           to="/#quotation"
-          className="inline-flex px-4 sm:px-5 py-2.5 rounded-xl bg-gradient-to-br from-primary-light to-primary text-white font-semibold text-sm"
+          className="inline-flex px-4 sm:px-5 py-2.5 rounded-xl bg-gradient-to-b from-brand to-brand-dark text-white font-semibold text-sm"
         >
           Get Personalized Quote
         </Link>
         <button
           onClick={() => openWhatsapp(waMessage)}
-          className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl bg-gradient-to-br from-secondary to-secondary-light text-white font-semibold text-sm"
+          className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl bg-gradient-to-b from-accent to-accent-dark text-white font-semibold text-sm"
         >
           Send via WhatsApp
         </button>
         <button
           onClick={onReset}
-          className="inline-flex px-4 sm:px-5 py-2.5 rounded-xl border-2 border-dark-border-strong font-semibold hover:bg-dark-muted text-sm"
+          className="inline-flex px-4 sm:px-5 py-2.5 rounded-xl border-[1.5px] border-[var(--border-strong)] font-semibold hover:bg-[var(--bg-muted)] text-sm"
         >
           Recalculate
         </button>

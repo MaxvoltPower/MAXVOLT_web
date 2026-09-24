@@ -16,8 +16,18 @@ export default function DynamicSections() {
 
   const handleAddCombo = (products) => {
     if (!products?.length) return;
-    products.forEach((p) => addToCart(p, 1));
-    // Single aggregate toast — addToCart also fires one; keep it simple
+    let addedCount = 0;
+    products.forEach((p) => {
+      try {
+        addToCart(p, 1);
+        addedCount++;
+      } catch {
+        // ignore individual failures
+      }
+    });
+    if (addedCount > 0) {
+      showToast(`Combo added — ${addedCount} item(s) in cart`, 'success');
+    }
   };
 
   return (
@@ -38,16 +48,19 @@ export default function DynamicSections() {
           : 'Hand-picked for you';
 
         return (
-          <section
-            key={section._id || section.title}
-            className="section-padding"
-          >
+          <section key={section._id || section.title} className="section-padding">
             <div className="container-custom">
               <div className="section-header">
                 {isCombo && (
-                  <span className="inline-block mb-3 px-4 py-1.5 rounded-full bg-gradient-to-br from-secondary to-secondary-light text-white font-bold text-xs uppercase tracking-wider">
+                  <span className="inline-block mb-3 px-4 py-1.5 rounded-full bg-gradient-to-b from-accent to-accent-dark text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-accent/30">
                     🎁 Combo Offer
                   </span>
+                )}
+                {isSale && !isCombo && (
+                  <span className="eyebrow">Limited Time</span>
+                )}
+                {!isSale && !isCombo && (
+                  <span className="eyebrow">Featured</span>
                 )}
                 <h2>{section.title}</h2>
                 <p>{subtitle}</p>
@@ -55,18 +68,15 @@ export default function DynamicSections() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
                 {sectionProducts.map((product) => (
-                  <ProductCard
-                    key={product.id || product._id}
-                    product={product}
-                  />
+                  <ProductCard key={product.id || product._id} product={product} />
                 ))}
               </div>
 
               {isCombo && (
-                <div className="text-center mt-8">
+                <div className="text-center mt-10">
                   <button
                     onClick={() => handleAddCombo(sectionProducts)}
-                    className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-br from-secondary to-secondary-light text-white font-semibold hover:-translate-y-0.5 hover:shadow-lg transition-all"
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-b from-accent to-accent-dark text-white font-semibold shadow-md shadow-accent/25 hover:shadow-lg hover:shadow-accent/40 hover:-translate-y-0.5 transition-all"
                   >
                     🛒 Add Combo to Cart
                   </button>

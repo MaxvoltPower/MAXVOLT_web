@@ -19,6 +19,7 @@ export default function FeaturedProducts() {
     <section id="featured-fallback" className="section-padding">
       <div className="container-custom">
         <div className="section-header">
+          <span className="eyebrow">Popular Picks</span>
           <h2>Featured Home Batteries</h2>
           <p>Popular choices from trusted brands</p>
         </div>
@@ -38,12 +39,24 @@ export default function FeaturedProducts() {
           )}
         </div>
 
-        <div className="text-center mt-8 sm:mt-10">
+        <div className="text-center mt-10">
           <Link
             to="/products?category=homeInverterBatteries"
-            className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-gradient-to-br from-primary-light to-primary text-white font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-b from-brand to-brand-dark text-white font-semibold shadow-md shadow-brand/25 hover:shadow-lg hover:shadow-brand/40 hover:-translate-y-0.5 transition-all"
           >
             View All Home Batteries
+            <svg
+              className="w-4 h-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
           </Link>
         </div>
       </div>

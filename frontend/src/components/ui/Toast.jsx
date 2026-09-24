@@ -16,22 +16,10 @@ import { classNames } from '@lib/utils';
 const ToastContext = createContext(null);
 
 const VARIANTS = {
-  success: {
-    bg: 'bg-emerald-500',
-    icon: '✓',
-  },
-  error: {
-    bg: 'bg-red-500',
-    icon: '✕',
-  },
-  warning: {
-    bg: 'bg-amber-500',
-    icon: '!',
-  },
-  info: {
-    bg: 'bg-sky-500',
-    icon: 'i',
-  },
+  success: { bg: 'bg-emerald-500', icon: '✓' },
+  error:   { bg: 'bg-red-500',     icon: '✕' },
+  warning: { bg: 'bg-amber-500',   icon: '!' },
+  info:    { bg: 'bg-brand',       icon: 'i' },
 };
 
 export function ToastProvider({ children }) {

@@ -1,15 +1,10 @@
 import { forwardRef } from 'react';
 import { classNames } from '@lib/utils';
 
-const Select = forwardRef(({
-  label,
-  error,
-  hint,
-  children,
-  className,
-  required,
-  ...props
-}, ref) => {
+const Select = forwardRef(function Select(
+  { label, error, hint, children, className, required, ...props },
+  ref
+) {
   return (
     <div className="form-group">
       {label && (
@@ -22,9 +17,10 @@ const Select = forwardRef(({
         <select
           ref={ref}
           className={classNames(
-            'w-full px-4 py-3 pr-10 rounded-xl border-[1.5px] bg-dark-muted text-[var(--text)] text-[0.95rem] transition-all duration-200 appearance-none cursor-pointer',
-            'hover:border-dark-border-strong',
-            'focus:outline-none focus:border-secondary focus:ring-4 focus:ring-secondary/25',
+            'w-full px-4 py-3 pr-10 rounded-xl border-[1.5px] bg-[var(--bg-muted)] text-[var(--text)] text-[0.95rem] transition-all duration-150 appearance-none cursor-pointer',
+            'border-[var(--border)]',
+            'hover:border-[var(--border-strong)]',
+            'focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/20',
             error && 'border-red-500',
             className
           )}
@@ -37,16 +33,15 @@ const Select = forwardRef(({
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
+          aria-hidden="true"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </div>
       {hint && !error && (
-        <p className="mt-1 text-xs text-[var(--text-subtle)]">{hint}</p>
+        <p className="mt-1.5 text-xs text-[var(--text-subtle)]">{hint}</p>
       )}
-      {error && (
-        <p className="mt-1 text-xs text-red-400">{error}</p>
-      )}
+      {error && <p className="mt-1.5 text-xs text-red-400">{error}</p>}
     </div>
   );
 });

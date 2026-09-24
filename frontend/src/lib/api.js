@@ -15,6 +15,11 @@ async function getToken() {
   }
 }
 
+/**
+ * Core request wrapper.
+ * Returns `data.data` (never `undefined` — falls back to `null`).
+ * Throws on non-2xx or `success === false`.
+ */
 async function request(path, options = {}) {
   const token = await getToken();
   const headers = {
@@ -33,7 +38,11 @@ async function request(path, options = {}) {
     );
   }
 
-  const data = await res.json().catch(() => ({}));
+  const text = await res.text();
+  let data = {};
+  if (text) {
+    try { data = JSON.parse(text); } catch { data = {}; }
+  }
 
   if (!res.ok || data.success === false) {
     const message =
@@ -48,9 +57,7 @@ async function request(path, options = {}) {
     throw error;
   }
 
-  // Preserve null (some callers rely on it) but never return a bare {} for
-  // an expected payload — that causes "Cannot read properties of undefined"
-  // errors downstream (e.g. AuthContext reading profileData.profile).
+  // Preserve null (some callers rely on it) — never return a bare `undefined`
   if (data.data === undefined) return null;
   return data.data;
 }
@@ -81,10 +88,7 @@ export const api = {
 
   // ---- Payments ----
   createPayment: (payload) =>
-    request('/api/payments/create-order', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    }),
+    request('/api/payments/create-order', { method: 'POST', body: JSON.stringify(payload) }),
   verifyPayment: (payload) =>
     request('/api/payments/verify', { method: 'POST', body: JSON.stringify(payload) }),
 
@@ -102,17 +106,13 @@ export const api = {
     request('/api/sections', { method: 'POST', body: JSON.stringify(payload) }),
   updateSection: (id, payload) =>
     request(`/api/sections/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
-  deleteSection: (id) =>
-    request(`/api/sections/${id}`, { method: 'DELETE' }),
+  deleteSection: (id) => request(`/api/sections/${id}`, { method: 'DELETE' }),
 
   // ---- Admin ----
   getAdminStats: () => request('/api/admin/stats'),
   getUsers: (q) => request(`/api/admin/users${q ? `?q=${encodeURIComponent(q)}` : ''}`),
   setUserRole: (uid, role) =>
-    request('/api/admin/users', {
-      method: 'PATCH',
-      body: JSON.stringify({ uid, role }),
-    }),
+    request('/api/admin/users', { method: 'PATCH', body: JSON.stringify({ uid, role }) }),
   getSettings: () => request('/api/admin/settings'),
   saveSettings: (payload) =>
     request('/api/admin/settings', { method: 'PUT', body: JSON.stringify(payload) }),

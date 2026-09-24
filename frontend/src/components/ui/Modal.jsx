@@ -16,19 +16,12 @@ export default function Modal({
 }) {
   const panelRef = useRef(null);
 
-  // Lock scroll
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
+    if (isOpen) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = '';
+    return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
-  // Esc to close
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape' && isOpen) onClose();
@@ -37,7 +30,6 @@ export default function Modal({
     return () => document.removeEventListener('keydown', onKey);
   }, [isOpen, onClose]);
 
-  // Focus first focusable element
   useEffect(() => {
     if (!isOpen) return;
     const t = setTimeout(() => {
@@ -63,7 +55,7 @@ export default function Modal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[2000] grid place-items-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-[2000] grid place-items-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-[fadeIn_200ms_ease-out]"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -72,33 +64,22 @@ export default function Modal({
       <div
         ref={panelRef}
         className={classNames(
-          'bg-dark-elevated border border-dark-border rounded-2xl w-full max-h-[92vh] flex flex-col',
-          'shadow-2xl',
+          'bg-[var(--bg-elev)] border border-[var(--border)] rounded-2xl w-full max-h-[92vh] flex flex-col shadow-2xl',
           sizes[size],
           className
         )}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-dark-border shrink-0">
-            <h2 className="text-lg sm:text-xl font-bold pr-2">{title}</h2>
+          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-[var(--border)] shrink-0">
+            <h2 className="text-lg sm:text-xl font-bold pr-2 text-[var(--text)]">{title}</h2>
             <button
               onClick={onClose}
-              className="p-2 -mr-1 rounded-lg hover:bg-dark-muted transition-colors shrink-0"
+              className="p-2 -mr-1 rounded-lg hover:bg-[var(--bg-muted)] transition-colors shrink-0 text-[var(--text-muted)] hover:text-[var(--text)]"
               aria-label="Close dialog"
             >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 18L18 6M6 6l12 12"
-                />
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
