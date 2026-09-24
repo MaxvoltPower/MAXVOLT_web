@@ -1,4 +1,10 @@
-import { requireAdmin, ok, fail, parseBody } from './_lib/middleware.js';
+import {
+  requireAdmin,
+  ok,
+  fail,
+  parseBody,
+  getPathSegments,
+} from './_lib/middleware.js';
 import { getCollection, COLLECTIONS } from './_lib/mongodb.js';
 import { setUserRole } from './_lib/firebase-admin.js';
 
@@ -17,7 +23,11 @@ export default async function handler(req, res) {
   const action = segments[0] || '';
   const method = req.method;
 
-  console.log(`[admin] ${method} action=${action || '(root)'} url=${req.url}`);
+  console.log(
+    `[admin] ${method} action=${action || '(root)'} url=${req.url} path=${JSON.stringify(
+      req.query?.path
+    )}`
+  );
 
   const admin = await requireAdmin(req, res);
   if (!admin) return;
@@ -36,8 +46,14 @@ export default async function handler(req, res) {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const [
-      totalUsers, totalProducts, totalOrders, totalQuotes,
-      ordersToday, ordersThisMonth, newQuotes, revenueAgg,
+      totalUsers,
+      totalProducts,
+      totalOrders,
+      totalQuotes,
+      ordersToday,
+      ordersThisMonth,
+      newQuotes,
+      revenueAgg,
     ] = await Promise.all([
       users.countDocuments(),
       products.countDocuments({ active: { $ne: false } }),
@@ -46,19 +62,32 @@ export default async function handler(req, res) {
       orders.countDocuments({ createdAt: { $gte: startOfDay } }),
       orders.countDocuments({ createdAt: { $gte: startOfMonth } }),
       quotes.countDocuments({ status: 'new' }),
-      orders.aggregate([
-        { $match: { paymentStatus: 'paid' } },
-        { $group: { _id: null, total: { $sum: '$total' } } },
-      ]).toArray(),
+      orders
+        .aggregate([
+          { $match: { paymentStatus: 'paid' } },
+          { $group: { _id: null, total: { $sum: '$total' } } },
+        ])
+        .toArray(),
     ]);
 
-    const recentOrders = await orders.find({}).sort({ createdAt: -1 }).limit(5).toArray();
-    const recentQuotes = await quotes.find({}).sort({ createdAt: -1 }).limit(5).toArray();
+    const recentOrders = await orders
+      .find({})
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .toArray();
+    const recentQuotes = await quotes
+      .find({})
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .toArray();
 
     return ok(res, {
       totals: {
-        users: totalUsers, products: totalProducts, orders: totalOrders,
-        quotes: totalQuotes, revenue: revenueAgg[0]?.total || 0,
+        users: totalUsers,
+        products: totalProducts,
+        orders: totalOrders,
+        quotes: totalQuotes,
+        revenue: revenueAgg[0]?.total || 0,
       },
       today: { orders: ordersToday },
       month: { orders: ordersThisMonth },
@@ -74,9 +103,18 @@ export default async function handler(req, res) {
     if (method === 'GET') {
       const { q } = req.query;
       const query = q
-        ? { $or: [{ email: { $regex: q, $options: 'i' } }, { displayName: { $regex: q, $options: 'i' } }] }
+        ? {
+            $or: [
+              { email: { $regex: q, $options: 'i' } },
+              { displayName: { $regex: q, $options: 'i' } },
+            ],
+          }
         : {};
-      const items = await users.find(query).sort({ createdAt: -1 }).limit(200).toArray();
+      const items = await users
+        .find(query)
+        .sort({ createdAt: -1 })
+        .limit(200)
+        .toArray();
       return ok(res, items);
     }
     if (method === 'PATCH') {
@@ -112,14 +150,28 @@ export default async function handler(req, res) {
         if (Object.keys(siteValue).length) {
           await settings.updateOne(
             { key: SETTINGS_KEY },
-            { $set: { key: SETTINGS_KEY, value: siteValue, updatedAt: new Date(), updatedBy: admin.uid } },
+            {
+              $set: {
+                key: SETTINGS_KEY,
+                value: siteValue,
+                updatedAt: new Date(),
+                updatedBy: admin.uid,
+              },
+            },
             { upsert: true }
           );
         }
         if (Object.keys(chatValue).length) {
           await settings.updateOne(
             { key: 'chatbot' },
-            { $set: { key: 'chatbot', value: chatValue, updatedAt: new Date(), updatedBy: admin.uid } },
+            {
+              $set: {
+                key: 'chatbot',
+                value: chatValue,
+                updatedAt: new Date(),
+                updatedBy: admin.uid,
+              },
+            },
             { upsert: true }
           );
         }
@@ -133,14 +185,4 @@ export default async function handler(req, res) {
   }
 
   return fail(res, 'Not found', 404);
-}
-
-function getPathSegments(req, prefix) {
-  if (req.query && req.query.path) {
-    return Array.isArray(req.query.path) ? req.query.path : [req.query.path];
-  }
-  const url = (req.url || '').split('?')[0];
-  const parts = url.split('/').filter(Boolean);
-  const idx = parts.indexOf(prefix);
-  return idx >= 0 ? parts.slice(idx + 1) : [];
 }

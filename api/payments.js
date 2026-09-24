@@ -1,19 +1,25 @@
 import crypto from 'crypto';
-import { requireAuth, ok, fail, parseBody } from './_lib/middleware.js';
+import {
+  requireAuth,
+  ok,
+  fail,
+  parseBody,
+  getPathSegments,
+} from './_lib/middleware.js';
 import { getCollection, COLLECTIONS } from './_lib/mongodb.js';
 import { getRazorpay } from './_lib/razorpay.js';
 import { ObjectId } from 'mongodb';
 
-/**
- * Router for /api/payments/*
- *  POST /api/payments/create-order
- *  POST /api/payments/verify
- *  POST /api/payments/webhook
- */
 export default async function handler(req, res) {
   const segments = getPathSegments(req, 'payments');
   const action = segments[0] || '';
   const method = req.method;
+
+  console.log(
+    `[payments] ${method} action=${action || '(root)'} url=${req.url} path=${JSON.stringify(
+      req.query?.path
+    )}`
+  );
 
   // ---- create-order ----
   if (action === 'create-order') {
@@ -22,7 +28,8 @@ export default async function handler(req, res) {
     if (!user) return;
     const body = parseBody(req);
     const { amount, currency = 'INR', items = [], shipping = {} } = body;
-    if (!amount || amount < 100) return fail(res, 'Amount must be at least ₹1 (100 paise)');
+    if (!amount || amount < 100)
+      return fail(res, 'Amount must be at least ₹1 (100 paise)');
 
     try {
       const razorpay = getRazorpay();
@@ -34,14 +41,18 @@ export default async function handler(req, res) {
       });
       const orders = await getCollection(COLLECTIONS.ORDERS);
       const orderDoc = {
-        uid: user.uid, email: user.email,
-        items, shipping,
-        total: amount, currency,
+        uid: user.uid,
+        email: user.email,
+        items,
+        shipping,
+        total: amount,
+        currency,
         paymentMethod: 'razorpay',
         paymentStatus: 'pending',
         status: 'pending_payment',
         razorpayOrderId: rpOrder.id,
-        createdAt: new Date(), updatedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
       const inserted = await orders.insertOne(orderDoc);
       return ok(res, {
@@ -62,7 +73,12 @@ export default async function handler(req, res) {
     if (method !== 'POST') return fail(res, 'Method not allowed', 405);
     const user = await requireAuth(req, res);
     if (!user) return;
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = parseBody(req);
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      orderId,
+    } = parseBody(req);
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return fail(res, 'Missing payment verification fields');
     }
@@ -80,14 +96,18 @@ export default async function handler(req, res) {
       : { razorpayOrderId: razorpay_order_id, uid: user.uid };
 
     if (!isValid) {
-      await orders.updateOne(filter, { $set: { paymentStatus: 'failed', updatedAt: new Date() } });
+      await orders.updateOne(filter, {
+        $set: { paymentStatus: 'failed', updatedAt: new Date() },
+      });
       return fail(res, 'Payment signature verification failed', 400);
     }
     await orders.updateOne(filter, {
       $set: {
-        paymentStatus: 'paid', status: 'confirmed',
+        paymentStatus: 'paid',
+        status: 'confirmed',
         razorpayPaymentId: razorpay_payment_id,
-        paidAt: new Date(), updatedAt: new Date(),
+        paidAt: new Date(),
+        updatedAt: new Date(),
       },
     });
     await payments.insertOne({
@@ -103,14 +123,4 @@ export default async function handler(req, res) {
   }
 
   return fail(res, 'Not found', 404);
-}
-
-function getPathSegments(req, prefix) {
-  if (req.query && req.query.path) {
-    return Array.isArray(req.query.path) ? req.query.path : [req.query.path];
-  }
-  const url = (req.url || '').split('?')[0];
-  const parts = url.split('/').filter(Boolean);
-  const idx = parts.indexOf(prefix);
-  return idx >= 0 ? parts.slice(idx + 1) : [];
 }

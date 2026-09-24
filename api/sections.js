@@ -1,4 +1,11 @@
-import { requireAdmin, ok, fail, parseBody, authenticate } from './_lib/middleware.js';
+import {
+  requireAdmin,
+  ok,
+  fail,
+  parseBody,
+  authenticate,
+  getPathSegments,
+} from './_lib/middleware.js';
 import { getCollection } from './_lib/mongodb.js';
 import { ObjectId } from 'mongodb';
 
@@ -8,6 +15,12 @@ export default async function handler(req, res) {
   const segments = getPathSegments(req, 'sections');
   const id = segments[0];
   const col = await getCollection(COLLECTION);
+
+  console.log(
+    `[sections] ${req.method} id=${id || '(root)'} url=${req.url} path=${JSON.stringify(
+      req.query?.path
+    )}`
+  );
 
   if (req.method === 'GET' && !id) {
     // If the caller is an admin, return ALL sections (including hidden ones)
@@ -33,7 +46,11 @@ export default async function handler(req, res) {
     const _id = new ObjectId(id);
     if (req.method === 'PUT' || req.method === 'PATCH') {
       const body = parseBody(req);
-      const result = await col.findOneAndUpdate({ _id }, { $set: { ...body, updatedAt: new Date() } }, { returnDocument: 'after' });
+      const result = await col.findOneAndUpdate(
+        { _id },
+        { $set: { ...body, updatedAt: new Date() } },
+        { returnDocument: 'after' }
+      );
       return ok(res, result);
     }
     if (req.method === 'DELETE') {
@@ -51,14 +68,4 @@ export default async function handler(req, res) {
   }
 
   return fail(res, 'Not found', 404);
-}
-
-function getPathSegments(req, prefix) {
-  if (req.query && req.query.path) {
-    return Array.isArray(req.query.path) ? req.query.path : [req.query.path];
-  }
-  const url = (req.url || '').split('?')[0];
-  const parts = url.split('/').filter(Boolean);
-  const idx = parts.indexOf(prefix);
-  return idx >= 0 ? parts.slice(idx + 1) : [];
 }

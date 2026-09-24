@@ -1,5 +1,17 @@
-import { requireAdmin, ok, fail, parseBody, authenticate } from './_lib/middleware.js';
-import { getCollection, COLLECTIONS, normalizeImageInput, resolveProductImage } from './_lib/mongodb.js';
+import {
+  requireAdmin,
+  ok,
+  fail,
+  parseBody,
+  authenticate,
+  getPathSegments,
+} from './_lib/middleware.js';
+import {
+  getCollection,
+  COLLECTIONS,
+  normalizeImageInput,
+  resolveProductImage,
+} from './_lib/mongodb.js';
 import { ObjectId } from 'mongodb';
 
 /**
@@ -16,6 +28,12 @@ export default async function handler(req, res) {
   const segments = getPathSegments(req, 'products');
   const first = segments[0] || '';
   const method = req.method;
+
+  console.log(
+    `[products] ${method} first=${first || '(root)'} url=${req.url} path=${JSON.stringify(
+      req.query?.path
+    )}`
+  );
 
   // ---- /api/products/categories ----
   if (first === 'categories') {
@@ -55,12 +73,13 @@ export default async function handler(req, res) {
       const body = parseBody(req);
       delete body._id;
 
-      // Handle image fields
       if ('images' in body && Array.isArray(body.images)) {
-        body.images = body.images.map(img => {
-          const norm = normalizeImageInput(img);
-          return norm.ok ? norm.value : null;
-        }).filter(Boolean);
+        body.images = body.images
+          .map((img) => {
+            const norm = normalizeImageInput(img);
+            return norm.ok ? norm.value : null;
+          })
+          .filter(Boolean);
         body.image = body.images[0] || null;
       } else if ('image' in body) {
         const norm = normalizeImageInput(body.image);
@@ -69,7 +88,6 @@ export default async function handler(req, res) {
         body.images = [norm.value];
       }
 
-      // Normalize numeric fields
       if ('discountedPrice' in body) {
         const n = Number(body.discountedPrice);
         body.discountedPrice = Number.isFinite(n) && n > 0 ? n : null;
@@ -144,14 +162,15 @@ export default async function handler(req, res) {
       return fail(res, 'model, brand, category are required');
     }
 
-    // Image handling — support multiple images
     let imageValue = null;
     let imagesValue = [];
     if (Array.isArray(body.images) && body.images.length) {
-      imagesValue = body.images.map(img => {
-        const norm = normalizeImageInput(img);
-        return norm.ok ? norm.value : null;
-      }).filter(Boolean);
+      imagesValue = body.images
+        .map((img) => {
+          const norm = normalizeImageInput(img);
+          return norm.ok ? norm.value : null;
+        })
+        .filter(Boolean);
       imageValue = imagesValue[0] || null;
     } else if (body.image) {
       const norm = normalizeImageInput(body.image);
@@ -164,7 +183,9 @@ export default async function handler(req, res) {
       ...body,
       image: imageValue,
       images: imagesValue,
-      discountedPrice: body.discountedPrice ? Number(body.discountedPrice) : null,
+      discountedPrice: body.discountedPrice
+        ? Number(body.discountedPrice)
+        : null,
       stock: body.stock !== undefined ? Number(body.stock) : 0,
       active: body.active !== false,
       createdAt: new Date(),
@@ -177,7 +198,6 @@ export default async function handler(req, res) {
   return fail(res, 'Method not allowed', 405);
 }
 
-/** Convert a Mongo product doc into a shape safe for the public + includes a resolved image URL */
 function toPublicProduct(doc) {
   if (!doc) return doc;
   const out = { ...doc };
@@ -190,14 +210,4 @@ function toPublicProduct(doc) {
     out.images = [];
   }
   return out;
-}
-
-function getPathSegments(req, prefix) {
-  if (req.query && req.query.path) {
-    return Array.isArray(req.query.path) ? req.query.path : [req.query.path];
-  }
-  const url = (req.url || '').split('?')[0];
-  const parts = url.split('/').filter(Boolean);
-  const idx = parts.indexOf(prefix);
-  return idx >= 0 ? parts.slice(idx + 1) : [];
 }

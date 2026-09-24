@@ -23,7 +23,11 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     const admin = await requireAdmin(req, res);
     if (!admin) return;
-    const items = await contacts.find({}).sort({ createdAt: -1 }).limit(200).toArray();
+    const items = await contacts
+      .find({})
+      .sort({ createdAt: -1 })
+      .limit(200)
+      .toArray();
     return ok(res, items);
   }
 

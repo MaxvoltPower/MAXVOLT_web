@@ -1,23 +1,26 @@
 import {
-  authenticate, requireAuth, requireAdmin,
-  ok, fail, parseBody, ensureUserDoc
+  authenticate,
+  requireAdmin,
+  ok,
+  fail,
+  parseBody,
+  ensureUserDoc,
+  getPathSegments,
 } from './_lib/middleware.js';
 import { getCollection, COLLECTIONS } from './_lib/mongodb.js';
 import { ObjectId } from 'mongodb';
 
-/**
- * Router for /api/quotes/*
- *  POST   /api/quotes       → public: submit quote
- *  GET    /api/quotes       → admin: list all
- *  GET    /api/quotes/:id   → admin: get one
- *  PATCH  /api/quotes/:id   → admin: update
- *  DELETE /api/quotes/:id   → admin: delete
- */
 export default async function handler(req, res) {
   const segments = getPathSegments(req, 'quotes');
   const id = segments[0];
   const method = req.method;
   const quotes = await getCollection(COLLECTIONS.QUOTES);
+
+  console.log(
+    `[quotes] ${method} id=${id || '(root)'} url=${req.url} path=${JSON.stringify(
+      req.query?.path
+    )}`
+  );
 
   // ---- /api/quotes/:id (admin only) ----
   if (id) {
@@ -40,7 +43,9 @@ export default async function handler(req, res) {
       if (body.quotedAmount !== undefined) update.quotedAmount = body.quotedAmount;
       update.updatedAt = new Date();
       const result = await quotes.findOneAndUpdate(
-        { _id }, { $set: update }, { returnDocument: 'after' }
+        { _id },
+        { $set: update },
+        { returnDocument: 'after' }
       );
       return ok(res, result);
     }
@@ -65,7 +70,8 @@ export default async function handler(req, res) {
 
     const doc = {
       uid: user?.uid || null,
-      name, phone,
+      name,
+      phone,
       email: email || null,
       requirement,
       location: location || null,
@@ -80,19 +86,13 @@ export default async function handler(req, res) {
   if (method === 'GET') {
     const admin = await requireAdmin(req, res);
     if (!admin) return;
-    const items = await quotes.find({}).sort({ createdAt: -1 }).limit(500).toArray();
+    const items = await quotes
+      .find({})
+      .sort({ createdAt: -1 })
+      .limit(500)
+      .toArray();
     return ok(res, items);
   }
 
   return fail(res, 'Method not allowed', 405);
-}
-
-function getPathSegments(req, prefix) {
-  if (req.query && req.query.path) {
-    return Array.isArray(req.query.path) ? req.query.path : [req.query.path];
-  }
-  const url = (req.url || '').split('?')[0];
-  const parts = url.split('/').filter(Boolean);
-  const idx = parts.indexOf(prefix);
-  return idx >= 0 ? parts.slice(idx + 1) : [];
 }

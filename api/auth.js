@@ -1,4 +1,11 @@
-import { requireAuth, ok, fail, parseBody, ensureUserDoc } from './_lib/middleware.js';
+import {
+  requireAuth,
+  ok,
+  fail,
+  parseBody,
+  ensureUserDoc,
+  getPathSegments,
+} from './_lib/middleware.js';
 import { getCollection, COLLECTIONS } from './_lib/mongodb.js';
 
 /**
@@ -6,15 +13,17 @@ import { getCollection, COLLECTIONS } from './_lib/mongodb.js';
  *  POST /api/auth/verify   → verify token + return profile
  *  GET  /api/auth/profile  → get profile
  *  PUT  /api/auth/profile  → update profile
- *
- * How routing works: Vercel passes `req.query.path` as an array
- * when the catch-all file is at api/auth.js and request is /api/auth/verify
- * If not available, we fall back to parsing req.url.
  */
 export default async function handler(req, res) {
   const segments = getPathSegments(req, 'auth');
-  const action = segments[0] || '';   // 'verify' | 'profile'
+  const action = segments[0] || ''; // 'verify' | 'profile'
   const method = req.method;
+
+  console.log(
+    `[auth] ${method} action=${action || '(root)'} url=${req.url} path=${JSON.stringify(
+      req.query?.path
+    )}`
+  );
 
   // ---- POST /api/auth/verify ----
   if (action === 'verify') {
@@ -44,7 +53,14 @@ export default async function handler(req, res) {
 
     if (method === 'PUT' || method === 'PATCH') {
       const body = parseBody(req);
-      const allowed = ['displayName', 'phone', 'address', 'city', 'pincode', 'photoURL'];
+      const allowed = [
+        'displayName',
+        'phone',
+        'address',
+        'city',
+        'pincode',
+        'photoURL',
+      ];
       const update = {};
       for (const k of allowed) if (body[k] !== undefined) update[k] = body[k];
       update.updatedAt = new Date();
@@ -58,17 +74,4 @@ export default async function handler(req, res) {
   }
 
   return fail(res, 'Not found', 404);
-}
-
-/** Extract path segments after a given prefix, e.g. /api/auth/profile → ['profile'] */
-function getPathSegments(req, prefix) {
-  // Vercel sometimes exposes req.query.path as array
-  if (req.query && req.query.path) {
-    return Array.isArray(req.query.path) ? req.query.path : [req.query.path];
-  }
-  // Fallback: parse from URL
-  const url = (req.url || '').split('?')[0];
-  const parts = url.split('/').filter(Boolean); // ['api', 'auth', 'profile']
-  const idx = parts.indexOf(prefix);
-  return idx >= 0 ? parts.slice(idx + 1) : [];
 }

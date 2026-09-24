@@ -2,7 +2,13 @@
 // MAXVOLT — Orders API
 // ============================================================
 
-import { requireAuth, ok, fail, parseBody } from './_lib/middleware.js';
+import {
+  requireAuth,
+  ok,
+  fail,
+  parseBody,
+  getPathSegments,
+} from './_lib/middleware.js';
 import { getCollection, COLLECTIONS } from './_lib/mongodb.js';
 import { ObjectId } from 'mongodb';
 
@@ -25,7 +31,6 @@ async function findProductById(productsCol, productId) {
     const byOid = await productsCol.findOne({ _id: new ObjectId(productId) });
     if (byOid) return byOid;
   }
-  // Fall back to custom string `id`
   return productsCol.findOne({ id: productId });
 }
 
@@ -37,6 +42,10 @@ export default async function handler(req, res) {
   const id = segments[0];
   const method = req.method;
   const orders = await getCollection(COLLECTIONS.ORDERS);
+
+  console.log(
+    `[orders] ${method} id=${id || '(root)'} user=${user.email} isAdmin=${user.isAdmin} url=${req.url}`
+  );
 
   // ---- /api/orders/:id ----
   if (id) {
@@ -67,7 +76,10 @@ export default async function handler(req, res) {
           const existing = await orders.findOne({ _id, uid: user.uid });
           if (!existing) return fail(res, 'Order not found', 404);
           if (!['placed', 'pending_payment'].includes(existing.status))
-            return fail(res, 'Only placed or pending-payment orders can be cancelled');
+            return fail(
+              res,
+              'Only placed or pending-payment orders can be cancelled'
+            );
           update.status = 'cancelled';
         } else {
           return fail(res, 'Unauthorized update', 403);
@@ -87,9 +99,13 @@ export default async function handler(req, res) {
 
   // ---- /api/orders (root) ----
   if (method === 'GET') {
-    const query =
-      user.isAdmin && req.query.all === '1' ? {} : { uid: user.uid };
-    const items = await orders.find(query).sort({ createdAt: -1 }).toArray();
+    // Admins see ALL orders by default so the admin panel works.
+    // Customers see only their own orders.
+    const query = user.isAdmin ? {} : { uid: user.uid };
+    const items = await orders
+      .find(query)
+      .sort({ createdAt: -1 })
+      .toArray();
     return ok(res, items);
   }
 
@@ -105,7 +121,6 @@ export default async function handler(req, res) {
 
     const productsCol = await getCollection(COLLECTIONS.PRODUCTS);
 
-    // Stock validation (by custom id or _id)
     for (const item of items) {
       const p = await findProductById(productsCol, item.productId);
       if (p && typeof p.stock === 'number' && p.stock < item.qty) {
@@ -131,7 +146,6 @@ export default async function handler(req, res) {
 
     const result = await orders.insertOne(doc);
 
-    // Decrement stock (best-effort)
     for (const item of items) {
       const p = await findProductById(productsCol, item.productId);
       if (p && typeof p.stock === 'number') {
@@ -146,14 +160,4 @@ export default async function handler(req, res) {
   }
 
   return fail(res, 'Method not allowed', 405);
-}
-
-function getPathSegments(req, prefix) {
-  if (req.query && req.query.path) {
-    return Array.isArray(req.query.path) ? req.query.path : [req.query.path];
-  }
-  const url = (req.url || '').split('?')[0];
-  const parts = url.split('/').filter(Boolean);
-  const idx = parts.indexOf(prefix);
-  return idx >= 0 ? parts.slice(idx + 1) : [];
 }

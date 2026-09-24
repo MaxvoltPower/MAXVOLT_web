@@ -9,7 +9,7 @@ import { getCollection, COLLECTIONS } from './mongodb.js';
 function getAdminEmails() {
   return (process.env.ADMIN_EMAILS || '')
     .split(',')
-    .map(e => e.trim().toLowerCase())
+    .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
 }
 
@@ -84,15 +84,47 @@ export async function ensureUserDoc(user) {
 export function parseBody(req) {
   if (req.body && typeof req.body === 'object') return req.body;
   if (typeof req.body === 'string') {
-    try { return JSON.parse(req.body); } catch { return {}; }
+    try {
+      return JSON.parse(req.body);
+    } catch {
+      return {};
+    }
   }
   return {};
 }
 
+/**
+ * Extract path segments after a given prefix from the request URL.
+ *
+ * Vercel's rewrites strip the tail and forward the request to the function
+ * as /api/<entry>, but Vercel ALSO populates req.query.path with the
+ * catch-all segments when the rewrite uses `:path*`. This helper supports
+ * both Vercel and the local dev server.
+ */
+export function getPathSegments(req, prefix) {
+  // 1) Vercel may populate req.query.path directly (array or string)
+  if (req.query && req.query.path !== undefined) {
+    const p = req.query.path;
+    if (Array.isArray(p)) {
+      return p.filter(Boolean);
+    }
+    if (typeof p === 'string' && p.length > 0) {
+      return p.split('/').filter(Boolean);
+    }
+  }
+
+  // 2) Fallback: parse from req.url
+  const url = (req.url || '').split('?')[0];
+  const parts = url.split('/').filter(Boolean);
+  const idx = parts.indexOf(prefix);
+  return idx >= 0 ? parts.slice(idx + 1) : [];
+}
+
 /** Standard response helpers */
 export function ok(res, data, status = 200) {
-  // Always wrap in { success: true, data } — even if data is undefined
-  return res.status(status).json({ success: true, data: data === undefined ? null : data });
+  return res
+    .status(status)
+    .json({ success: true, data: data === undefined ? null : data });
 }
 
 export function fail(res, message, status = 400, code = null) {

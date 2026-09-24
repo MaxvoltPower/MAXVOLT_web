@@ -1,13 +1,4 @@
 {
-  "services": {
-    "frontend": {
-      "root": "frontend/",
-      "framework": "vite"
-    },
-    "backend": {
-      "root": "api/"
-    }
-  },
   "redirects": [
     { "source": "/products/home-inverter-batteries.html", "destination": "/products?category=homeInverterBatteries", "permanent": true },
     { "source": "/products/car-batteries.html", "destination": "/products?category=carBatteries", "permanent": true },
@@ -25,7 +16,19 @@
     { "source": "/admin/index.html", "destination": "/admin", "permanent": true }
   ],
   "rewrites": [
-    { "source": "/api/(.*)", "destination": { "service": "backend" } },
-    { "source": "/(.*)", "destination": { "service": "frontend" } }
-  ]
+    { "source": "/api/admin/:path*", "destination": "/api/admin" },
+    { "source": "/api/auth/:path*", "destination": "/api/auth" },
+    { "source": "/api/products/:path*", "destination": "/api/products" },
+    { "source": "/api/orders/:path*", "destination": "/api/orders" },
+    { "source": "/api/payments/:path*", "destination": "/api/payments" },
+    { "source": "/api/quotes/:path*", "destination": "/api/quotes" },
+    { "source": "/api/sections/:path*", "destination": "/api/sections" },
+    { "source": "/api/contact/:path*", "destination": "/api/contact" },
+    { "source": "/api/chat/:path*", "destination": "/api/chat" },
+    { "source": "/api/config/:path*", "destination": "/api/config" },
+    { "source": "/api/webhook/:path*", "destination": "/api/webhook" }
+  ],
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/dist",
+  "installCommand": "npm install && cd frontend && npm install"
 }
