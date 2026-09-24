@@ -66,8 +66,8 @@ export default async function handler(req, res) {
         if (body.status === 'cancelled') {
           const existing = await orders.findOne({ _id, uid: user.uid });
           if (!existing) return fail(res, 'Order not found', 404);
-          if (existing.status !== 'placed')
-            return fail(res, 'Only placed orders can be cancelled');
+          if (!['placed', 'pending_payment'].includes(existing.status))
+            return fail(res, 'Only placed or pending-payment orders can be cancelled');
           update.status = 'cancelled';
         } else {
           return fail(res, 'Unauthorized update', 403);

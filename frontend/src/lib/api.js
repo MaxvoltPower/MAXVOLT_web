@@ -48,7 +48,10 @@ async function request(path, options = {}) {
     throw error;
   }
 
-  if (data.data === undefined || data.data === null) return {};
+  // Preserve null (some callers rely on it) but never return a bare {} for
+  // an expected payload — that causes "Cannot read properties of undefined"
+  // errors downstream (e.g. AuthContext reading profileData.profile).
+  if (data.data === undefined) return null;
   return data.data;
 }
 
@@ -95,6 +98,12 @@ export const api = {
 
   // ---- Sections ----
   getSections: () => request('/api/sections'),
+  createSection: (payload) =>
+    request('/api/sections', { method: 'POST', body: JSON.stringify(payload) }),
+  updateSection: (id, payload) =>
+    request(`/api/sections/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  deleteSection: (id) =>
+    request(`/api/sections/${id}`, { method: 'DELETE' }),
 
   // ---- Admin ----
   getAdminStats: () => request('/api/admin/stats'),

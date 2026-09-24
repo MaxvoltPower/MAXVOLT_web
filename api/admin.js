@@ -17,6 +17,8 @@ export default async function handler(req, res) {
   const action = segments[0] || '';
   const method = req.method;
 
+  console.log(`[admin] ${method} action=${action || '(root)'} url=${req.url}`);
+
   const admin = await requireAdmin(req, res);
   if (!admin) return;
 
@@ -90,39 +92,44 @@ export default async function handler(req, res) {
 
   // ---- /api/admin/settings ----
   if (action === 'settings') {
-    const settings = await getCollection(COLLECTIONS.SETTINGS);
+    try {
+      const settings = await getCollection(COLLECTIONS.SETTINGS);
 
-    if (method === 'GET') {
-      const doc = await settings.findOne({ key: SETTINGS_KEY });
-      const chatbot = await settings.findOne({ key: 'chatbot' });
-      return ok(res, { ...(doc?.value || {}), ...(chatbot?.value || {}) });
+      if (method === 'GET') {
+        const doc = await settings.findOne({ key: SETTINGS_KEY });
+        const chatbot = await settings.findOne({ key: 'chatbot' });
+        return ok(res, { ...(doc?.value || {}), ...(chatbot?.value || {}) });
+      }
+      if (method === 'PUT' || method === 'PATCH') {
+        const body = parseBody(req);
+        const chatKeys = ['chatApiKey', 'chatModel'];
+        const chatValue = {};
+        const siteValue = {};
+        for (const k in body) {
+          if (chatKeys.includes(k)) chatValue[k] = body[k];
+          else siteValue[k] = body[k];
+        }
+        if (Object.keys(siteValue).length) {
+          await settings.updateOne(
+            { key: SETTINGS_KEY },
+            { $set: { key: SETTINGS_KEY, value: siteValue, updatedAt: new Date(), updatedBy: admin.uid } },
+            { upsert: true }
+          );
+        }
+        if (Object.keys(chatValue).length) {
+          await settings.updateOne(
+            { key: 'chatbot' },
+            { $set: { key: 'chatbot', value: chatValue, updatedAt: new Date(), updatedBy: admin.uid } },
+            { upsert: true }
+          );
+        }
+        return ok(res, body);
+      }
+      return fail(res, 'Method not allowed', 405);
+    } catch (err) {
+      console.error('[admin/settings] error:', err);
+      return fail(res, err?.message || 'Settings operation failed', 500);
     }
-    if (method === 'PUT' || method === 'PATCH') {
-      const body = parseBody(req);
-      const chatKeys = ['chatApiKey', 'chatModel'];
-      const chatValue = {};
-      const siteValue = {};
-      for (const k in body) {
-        if (chatKeys.includes(k)) chatValue[k] = body[k];
-        else siteValue[k] = body[k];
-      }
-      if (Object.keys(siteValue).length) {
-        await settings.updateOne(
-          { key: SETTINGS_KEY },
-          { $set: { key: SETTINGS_KEY, value: siteValue, updatedAt: new Date(), updatedBy: admin.uid } },
-          { upsert: true }
-        );
-      }
-      if (Object.keys(chatValue).length) {
-        await settings.updateOne(
-          { key: 'chatbot' },
-          { $set: { key: 'chatbot', value: chatValue, updatedAt: new Date(), updatedBy: admin.uid } },
-          { upsert: true }
-        );
-      }
-      return ok(res, body);
-    }
-    return fail(res, 'Method not allowed', 405);
   }
 
   return fail(res, 'Not found', 404);

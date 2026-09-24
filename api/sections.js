@@ -1,4 +1,4 @@
-import { requireAdmin, ok, fail, parseBody } from './_lib/middleware.js';
+import { requireAdmin, ok, fail, parseBody, authenticate } from './_lib/middleware.js';
 import { getCollection } from './_lib/mongodb.js';
 import { ObjectId } from 'mongodb';
 
@@ -10,9 +10,18 @@ export default async function handler(req, res) {
   const col = await getCollection(COLLECTION);
 
   if (req.method === 'GET' && !id) {
-    // Public read — homepage needs this. Admin panel also calls it
-    // (with a token, which we simply ignore here).
-    const sections = await col.find({ active: { $ne: false } }).sort({ order: 1 }).toArray();
+    // If the caller is an admin, return ALL sections (including hidden ones)
+    // so the admin panel can re-enable them. Otherwise only active ones.
+    let isAdmin = false;
+    try {
+      const user = await authenticate(req);
+      isAdmin = !!user?.isAdmin;
+    } catch {
+      isAdmin = false;
+    }
+
+    const query = isAdmin ? {} : { active: { $ne: false } };
+    const sections = await col.find(query).sort({ order: 1 }).toArray();
     return ok(res, sections);
   }
 

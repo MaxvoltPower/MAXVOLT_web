@@ -49,7 +49,7 @@ export default function ProfileForm({ onSaved }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="surface max-w-2xl mx-auto">
+    <form onSubmit={handleSubmit} className="surface w-full max-w-2xl">
       <Input
         label="Email"
         type="email"

@@ -75,11 +75,7 @@ export default function SectionsManager() {
   const handleDelete = async (id) => {
     if (!confirm('Delete this section?')) return;
     try {
-      const token = await api.getToken?.();
-      await fetch(`/api/sections/${id}`, {
-        method: 'DELETE',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      await api.deleteSection(id);
       showToast('Section deleted', 'success');
       load();
       reload();
@@ -102,20 +98,13 @@ export default function SectionsManager() {
       products: selectedProducts,
     };
     try {
-      const token = await api.getToken?.();
-      const url = editingSection ? `/api/sections/${editingSection._id}` : '/api/sections';
-      const method = editingSection ? 'PUT' : 'POST';
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(payload),
-      });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error || 'Save failed');
-      showToast(editingSection ? 'Section updated' : 'Section created', 'success');
+      if (editingSection) {
+        await api.updateSection(editingSection._id, payload);
+        showToast('Section updated', 'success');
+      } else {
+        await api.createSection(payload);
+        showToast('Section created', 'success');
+      }
       setModalOpen(false);
       load();
       reload();

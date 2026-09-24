@@ -37,15 +37,23 @@ export default function QuotationForm() {
     }
 
     setLoading(true);
+    let saved = false;
     try {
       await api.submitQuote(formData);
+      saved = true;
       showToast('Quote request submitted! We will contact you shortly.', 'success');
     } catch (err) {
-      // Even if API fails, still allow WhatsApp handoff
-      showToast('Quote request submitted! We will contact you shortly.', 'success');
+      showToast(
+        'Could not save your request, but we\\'ll still reach out via WhatsApp.',
+        'warning'
+      );
     } finally {
       const waMessage = `Hello MAXVOLT, My name is ${formData.name}. I need: ${formData.requirement}. Please contact me at ${formData.phone}.`;
-      setTimeout(() => openWhatsapp(waMessage), 600);
+      // Only auto-open WhatsApp if the API call failed, so we don't
+      // double-contact users on every successful submit.
+      if (!saved) {
+        setTimeout(() => openWhatsapp(waMessage), 600);
+      }
       setFormData(EMPTY);
       setLoading(false);
     }

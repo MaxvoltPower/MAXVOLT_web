@@ -27,17 +27,28 @@ export function AuthProvider({ children }) {
       if (firebaseUser) {
         try {
           const profileData = await api.verify();
-          // Defensive: ensure profileData is an object before accessing .profile
+          // Defensive: profileData may be null (if data.data was null) or an
+          // object. Never assume .profile exists.
           if (profileData && typeof profileData === 'object') {
-            setProfile(profileData.profile || null);
+            setProfile(profileData.profile ?? null);
             setIsAdmin(Boolean(profileData.isAdmin));
           } else {
-            setProfile(null);
+            // Fall back to a local profile built from the Firebase user so
+            // the UI still works even if /api/auth/verify failed.
+            setProfile({
+              displayName: firebaseUser.displayName || '',
+              email: firebaseUser.email || '',
+              uid: firebaseUser.uid,
+            });
             setIsAdmin(false);
           }
         } catch (err) {
           console.warn('Failed to verify user:', err);
-          setProfile(null);
+          setProfile({
+            displayName: firebaseUser.displayName || '',
+            email: firebaseUser.email || '',
+            uid: firebaseUser.uid,
+          });
           setIsAdmin(false);
         }
       } else {

@@ -21,6 +21,7 @@ export default function AdminLayout() {
     { path: '/admin/orders', label: 'Orders', icon: '🛒' },
     { path: '/admin/quotes', label: 'Quotes', icon: '💬' },
     { path: '/admin/users', label: 'Users', icon: '👥' },
+    { path: '/admin/profile', label: 'My Profile', icon: '👤' },
     { path: '/admin/settings', label: 'Settings', icon: '⚙️' },
   ];
 
@@ -63,9 +64,12 @@ export default function AdminLayout() {
           </svg>
           <span className="text-sm font-semibold">Admin Menu</span>
         </button>
-        <span className="text-xs text-[var(--text-subtle)] truncate max-w-[140px]">
+        <Link
+          to="/admin/profile"
+          className="text-xs text-[var(--text-subtle)] truncate max-w-[140px] hover:text-accent"
+        >
           {user?.email}
-        </span>
+        </Link>
       </div>
 
       {/* Sidebar */}
@@ -75,7 +79,7 @@ export default function AdminLayout() {
         }`}
       >
         <div className="flex items-center justify-between mb-6">
-          <Link to="/" className="flex items-center gap-3 hover:opacity-85 transition-opacity">
+          <Link to="/admin" className="flex items-center gap-3 hover:opacity-85 transition-opacity">
             <img
               src="/assets/maxvolt-logo.png"
               alt="MAXVOLT"

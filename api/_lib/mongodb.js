@@ -96,9 +96,11 @@ export function resolveProductImage(product) {
   if (!product || !product.image) return null;
   const img = product.image;
   if (typeof img !== 'string') return null;
-  if (img.startsWith('data:')) return img;         // base64
-  if (/^https?:\/\//i.test(img)) return img;       // external
-  if (img.startsWith('/')) return img;             // absolute path
-  if (img.startsWith('assets/')) return '/' + img; // normalise
-  return '/' + img;                                // bare filename fallback
+  const s = img.trim();
+  if (!s) return null;
+  if (s.startsWith('data:')) return s;             // base64
+  if (/^https?:\/\//i.test(s)) return s;           // external
+  if (s.startsWith('/')) return s;                 // absolute path
+  if (s.startsWith('assets/')) return '/' + s;     // normalise
+  return '/assets/images/' + s;                    // bare filename → assets/images
 }

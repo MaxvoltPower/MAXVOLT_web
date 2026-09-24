@@ -133,17 +133,27 @@ export default function Header() {
             {/* Right actions */}
             <div className="flex items-center gap-1.5 lg:gap-2 shrink-0">
               {user ? (
-                <Link
-                  to={isAdmin ? '/admin' : '/account/profile'}
-                  className="hidden sm:inline-flex items-center gap-2 px-3 lg:px-4 py-2 rounded-xl border-2 border-dark-border-strong text-[var(--text)] text-sm font-semibold hover:bg-dark-muted hover:border-accent transition-all"
-                >
-                  <span className="w-6 h-6 rounded-full bg-gradient-to-br from-primary-light to-primary grid place-items-center text-[10px] font-bold text-white">
-                    {initialsFrom(user.displayName || user.email)}
-                  </span>
-                  <span className="hidden lg:inline">
-                    {isAdmin ? 'Admin' : 'Account'}
-                  </span>
-                </Link>
+                <>
+                  {!isAdmin && (
+                    <Link
+                      to="/account/orders"
+                      className="hidden md:inline-flex items-center px-3 lg:px-4 py-2 rounded-xl border-2 border-dark-border-strong text-[var(--text)] text-sm font-semibold hover:bg-dark-muted hover:border-accent transition-all"
+                    >
+                      My Orders
+                    </Link>
+                  )}
+                  <Link
+                    to={isAdmin ? '/admin' : '/account/profile'}
+                    className="hidden sm:inline-flex items-center gap-2 px-3 lg:px-4 py-2 rounded-xl border-2 border-dark-border-strong text-[var(--text)] text-sm font-semibold hover:bg-dark-muted hover:border-accent transition-all"
+                  >
+                    <span className="w-6 h-6 rounded-full bg-gradient-to-br from-primary-light to-primary grid place-items-center text-[10px] font-bold text-white">
+                      {initialsFrom(user.displayName || user.email)}
+                    </span>
+                    <span className="hidden lg:inline">
+                      {isAdmin ? 'Admin' : 'Account'}
+                    </span>
+                  </Link>
+                </>
               ) : (
                 <Link
                   to="/account/login"
@@ -212,13 +222,33 @@ export default function Header() {
               ))}
               <li className="pt-3 mt-3 border-t border-dark-border flex flex-col gap-2">
                 {user ? (
-                  <Link
-                    to={isAdmin ? '/admin' : '/account/profile'}
-                    className="block px-4 py-3 rounded-xl text-center border-2 border-dark-border-strong font-semibold"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {isAdmin ? 'Admin Panel' : 'My Account'}
-                  </Link>
+                  <>
+                    <Link
+                      to={isAdmin ? '/admin' : '/account/profile'}
+                      className="block px-4 py-3 rounded-xl text-center border-2 border-dark-border-strong font-semibold"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      {isAdmin ? 'Admin Panel' : 'My Account'}
+                    </Link>
+                    {isAdmin && (
+                      <Link
+                        to="/account/profile"
+                        className="block px-4 py-3 rounded-xl text-center border-2 border-dark-border-strong font-semibold"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        My Profile
+                      </Link>
+                    )}
+                    {!isAdmin && (
+                      <Link
+                        to="/account/orders"
+                        className="block px-4 py-3 rounded-xl text-center border-2 border-dark-border-strong font-semibold"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        My Orders
+                      </Link>
+                    )}
+                  </>
                 ) : (
                   <Link
                     to="/account/login"

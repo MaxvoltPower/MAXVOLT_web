@@ -2,14 +2,27 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@context/AuthContext';
 import { api } from '@lib/api';
-import { formatPrice, formatDate } from '@lib/utils';
+import { formatPrice, formatDate, openWhatsapp } from '@lib/utils';
+import { useToast } from '@components/ui/Toast';
 import Badge from '@components/ui/Badge';
+import Button from '@components/ui/Button';
 
 export default function OrdersPage() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { showToast } = useToast();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState(null);
+
+  const loadOrders = () => {
+    setLoading(true);
+    api
+      .getOrders()
+      .then((data) => setOrders(Array.isArray(data) ? data : []))
+      .catch((err) => showToast(err.message, 'error'))
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -20,14 +33,22 @@ export default function OrdersPage() {
 
   useEffect(() => {
     if (!user) return;
-    api
-      .getOrders()
-      .then((data) => setOrders(data || []))
-      .catch((err) => console.warn(err))
-      .finally(() => setLoading(false));
+    loadOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  if (loading) {
+  const handleCancel = async (orderId) => {
+    if (!confirm('Cancel this order? This cannot be undone.')) return;
+    try {
+      await api.updateOrder(orderId, { status: 'cancelled' });
+      showToast('Order cancelled', 'success');
+      loadOrders();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  if (authLoading || loading) {
     return (
       <div className="container-custom py-20 text-center">
         <p>Loading orders...</p>
@@ -43,7 +64,7 @@ export default function OrdersPage() {
           to="/account/profile"
           className="inline-flex px-4 py-2 rounded-xl border-2 border-dark-border-strong text-sm font-semibold hover:bg-dark-muted hover:border-accent"
         >
-          Back to Profile
+          Back to Dashboard
         </Link>
       </div>
 
@@ -61,25 +82,90 @@ export default function OrdersPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {orders.map((order) => (
-            <div key={order._id} className="surface">
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-                <strong>Order #{String(order._id).slice(-8).toUpperCase()}</strong>
-                <Badge variant={order.status}>{order.status}</Badge>
+          {orders.map((order) => {
+            const isExpanded = expandedId === order._id;
+            const canCancel = order.status === 'placed';
+            return (
+              <div key={order._id} className="surface">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                  <div>
+                    <strong className="block">
+                      Order #{String(order._id).slice(-8).toUpperCase()}
+                    </strong>
+                    <span className="text-xs text-[var(--text-subtle)]">
+                      {formatDate(order.createdAt)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={order.status}>{order.status}</Badge>
+                    <Badge variant={order.paymentStatus === 'paid' ? 'paid' : 'new'}>
+                      {order.paymentStatus || 'pending'}
+                    </Badge>
+                  </div>
+                </div>
+
+                <p className="text-sm mb-3 text-[var(--text-muted)]">
+                  {order.items?.map((i) => `${i.model} × ${i.qty}`).join(', ')}
+                </p>
+
+                <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+                  <span>
+                    Total: <strong>{formatPrice(order.total)}</strong>
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setExpandedId(isExpanded ? null : order._id)}
+                      className="text-accent hover:underline text-sm"
+                    >
+                      {isExpanded ? 'Hide details' : 'View details'}
+                    </button>
+                    {canCancel && (
+                      <button
+                        onClick={() => handleCancel(order._id)}
+                        className="text-red-400 hover:underline text-sm"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                    <button
+                      onClick={() =>
+                        openWhatsapp(
+                          `Hi MAXVOLT, I need help with order #${String(order._id).slice(-8).toUpperCase()}.`
+                        )
+                      }
+                      className="text-[#25d366] hover:underline text-sm"
+                    >
+                      WhatsApp
+                    </button>
+                  </div>
+                </div>
+
+                {isExpanded && (
+                  <div className="mt-4 pt-4 border-t border-dark-border space-y-2 text-sm">
+                    <div>
+                      <strong className="text-[var(--text)]">Shipping:</strong>{' '}
+                      <span className="text-[var(--text-muted)]">
+                        {order.shipping?.name}, {order.shipping?.address},{' '}
+                        {order.shipping?.city} — {order.shipping?.pincode}
+                      </span>
+                    </div>
+                    <div>
+                      <strong className="text-[var(--text)]">Phone:</strong>{' '}
+                      <span className="text-[var(--text-muted)]">
+                        {order.shipping?.phone}
+                      </span>
+                    </div>
+                    <div>
+                      <strong className="text-[var(--text)]">Payment method:</strong>{' '}
+                      <span className="text-[var(--text-muted)]">
+                        {order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online (Razorpay)'}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
-              <p className="text-sm mb-3">
-                {order.items?.map((i) => `${i.model} × ${i.qty}`).join(', ')}
-              </p>
-              <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-                <span>
-                  Total: <strong>{formatPrice(order.total)}</strong>
-                </span>
-                <span className="text-[var(--text-subtle)]">
-                  {formatDate(order.createdAt)}
-                </span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
