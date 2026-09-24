@@ -11,7 +11,6 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const { user, profile, isAdmin, signOutUser, loading: authLoading } = useAuth();
   const [orders, setOrders] = useState([]);
-  const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

@@ -116,8 +116,6 @@ export default function ProductsManager() {
     e.preventDefault();
     if (saving) return;
     setSaving(true);
-    // Guard against React StrictMode double-invocation in dev
-    e.stopPropagation();
     try {
       if (editingProduct) {
         await api.updateProduct(editingProduct._id, formData);

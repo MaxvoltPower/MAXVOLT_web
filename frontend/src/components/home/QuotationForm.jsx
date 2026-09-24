@@ -44,7 +44,7 @@ export default function QuotationForm() {
       showToast('Quote request submitted! We will contact you shortly.', 'success');
     } catch (err) {
       showToast(
-        'Could not save your request, but we\\'ll still reach out via WhatsApp.',
+        "Could not save your request, but we'll still reach out via WhatsApp.",
         'warning'
       );
     } finally {
