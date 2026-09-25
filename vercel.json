@@ -2,7 +2,10 @@
   "services": {
     "frontend": {
       "root": "frontend",
-      "framework": "vite"
+      "framework": "vite",
+      "installCommand": "npm install",
+      "buildCommand": "npm run build",
+      "outputDirectory": "dist"
     },
     "backend": {
       "root": "api"
@@ -44,9 +47,5 @@
     { "source": "/api/webhook/:path*", "destination": "/api/webhook?path=:path*" },
     { "source": "/((?!api/).*)", "destination": "/index" }
   ],
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/dist",
-  "installCommand": "npm install && cd frontend && npm install",
-  "framework": null,
   "trailingSlash": false
 }
