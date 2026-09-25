@@ -9,14 +9,10 @@
     },
     "backend": {
       "root": "api",
-      "installCommand": "npm install",
-      "buildCommand": ""
+      "installCommand": "npm install"
     }
   },
-  "routes": [
-    { "src": "/api/(.*)", "dest": "backend" },
-    { "src": "/(.*)", "dest": "frontend" }
-  ],
+
   "redirects": [
     { "source": "/products/home-inverter-batteries.html", "destination": "/products?category=homeInverterBatteries", "permanent": true },
     { "source": "/products/car-batteries.html", "destination": "/products?category=carBatteries", "permanent": true },
