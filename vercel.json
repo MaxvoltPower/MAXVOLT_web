@@ -38,6 +38,6 @@
     { "source": "/api/webhook/:path*", "destination": "/api/webhook" },
     { "source": "/api/auth/:path*", "destination": "/api/auth" },
     { "source": "/api/admin/:path*", "destination": "/api/admin" },
-    { "source": "/((?!api/).*)", "destination": "/index" }
+    { "source": "/((?!api/|assets/|.*\\..*).*)", "destination": "/index.html" }
   ]
 }
