@@ -1,5 +1,6 @@
 import {
   requireAdmin,
+  requireAuth,
   ok,
   fail,
   parseBody,
@@ -26,11 +27,26 @@ import { ObjectId } from 'mongodb';
  *  GET    /api/products/:id            → single product
  *  PUT    /api/products/:id            → update (admin)
  *  DELETE /api/products/:id            → delete (admin)
+ *
+ * Router for /api/reviews/*  (folded in to stay under Hobby plan function limit)
+ *  GET    /api/reviews?productId=xxx   → list reviews (public)
+ *  POST   /api/reviews                 → create review (auth)
+ *  DELETE /api/reviews/:id             → delete own review (auth) or any (admin)
  */
 export default async function handler(req, res) {
   const segments = getPathSegments(req, 'products');
   const first = segments[0] || '';
   const method = req.method;
+
+  // ---- Folded-in reviews handler ----
+  // If the original URL was /api/reviews/* we route to reviews logic.
+  const rawUrl = (req.url || '').split('?')[0];
+  if (rawUrl.startsWith('/api/reviews')) {
+    return handleReviews(req, res);
+  }
+  if (first === 'reviews') {
+    return handleReviews(req, res);
+  }
 
   console.log(
     `[products] ${method} first=${first || '(root)'} url=${req.url} path=${JSON.stringify(
@@ -238,4 +254,121 @@ function toPublicProduct(doc) {
     out.images = [];
   }
   return out;
+}
+
+// ============================================================
+// Reviews (folded in from api/reviews.js)
+// ============================================================
+const REVIEWS_COLLECTION = 'reviews';
+
+async function handleReviews(req, res) {
+  const segments = getPathSegments(req, 'reviews');
+  const id = segments[0];
+  const method = req.method;
+  const reviews = await getCollection(REVIEWS_COLLECTION);
+
+  console.log(
+    `[reviews] ${method} id=${id || '(root)'} url=${req.url} path=${JSON.stringify(
+      req.query?.path
+    )}`
+  );
+
+  // ---- GET /api/reviews?productId=xxx ----  (public)
+  if (!id && method === 'GET') {
+    const { productId, limit = '50' } = req.query;
+    if (!productId) return fail(res, 'productId is required');
+
+    const lim = Math.min(parseInt(limit) || 50, 200);
+    const items = await reviews
+      .find({ productId: String(productId) })
+      .sort({ createdAt: -1 })
+      .limit(lim)
+      .toArray();
+
+    const total = items.length;
+    const average = total
+      ? items.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / total
+      : 0;
+
+    const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    for (const r of items) {
+      const k = Math.round(Number(r.rating) || 0);
+      if (k >= 1 && k <= 5) distribution[k] += 1;
+    }
+
+    return ok(res, {
+      items,
+      total,
+      average: Math.round(average * 10) / 10,
+      distribution,
+    });
+  }
+
+  // ---- POST /api/reviews ----  (auth required)
+  if (!id && method === 'POST') {
+    const user = await requireAuth(req, res);
+    if (!user) return;
+
+    const body = parseBody(req);
+    const { productId, rating, comment } = body;
+
+    if (!productId) return fail(res, 'productId is required');
+    const ratingNum = Number(rating);
+    if (!Number.isFinite(ratingNum) || ratingNum < 1 || ratingNum > 5) {
+      return fail(res, 'rating must be between 1 and 5');
+    }
+    if (comment && String(comment).length > 1000) {
+      return fail(res, 'comment must be 1000 characters or less');
+    }
+
+    const existing = await reviews.findOne({
+      productId: String(productId),
+      uid: user.uid,
+    });
+    if (existing) {
+      return fail(res, 'You have already reviewed this product', 409);
+    }
+
+    let userName = user.email ? user.email.split('@')[0] : 'Customer';
+    try {
+      const users = await getCollection('users');
+      const doc = await users.findOne({ uid: user.uid });
+      if (doc?.displayName) userName = doc.displayName;
+    } catch {
+      /* non-fatal */
+    }
+
+    const doc = {
+      productId: String(productId),
+      uid: user.uid,
+      userName,
+      rating: ratingNum,
+      comment: comment ? String(comment).trim() : '',
+      createdAt: new Date(),
+    };
+
+    const result = await reviews.insertOne(doc);
+    return ok(res, { _id: result.insertedId, ...doc }, 201);
+  }
+
+  // ---- DELETE /api/reviews/:id ----  (auth: owner or admin)
+  if (id && method === 'DELETE') {
+    const user = await requireAuth(req, res);
+    if (!user) return;
+
+    if (!ObjectId.isValid(id)) return fail(res, 'Invalid review ID');
+    const _id = new ObjectId(id);
+
+    const review = await reviews.findOne({ _id });
+    if (!review) return fail(res, 'Review not found', 404);
+
+    if (!user.isAdmin && review.uid !== user.uid) {
+      return fail(res, 'You can only delete your own review', 403);
+    }
+
+    await reviews.deleteOne({ _id });
+    return ok(res, { deleted: true });
+  }
+
+  return fail(res, 'Not found', 404);
 }

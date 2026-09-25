@@ -15,7 +15,6 @@ const API_DIR = path.resolve(process.cwd(), 'api');
 const API_ENTRY_FILES = [
   'admin',
   'auth',
-  'categories',
   'chat',
   'config',
   'contact',
@@ -24,10 +23,17 @@ const API_ENTRY_FILES = [
   'payments',
   'products',
   'quotes',
-  'reviews',
   'sections',
   'webhook',
 ];
+
+// Aliases: public path prefix → handler file name.
+// Lets us fold smaller handlers into bigger ones without changing the
+// public API surface.
+const ALIASES = {
+  reviews: 'products',
+  categories: 'sections',
+};
 
 // Cache loaded modules so we don't re-import on every request.
 const moduleCache = new Map();
@@ -53,21 +59,26 @@ async function loadHandlerModule(name) {
  * or null if no matching entry file exists.
  */
 function matchApiRoute(pathname) {
-  // Strip leading slash, split
   const parts = pathname.replace(/^\/+/, '').split('/').filter(Boolean);
 
-  // Must start with "api"
   if (parts[0] !== 'api') return null;
 
   const rest = parts.slice(1);
   if (rest.length === 0) return null;
 
-  const entry = rest[0];
+  const requested = rest[0];
+  const entry = ALIASES[requested] || requested;
+
   if (!API_ENTRY_FILES.includes(entry)) return null;
 
   return {
     entry,
-    segments: rest.slice(1), // e.g. ['profile'] for /api/auth/profile
+    // Preserve the ORIGINAL requested prefix so the handler can tell
+    // whether it should treat the request as a reviews/categories call.
+    // e.g. /api/reviews/abc → entry='products', segments=['reviews','abc']?
+    // We keep the requested prefix in the segments so the folded-in logic
+    // can detect it. The handler also inspects req.url as a fallback.
+    segments: rest.slice(1),
   };
 }
 
@@ -93,12 +104,15 @@ export async function dispatchApiRequest(req, res) {
     return true;
   }
 
-  // Inject req.query.path like Vercel does for dynamic routes.
-  // Note: our adapter already populated req.query from the URL.
-  // We merge the path segments in, preserving any real query params.
+  req.query = req.query || {};
+  // Preserve the original requested prefix as a marker so folded handlers
+  // can tell which sub-module to dispatch to.
+  const parts = urlPath.replace(/^\/+/, '').split('/').filter(Boolean);
+  const requestedPrefix = parts[1];
+  if (requestedPrefix && ALIASES[requestedPrefix]) {
+    req.query.__module = requestedPrefix;
+  }
   if (match.segments.length > 0) {
-    req.query = req.query || {};
-    // Vercel gives an array for catch-all; our handlers accept both.
     req.query.path = match.segments.length === 1
       ? match.segments[0]
       : match.segments;
@@ -109,9 +123,6 @@ export async function dispatchApiRequest(req, res) {
   return true;
 }
 
-/**
- * List of available API entries (useful for logging at startup).
- */
 export function listApiEntries() {
   return API_ENTRY_FILES.filter((name) =>
     fs.existsSync(path.join(API_DIR, `${name}.js`))

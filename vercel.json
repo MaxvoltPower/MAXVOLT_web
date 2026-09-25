@@ -25,13 +25,13 @@
     { "source": "/admin/index.html", "destination": "/admin", "permanent": true }
   ],
   "rewrites": [
-    { "source": "/api/products/:path*", "destination": "/api/products" },
+    { "source": "/api/products/:path*", "destination": "/api/products?path=:path*" },
+    { "source": "/api/reviews/:path*", "destination": "/api/products?__module=reviews&path=:path*" },
     { "source": "/api/orders/:path*", "destination": "/api/orders" },
     { "source": "/api/payments/:path*", "destination": "/api/payments" },
     { "source": "/api/quotes/:path*", "destination": "/api/quotes" },
-    { "source": "/api/reviews/:path*", "destination": "/api/reviews" },
-    { "source": "/api/sections/:path*", "destination": "/api/sections" },
-    { "source": "/api/categories/:path*", "destination": "/api/categories" },
+    { "source": "/api/sections/:path*", "destination": "/api/sections?path=:path*" },
+    { "source": "/api/categories/:path*", "destination": "/api/sections?__module=categories&path=:path*" },
     { "source": "/api/contact/:path*", "destination": "/api/contact" },
     { "source": "/api/chat/:path*", "destination": "/api/chat" },
     { "source": "/api/config/:path*", "destination": "/api/config" },
