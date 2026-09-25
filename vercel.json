@@ -12,6 +12,10 @@
       "installCommand": "npm install"
     }
   },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": { "service": "backend" } },
+    { "source": "/(.*)", "destination": { "service": "frontend" } }
+  ],
 
   "redirects": [
     { "source": "/products/home-inverter-batteries.html", "destination": "/products?category=homeInverterBatteries", "permanent": true },
