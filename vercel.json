@@ -8,9 +8,15 @@
       "outputDirectory": "dist"
     },
     "backend": {
-      "root": "api"
+      "root": "api",
+      "installCommand": "npm install",
+      "buildCommand": ""
     }
   },
+  "routes": [
+    { "src": "/api/(.*)", "dest": "backend" },
+    { "src": "/(.*)", "dest": "frontend" }
+  ],
   "redirects": [
     { "source": "/products/home-inverter-batteries.html", "destination": "/products?category=homeInverterBatteries", "permanent": true },
     { "source": "/products/car-batteries.html", "destination": "/products?category=carBatteries", "permanent": true },
@@ -31,21 +37,6 @@
     { "source": "/admin/:page.html", "destination": "/admin/:page", "permanent": true },
     { "source": "/admin/index.html", "destination": "/admin", "permanent": true }
   ],
-  "rewrites": [
-    { "source": "/api/admin/:path*", "destination": "/api/admin?path=:path*" },
-    { "source": "/api/auth/:path*", "destination": "/api/auth?path=:path*" },
-    { "source": "/api/products/:path*", "destination": "/api/products?path=:path*" },
-    { "source": "/api/orders/:path*", "destination": "/api/orders?path=:path*" },
-    { "source": "/api/payments/:path*", "destination": "/api/payments?path=:path*" },
-    { "source": "/api/quotes/:path*", "destination": "/api/quotes?path=:path*" },
-    { "source": "/api/reviews/:path*", "destination": "/api/reviews?path=:path*" },
-    { "source": "/api/sections/:path*", "destination": "/api/sections?path=:path*" },
-    { "source": "/api/categories/:path*", "destination": "/api/categories?path=:path*" },
-    { "source": "/api/contact/:path*", "destination": "/api/contact?path=:path*" },
-    { "source": "/api/chat/:path*", "destination": "/api/chat?path=:path*" },
-    { "source": "/api/config/:path*", "destination": "/api/config?path=:path*" },
-    { "source": "/api/webhook/:path*", "destination": "/api/webhook?path=:path*" },
-    { "source": "/((?!api/).*)", "destination": "/index" }
-  ],
+
   "trailingSlash": false
 }
