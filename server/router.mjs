@@ -19,6 +19,7 @@ const API_ENTRY_FILES = [
   'chat',
   'config',
   'contact',
+  'health',
   'orders',
   'payments',
   'products',
