@@ -5,8 +5,7 @@
       "framework": "vite"
     },
     "backend": {
-      "root": "api",
-      "framework": null
+      "root": "api"
     }
   },
   "redirects": [
