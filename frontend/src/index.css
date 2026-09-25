@@ -30,6 +30,10 @@
     --text-muted:  #B9C2D4;
     --text-subtle: #8A96AE;
 
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger:  #EF4444;
+
     --radius-sm: 8px;
     --radius:    12px;
     --radius-lg: 16px;
@@ -162,12 +166,12 @@
     border: 1px solid var(--border);
   }
 
-  /* Section header */
+  /* Section header — stacked, centered */
   .section-header {
-    @apply text-center max-w-3xl mx-auto mb-10 sm:mb-14 px-2;
+    @apply text-center max-w-3xl mx-auto mb-10 sm:mb-14 px-2 flex flex-col items-center;
   }
   .section-header h2 {
-    @apply relative inline-block pb-4;
+    @apply relative block pb-4;
   }
   .section-header h2::after {
     content: '';
@@ -258,10 +262,37 @@
   .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
 }
 
+/* ============================================================
+   SAFETY NET — legacy `dark-*` utility class fallbacks
+   ------------------------------------------------------------
+   Some components use class names like `bg-dark-subtle`,
+   `border-dark-border`, `text-secondary-light`, etc. The
+   Tailwind aliases cover most of them, but this block forces
+   the correct CSS variables on the most critical surfaces so
+   nothing ever renders fully transparent.
+   ============================================================ */
+
+/* Opaque admin sidebar no matter what */
+.admin-sidebar {
+  background-color: var(--bg-elev) !important;
+  border-right-color: var(--border) !important;
+}
+
+/* Fallback for `bg-dark-subtle` if Tailwind aliases fail */
+.bg-dark-subtle    { background-color: var(--bg-elev) !important; }
+.bg-dark-muted     { background-color: var(--bg-muted) !important; }
+.bg-dark-elevated  { background-color: var(--bg-elev) !important; }
+.bg-dark-elevated2 { background-color: var(--bg-elev-2) !important; }
+
+.border-dark-border        { border-color: var(--border) !important; }
+.border-dark-border-strong { border-color: var(--border-strong) !important; }
+
+.text-primary         { color: var(--brand) !important; }
+.text-primary-light   { color: var(--brand-light) !important; }
+.text-secondary       { color: var(--accent) !important; }
+.text-secondary-light { color: var(--accent-light) !important; }
+
 /* ---------- Brand wordmark — dark surface variant ---------- */
-/* The default inline colors in BrandLogo.jsx are tuned for a white
-   surface. These classes keep the wordmark readable on dark surfaces
-   (header, footer, admin sidebar). */
 .brand-on-dark .brand-wordmark-navy,
 .admin-sidebar .brand-wordmark-navy {
   color: #E8EDF7 !important;
@@ -274,8 +305,6 @@
 .admin-sidebar .brand-tagline {
   color: #B9C2D4 !important;
 }
-/* Force the brand wordmark to render white-on-dark inside the sidebar. */
-/* (class-based rules above handle the sidebar override) */
 
 /* ---------- Animations ---------- */
 @keyframes marquee {

@@ -7,21 +7,21 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Brand
+        // ---------- Brand ----------
         brand: {
-          DEFAULT: '#0B5FFF',   // electric blue - primary action
+          DEFAULT: '#0B5FFF',   // electric blue — primary action
           dark:    '#0043C7',
           light:   '#3D82FF',
           soft:    'rgba(11,95,255,0.12)',
         },
-        // Accent - warm amber, used sparingly
+        // ---------- Accent — warm amber ----------
         accent: {
           DEFAULT: '#FF7A18',
           dark:    '#E56600',
           light:   '#FFA24D',
           soft:    'rgba(255,122,24,0.14)',
         },
-        // Neutral dark scale
+        // ---------- Neutral dark scale ----------
         ink: {
           950: '#05070D',
           900: '#0A0E17',
@@ -35,11 +35,41 @@ export default {
           200: '#B9C2D4',
           100: '#E1E6EF',
         },
-        // Semantic
+        // ---------- Semantic ----------
         success: '#10B981',
         warning: '#F59E0B',
         danger:  '#EF4444',
         info:    '#38BDF8',
+
+        // ---------- Legacy aliases used across the codebase ----------
+        // Many older components use these class names:
+        //   bg-dark-subtle / bg-dark-muted / bg-dark-elevated
+        //   border-dark-border / border-dark-border-strong
+        //   from-primary-light to-primary
+        //   from-secondary to-secondary-light
+        //   text-secondary-light
+        // Defining them here makes every existing usage resolve
+        // without editing any JSX file.
+        dark: {
+          DEFAULT:         '#05070D',
+          subtle:          '#0A0E17',
+          muted:           '#121A2A',
+          elevated:        '#0E1420',
+          elevated2:       '#121A2A',
+          border:          '#1B2436',
+          'border-strong': '#26314A',
+          bg:              '#05070D',
+        },
+        primary: {
+          DEFAULT: '#0B5FFF',
+          light:   '#3D82FF',
+          dark:    '#0043C7',
+        },
+        secondary: {
+          DEFAULT: '#FF7A18',
+          light:   '#FFA24D',
+          dark:    '#E56600',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],

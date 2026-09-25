@@ -55,10 +55,10 @@ export default function AdminLayout() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] min-h-screen">
       {/* Mobile top bar */}
-      <div className="lg:hidden sticky top-16 z-40 bg-dark-subtle border-b border-dark-border px-4 py-2 flex items-center justify-between">
+      <div className="lg:hidden sticky top-16 z-40 bg-[var(--bg-elev)] border-b border-[var(--border)] px-4 py-2 flex items-center justify-between">
         <button
           onClick={() => setSidebarOpen(true)}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-dark-muted"
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[var(--bg-muted)]"
           aria-label="Open admin menu"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -76,7 +76,7 @@ export default function AdminLayout() {
 
       {/* Sidebar */}
       <aside
-        className={`admin-sidebar bg-dark-subtle border-r border-dark-border p-5 lg:p-6 fixed lg:sticky top-0 h-screen overflow-y-auto z-[1001] w-[280px] max-w-[85vw] transition-transform duration-300 ${
+        className={`admin-sidebar bg-[var(--bg-elev)] border-r border-[var(--border)] p-5 lg:p-6 fixed lg:sticky top-0 h-screen overflow-y-auto z-[1001] w-[280px] max-w-[85vw] transition-transform duration-300 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
@@ -92,7 +92,7 @@ export default function AdminLayout() {
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden p-2 rounded-lg hover:bg-dark-muted"
+            className="lg:hidden p-2 rounded-lg hover:bg-[var(--bg-muted)]"
             aria-label="Close admin menu"
           >
             ✕
@@ -106,8 +106,8 @@ export default function AdminLayout() {
               to={item.path}
               className={`flex items-center gap-2.5 px-4 py-3 rounded-xl font-medium text-sm transition-all ${
                 isActive(item.path, item.exact)
-                  ? 'bg-gradient-to-br from-primary-light to-primary text-white'
-                  : 'text-[var(--text-muted)] hover:bg-dark-muted hover:text-[var(--text)]'
+                  ? 'bg-gradient-to-br from-brand to-brand-dark text-white shadow-md shadow-brand/25'
+                  : 'text-[var(--text-muted)] hover:bg-[var(--bg-muted)] hover:text-[var(--text)]'
               }`}
             >
               <span className="text-base">{item.icon}</span>
@@ -115,7 +115,7 @@ export default function AdminLayout() {
             </Link>
           ))}
 
-          <div className="mt-3 pt-4 border-t border-dark-border space-y-1">
+          <div className="mt-3 pt-4 border-t border-[var(--border)] space-y-1">
             <a
               href="/"
               target="_blank"
@@ -134,7 +134,7 @@ export default function AdminLayout() {
         </nav>
 
         {user && (
-          <div className="mt-6 px-3 py-3 rounded-xl bg-dark-muted border border-dark-border">
+          <div className="mt-6 px-3 py-3 rounded-xl bg-[var(--bg-muted)] border border-[var(--border)]">
             <p className="text-[0.65rem] uppercase tracking-widest text-[var(--text-subtle)] mb-1">
               Signed in as
             </p>

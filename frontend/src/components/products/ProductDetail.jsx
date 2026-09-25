@@ -79,10 +79,10 @@ export default function ProductDetail({ product }) {
               <button
                 key={i}
                 onClick={() => setSelectedImage(i)}
-                className={`aspect-square rounded-lg bg-dark-muted border-2 p-1 transition-all ${
+                className={`aspect-square rounded-lg bg-[var(--bg-muted)] border-2 p-1 transition-all ${
                   i === selectedImage
-                    ? 'border-secondary'
-                    : 'border-dark-border hover:border-accent'
+                    ? 'border-accent'
+                    : 'border-[var(--border)] hover:border-accent'
                 }`}
               >
                 <img
@@ -116,11 +116,11 @@ export default function ProductDetail({ product }) {
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-secondary/10 border border-secondary/30 mb-6">
+        <div className="p-5 rounded-2xl bg-accent/10 border border-accent/30 mb-6">
           <div className="text-xs uppercase tracking-widest text-[var(--text-subtle)] mb-1">
             Price
           </div>
-          <div className="text-3xl font-extrabold text-secondary-light">
+          <div className="text-3xl font-extrabold text-accent-light">
             {product.discountedPrice ? (
               <>
                 <span className="line-through text-lg text-[var(--text-subtle)] mr-2">

@@ -4,6 +4,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { api } from '@lib/api';
+import Markdown from '@components/ui/Markdown';
 
 const INITIAL_MESSAGE = {
   role: 'assistant',
@@ -148,11 +149,11 @@ export default function Chatbot() {
                 key={i}
                 className={`max-w-[85%] px-3.5 py-2.5 rounded-xl text-sm leading-relaxed break-words ${
                   m.role === 'user'
-                    ? 'ml-auto bg-accent text-white rounded-br-sm'
+                    ? 'ml-auto bg-accent text-white rounded-br-sm whitespace-pre-wrap'
                     : 'bg-[var(--bg-muted)] text-[var(--text)] rounded-bl-sm'
                 }`}
               >
-                {m.content}
+                {m.role === 'user' ? m.content : <Markdown>{m.content}</Markdown>}
               </div>
             ))}
             {isTyping && (
