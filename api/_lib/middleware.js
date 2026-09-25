@@ -113,11 +113,18 @@ export function getPathSegments(req, prefix) {
     }
   }
 
-  // 2) Fallback: parse from req.url
+  // 2) Fallback: parse from req.url (full path, before rewrite)
   const url = (req.url || '').split('?')[0];
   const parts = url.split('/').filter(Boolean);
   const idx = parts.indexOf(prefix);
-  return idx >= 0 ? parts.slice(idx + 1) : [];
+  if (idx >= 0) return parts.slice(idx + 1);
+
+  // 3) Last resort: if prefix is the first segment after /api, return the rest
+  if (parts[0] === 'api' && parts.length > 2) {
+    return parts.slice(2);
+  }
+
+  return [];
 }
 
 /** Standard response helpers */

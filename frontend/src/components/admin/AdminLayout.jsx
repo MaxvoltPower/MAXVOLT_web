@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@context/AuthContext';
 import { useToast } from '@components/ui/Toast';
+import BrandLogo from '@components/layout/BrandLogo';
 
 export default function AdminLayout() {
   const location = useLocation();
