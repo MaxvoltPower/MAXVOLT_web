@@ -29,7 +29,7 @@ export default function SolutionsSection() {
           appliances. Together, they provide seamless backup during power cuts.
         </p>
         <Link
-          to="/#calculator"
+          to="/calculator"
           className="inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-3 rounded-xl bg-gradient-to-b from-brand to-brand-dark text-white font-semibold shadow-md shadow-brand/25 hover:shadow-lg hover:shadow-brand/40 hover:-translate-y-0.5 transition-all text-sm sm:text-base"
         >
           Calculate My Requirement

@@ -1,11 +1,41 @@
 // ============================================================
-// MAXVOLT — Product category grid
+// MAXVOLT — Product category grid (DB-driven)
 // ============================================================
 
 import { Link } from 'react-router-dom';
-import { categoryData } from '@data/products';
+import { useCategories } from '@context/CategoriesContext';
 
 export default function CategoryGrid() {
+  const { categories, loading } = useCategories();
+
+  // Only show visible, active categories
+  const visible = categories.filter((c) => c.active !== false);
+
+  if (loading) {
+    return (
+      <section id="products" className="section-padding">
+        <div className="container-custom">
+          <div className="section-header">
+            <span className="eyebrow">Product Range</span>
+            <h2>Our Products</h2>
+            <p>Loading categories...</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="skeleton h-64 rounded-2xl"
+                aria-hidden="true"
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (visible.length === 0) return null;
+
   return (
     <section id="products" className="section-padding">
       <div className="container-custom">
@@ -19,37 +49,37 @@ export default function CategoryGrid() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-          {categoryData.map((cat) => (
+          {visible.map((cat) => (
             <Link
-              key={cat.id}
-              to={cat.link}
+              key={cat._id || cat.slug}
+              to={`/products?category=${encodeURIComponent(cat.slug)}`}
               className="group relative bg-[var(--bg-elev)] border border-[var(--border)] rounded-2xl overflow-hidden shadow-card flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-card-lg hover:border-brand/60"
             >
-              {/* Icon panel */}
-              <div className="relative h-36 sm:h-40 lg:h-44 grid place-items-center text-5xl bg-gradient-to-br from-[#0B1220] via-[#0E1A2E] to-[#121A2A] border-b border-[var(--border)] overflow-hidden">
-                <div
-                  className="absolute inset-0 opacity-60"
-                  style={{
-                    background:
-                      'radial-gradient(circle at 30% 30%, rgba(11,95,255,0.18), transparent 60%)',
-                  }}
-                  aria-hidden="true"
-                />
-                <div
-                  className="absolute inset-0 opacity-30"
-                  style={{
-                    backgroundImage:
-                      'linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)',
-                    backgroundSize: '32px 32px',
-                  }}
-                  aria-hidden="true"
-                />
-                <span className="relative z-10 transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_4px_12px_rgba(11,95,255,0.4)]">
-                  {cat.icon}
-                </span>
+              <div className="relative h-36 sm:h-40 lg:h-44 overflow-hidden bg-gradient-to-br from-[#0B1220] via-[#0E1A2E] to-[#121A2A] border-b border-[var(--border)]">
+                {cat.image ? (
+                  <img
+                    src={cat.image}
+                    alt={cat.name}
+                    loading="lazy"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <>
+                    <div
+                      className="absolute inset-0 opacity-60"
+                      style={{
+                        background:
+                          'radial-gradient(circle at 30% 30%, rgba(11,95,255,0.18), transparent 60%)',
+                      }}
+                      aria-hidden="true"
+                    />
+                    <div className="relative z-10 h-full grid place-items-center text-5xl transition-transform duration-300 group-hover:scale-110">
+                      {cat.icon || '📦'}
+                    </div>
+                  </>
+                )}
               </div>
 
-              {/* Body */}
               <div className="p-5 sm:p-6 flex flex-col flex-1">
                 <h3 className="text-base sm:text-lg lg:text-xl mb-2 group-hover:text-accent-light transition-colors">
                   {cat.name}

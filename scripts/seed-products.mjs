@@ -148,6 +148,35 @@ function formatPriceDisplay(value) {
   return formatINR(min);
 }
 
+/**
+ * "700VA" → 700, "650VA / 360W" → 650, "0.7kVA" → 700, "" → 0
+ */
+function parseVaFromRaw(raw) {
+  if (raw === null || raw === undefined) return 0;
+  const s = String(raw).trim();
+  if (!s) return 0;
+  const kMatch = s.match(/(\d+(?:\.\d+)?)\s*k\s*va/i);
+  if (kMatch) return Math.round(parseFloat(kMatch[1]) * 1000);
+  const vaMatch = s.match(/(\d+(?:\.\d+)?)\s*va/i);
+  if (vaMatch) return Math.round(parseFloat(vaMatch[1]));
+  const m = s.match(/\d+(?:\.\d+)?/);
+  return m ? Math.round(parseFloat(m[0])) : 0;
+}
+
+/**
+ * "12V / 160Ah" → 160, "150Ah" → 150, "12V / 160" → 160, "" → 0
+ */
+function parseAhFromRaw(raw) {
+  if (raw === null || raw === undefined) return 0;
+  const s = String(raw).trim();
+  if (!s) return 0;
+  const ahMatch = s.match(/(\d+(?:\.\d+)?)\s*ah/i);
+  if (ahMatch) return Math.round(parseFloat(ahMatch[1]));
+  const nums = s.match(/\d+(?:\.\d+)?/g);
+  if (!nums || nums.length === 0) return 0;
+  return Math.round(Math.max(...nums.map(Number)));
+}
+
 // ============================================================
 // Normalize each product for storage
 // ============================================================
@@ -202,6 +231,10 @@ function normalizeProduct(raw, category) {
     priceDisplay: displayPrice,
     numericPrice,                           // single number for sorting / cart
     discountedPrice,                        // number or null
+
+    // structured numerics — used by the calculator
+    vaNumeric: parseVaFromRaw(raw.va),
+    capacityAh: parseAhFromRaw(raw.capacity),
 
     // media
     image: raw.image || null,

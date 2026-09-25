@@ -108,6 +108,23 @@ export const api = {
     request(`/api/sections/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
   deleteSection: (id) => request(`/api/sections/${id}`, { method: 'DELETE' }),
 
+  // ---- Reviews ----
+  getReviews: (productId) =>
+    request(`/api/reviews?productId=${encodeURIComponent(productId)}`),
+  createReview: (payload) =>
+    request('/api/reviews', { method: 'POST', body: JSON.stringify(payload) }),
+  deleteReview: (id) => request(`/api/reviews/${id}`, { method: 'DELETE' }),
+
+  // ---- Categories ----
+  getCategories: (all = false) =>
+    request(`/api/categories${all ? '?all=1' : ''}`),
+  getCategory: (id) => request(`/api/categories/${id}`),
+  createCategory: (payload) =>
+    request('/api/categories', { method: 'POST', body: JSON.stringify(payload) }),
+  updateCategory: (id, payload) =>
+    request(`/api/categories/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  deleteCategory: (id) => request(`/api/categories/${id}`, { method: 'DELETE' }),
+
   // ---- Admin ----
   getAdminStats: () => request('/api/admin/stats'),
   getUsers: (q) => request(`/api/admin/users${q ? `?q=${encodeURIComponent(q)}` : ''}`),

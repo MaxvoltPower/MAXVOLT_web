@@ -9,6 +9,8 @@
     "dev:frontend": "npm --prefix frontend run dev",
     "deploy": "vercel --prod",
     "seed": "node scripts/seed-products.mjs",
+    "seed:categories": "node scripts/seed-categories.mjs",
+    "backfill:numerics": "node scripts/backfill-numerics.mjs",
     "setup-indexes": "node scripts/setup-indexes.mjs"
   },
   "dependencies": {

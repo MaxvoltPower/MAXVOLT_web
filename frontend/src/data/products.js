@@ -126,10 +126,10 @@ export const marqueeItems = [
 ];
 
 export const categoryData = [
-  { id: 'home-inverter', name: 'Home Inverter & Battery', icon: '🏠', description: 'Reliable backup power for homes and small businesses.', link: '/products?category=homeInverterBatteries' },
-  { id: 'car-battery', name: 'Car Batteries', icon: '🚗', description: 'Reliable starting power for cars and commercial vehicles.', link: '/products?category=carBatteries' },
-  { id: 'toto', name: 'TOTO / E-Rickshaw', icon: '🛺', description: 'Heavy-duty battery solutions for electric rickshaws.', link: '/products?category=totoErickshawBatteries' },
-  { id: 'ebike', name: 'E-Bike Batteries', icon: '🚲', description: 'Battery solutions for electric two-wheelers.', link: '/products?category=ebikeBatteries' },
-  { id: 'ups', name: 'UPS Systems', icon: '💻', description: 'Backup power and protection for PCs, offices and businesses.', link: '/products?category=ups' },
-  { id: 'solar', name: 'Solar & Power Solutions', icon: '☀️', description: 'Solutions for renewable and backup power options.', link: '/#contact' },
+  { id: 'home-inverter', name: 'Home Inverter & Battery', icon: '🏠', image: 'https://images.unsplash.com/photo-1558449028-b53a39d100fc?w=600&h=400&fit=crop', description: 'Reliable backup power for homes and small businesses.', link: '/products?category=homeInverterBatteries' },
+  { id: 'car-battery', name: 'Car Batteries', icon: '🚗', image: 'https://images.unsplash.com/photo-1620714223084-8fcacc6dfd8d?w=600&h=400&fit=crop', description: 'Reliable starting power for cars and commercial vehicles.', link: '/products?category=carBatteries' },
+  { id: 'toto', name: 'TOTO / E-Rickshaw', icon: '🛺', image: 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=600&h=400&fit=crop', description: 'Heavy-duty battery solutions for electric rickshaws.', link: '/products?category=totoErickshawBatteries' },
+  { id: 'ebike', name: 'E-Bike Batteries', icon: '🚲', image: 'https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=600&h=400&fit=crop', description: 'Battery solutions for electric two-wheelers.', link: '/products?category=ebikeBatteries' },
+  { id: 'ups', name: 'UPS Systems', icon: '💻', image: 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?w=600&h=400&fit=crop', description: 'Backup power and protection for PCs, offices and businesses.', link: '/products?category=ups' },
+  { id: 'solar', name: 'Solar & Power Solutions', icon: '☀️', image: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=600&h=400&fit=crop', description: 'Solutions for renewable and backup power options.', link: '/#contact' },
 ];

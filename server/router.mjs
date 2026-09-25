@@ -15,6 +15,7 @@ const API_DIR = path.resolve(process.cwd(), 'api');
 const API_ENTRY_FILES = [
   'admin',
   'auth',
+  'categories',
   'chat',
   'config',
   'contact',
@@ -22,6 +23,7 @@ const API_ENTRY_FILES = [
   'payments',
   'products',
   'quotes',
+  'reviews',
   'sections',
   'webhook',
 ];

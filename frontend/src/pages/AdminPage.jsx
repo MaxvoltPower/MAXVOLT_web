@@ -8,6 +8,7 @@ import OrdersManager from '@components/admin/OrdersManager';
 import QuotesManager from '@components/admin/QuotesManager';
 import UsersManager from '@components/admin/UsersManager';
 import SectionsManager from '@components/admin/SectionsManager';
+import CategoriesManager from '@components/admin/CategoriesManager';
 import SettingsManager from '@components/admin/SettingsManager';
 import ProfileForm from '@components/account/ProfileForm';
 
@@ -71,6 +72,7 @@ export default function AdminPage() {
       <Route element={<AdminLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="products" element={<ProductsManager />} />
+        <Route path="categories" element={<CategoriesManager />} />
         <Route path="sections" element={<SectionsManager />} />
         <Route path="orders" element={<OrdersManager />} />
         <Route path="quotes" element={<QuotesManager />} />

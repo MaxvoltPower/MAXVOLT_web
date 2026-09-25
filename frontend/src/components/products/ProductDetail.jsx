@@ -1,13 +1,22 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCart } from '@context/CartContext';
 import { openWhatsapp, getWhatsappMessage, formatPrice, resolveProductImage } from '@lib/utils';
 import Button from '@components/ui/Button';
 
 export default function ProductDetail({ product }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { addToCart } = useCart();
   const [selectedImage, setSelectedImage] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('action') === 'addToCart' && product) {
+      addToCart(product, 1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!product) return null;
 
@@ -28,17 +37,41 @@ export default function ProductDetail({ product }) {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 max-w-6xl mx-auto">
       {/* Image Gallery */}
       <div>
-        <div className="h-80 sm:h-[400px] rounded-2xl bg-dark-muted border border-dark-border grid place-items-center overflow-hidden mb-5">
+        <div
+          className="relative h-80 sm:h-[400px] rounded-2xl bg-dark-muted border border-dark-border grid place-items-center overflow-hidden mb-5 cursor-zoom-in"
+          onClick={() => mainImage && setLightboxOpen(true)}
+        >
           {mainImage ? (
             <img
               src={resolveProductImage({ image: mainImage })}
               alt={product.model}
-              className="w-full h-full object-contain p-6"
+              className="w-full h-full object-contain p-6 transition-transform duration-300 hover:scale-105"
             />
           ) : (
             <span className="text-6xl">🔋</span>
           )}
         </div>
+
+        {lightboxOpen && mainImage && (
+          <div
+            className="fixed inset-0 z-[3000] bg-black/95 grid place-items-center p-4"
+            onClick={() => setLightboxOpen(false)}
+          >
+            <button
+              className="absolute top-4 right-4 text-white text-3xl hover:text-accent transition-colors"
+              onClick={() => setLightboxOpen(false)}
+              aria-label="Close"
+            >
+              ✕
+            </button>
+            <img
+              src={resolveProductImage({ image: mainImage })}
+              alt={product.model}
+              className="max-w-full max-h-[90vh] object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        )}
 
         {images.length > 1 && (
           <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
@@ -122,7 +155,7 @@ export default function ProductDetail({ product }) {
             💬 WhatsApp
           </Button>
           <Link
-            to="/#quotation"
+            to="/contact#quotation"
             className="inline-flex items-center justify-center w-full py-3.5 rounded-xl border-2 border-dark-border-strong font-semibold hover:bg-dark-muted hover:border-accent transition-all"
           >
             📋 Get Quote
@@ -135,7 +168,7 @@ export default function ProductDetail({ product }) {
             Talk to our MAXVOLT experts. We'll recommend the right product based on your actual requirement.
           </p>
           <Link
-            to="/#quotation"
+            to="/contact#quotation"
             className="inline-flex px-5 py-2.5 rounded-xl bg-gradient-to-br from-secondary to-secondary-light text-white text-sm font-semibold hover:-translate-y-0.5 transition-all"
           >
             Get Expert Help

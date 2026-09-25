@@ -19,7 +19,7 @@ export default function ServiceArea() {
           Kolkata and surrounding areas.
         </p>
         <Link
-          to="/#quotation"
+          to="/contact#quotation"
           className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-b from-brand to-brand-dark text-white font-semibold shadow-md shadow-brand/25 hover:shadow-lg hover:shadow-brand/40 hover:-translate-y-0.5 transition-all"
         >
           Check Availability for Your Area

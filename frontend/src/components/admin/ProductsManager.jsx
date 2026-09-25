@@ -5,6 +5,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { api } from '@lib/api';
 import { useProducts } from '@context/ProductsContext';
+import { useCategories } from '@context/CategoriesContext';
 import { formatPrice, resolveProductImage } from '@lib/utils';
 import { useToast } from '@components/ui/Toast';
 import Button from '@components/ui/Button';
@@ -13,7 +14,9 @@ import Select from '@components/ui/Select';
 import Modal from '@components/ui/Modal';
 import Badge from '@components/ui/Badge';
 
-const CATEGORY_LABELS = {
+// Category labels are now loaded from the CategoriesContext at runtime.
+// Kept as a fallback in case the DB is empty on first run.
+const FALLBACK_CATEGORY_LABELS = {
   homeInverterBatteries: 'Home Inverter Batteries',
   homeInverters: 'Home Inverters',
   inverter: 'Inverters',
@@ -44,7 +47,13 @@ const EMPTY_FORM = {
 
 export default function ProductsManager() {
   const { reload } = useProducts();
+  const { categories: dbCategories, labels: categoryLabelsFromDb } = useCategories();
   const { showToast } = useToast();
+
+  const CATEGORY_LABELS =
+    dbCategories && dbCategories.length > 0
+      ? categoryLabelsFromDb
+      : FALLBACK_CATEGORY_LABELS;
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -177,11 +186,17 @@ export default function ProductsManager() {
           className="w-full sm:max-w-xs px-4 py-2.5 rounded-xl border-[1.5px] border-dark-border bg-dark-muted text-sm cursor-pointer"
         >
           <option value="">All Categories</option>
-          {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-            <option key={key} value={key}>
-              {label}
-            </option>
-          ))}
+          {dbCategories && dbCategories.length > 0
+            ? dbCategories.map((c) => (
+                <option key={c._id || c.slug} value={c.slug}>
+                  {c.name}
+                </option>
+              ))
+            : Object.entries(FALLBACK_CATEGORY_LABELS).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
         </select>
       </div>
 
@@ -322,11 +337,17 @@ export default function ProductsManager() {
             value={formData.category}
             onChange={handleChange}
           >
-            {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-              <option key={key} value={key}>
-                {label}
-              </option>
-            ))}
+            {dbCategories && dbCategories.length > 0
+              ? dbCategories.map((c) => (
+                  <option key={c._id || c.slug} value={c.slug}>
+                    {c.name}
+                  </option>
+                ))
+              : Object.entries(FALLBACK_CATEGORY_LABELS).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
           </Select>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -335,6 +356,7 @@ export default function ProductsManager() {
               name="capacity"
               value={formData.capacity}
               onChange={handleChange}
+              hint='Free text — e.g. "150Ah", "12V / 160Ah". The calculator parses this automatically.'
             />
             <Input
               label="Type"
@@ -382,6 +404,7 @@ export default function ProductsManager() {
               name="va"
               value={formData.va}
               onChange={handleChange}
+              hint='Free text — e.g. "700VA", "650VA / 360W". The calculator parses this automatically.'
             />
             <Input
               label="Stock Quantity"

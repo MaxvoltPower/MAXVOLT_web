@@ -5,23 +5,14 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useProducts, normalizeCategory } from '@context/ProductsContext';
+import { useCategories } from '@context/CategoriesContext';
 import ProductGrid from '@components/products/ProductGrid';
 import ProductFilters from '@components/products/ProductFilters';
 import { parsePriceToNumber } from '@lib/utils';
 
-const CATEGORY_LABELS = {
-  homeInverterBatteries: 'Home Inverter Batteries',
-  homeInverters: 'Home Inverters',
-  inverter: 'Inverters',
-  carBatteries: 'Car Batteries',
-  totoErickshawBatteries: 'TOTO / E-Rickshaw',
-  ebikeBatteries: 'E-Bike Batteries',
-  ups: 'UPS Systems',
-  upsOffice: 'UPS Systems',
-};
-
 export default function ProductsPage() {
   const { products, loading, getProductsByCategory } = useProducts();
+  const { categories: dbCategories, labels: CATEGORY_LABELS } = useCategories();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [search, setSearch] = useState('');
@@ -34,14 +25,21 @@ export default function ProductsPage() {
     setCategory(cat);
   }, [searchParams]);
 
+  // Prefer DB categories (preserves admin-defined order + names).
+  // Fall back to categories derived from the product list if the DB is empty.
   const categories = useMemo(() => {
+    const fromDb = (dbCategories || [])
+      .filter((c) => c.active !== false)
+      .map((c) => c.slug);
+    if (fromDb.length > 0) return fromDb;
+
     const set = new Set();
     products.forEach((p) => {
       const c = normalizeCategory(p.category);
       if (c) set.add(c);
     });
     return Array.from(set);
-  }, [products]);
+  }, [dbCategories, products]);
 
   const brands = useMemo(() => {
     const set = new Set();

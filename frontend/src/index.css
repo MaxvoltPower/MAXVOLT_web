@@ -258,6 +258,25 @@
   .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
 }
 
+/* ---------- Brand wordmark — dark surface variant ---------- */
+/* The default inline colors in BrandLogo.jsx are tuned for a white
+   surface. These classes keep the wordmark readable on dark surfaces
+   (header, footer, admin sidebar). */
+.brand-on-dark .brand-wordmark-navy,
+.admin-sidebar .brand-wordmark-navy {
+  color: #E8EDF7 !important;
+}
+.brand-on-dark .brand-wordmark-gold,
+.admin-sidebar .brand-wordmark-gold {
+  color: #FFC93C !important;
+}
+.brand-on-dark .brand-tagline,
+.admin-sidebar .brand-tagline {
+  color: #B9C2D4 !important;
+}
+/* Force the brand wordmark to render white-on-dark inside the sidebar. */
+/* (class-based rules above handle the sidebar override) */
+
 /* ---------- Animations ---------- */
 @keyframes marquee {
   from { transform: translateX(0); }

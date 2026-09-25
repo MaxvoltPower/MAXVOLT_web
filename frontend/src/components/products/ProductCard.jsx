@@ -167,12 +167,12 @@ export default function ProductCard({ product }) {
               Out of Stock
             </button>
           ) : (
-            <button
-              onClick={() => openWhatsapp(getWhatsappMessage(product))}
+            <Link
+              to={`/product/${productId}?action=addToCart`}
               className="flex-1 inline-flex items-center justify-center px-3 py-2.5 rounded-xl bg-gradient-to-b from-accent to-accent-dark text-white text-xs sm:text-sm font-semibold hover:shadow-lg hover:shadow-accent/40 hover:-translate-y-0.5 transition-all"
             >
-              WhatsApp
-            </button>
+              Add to Cart
+            </Link>
           )}
         </div>
       </div>

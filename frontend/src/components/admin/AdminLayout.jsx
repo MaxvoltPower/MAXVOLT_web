@@ -17,6 +17,7 @@ export default function AdminLayout() {
   const navItems = [
     { path: '/admin', label: 'Dashboard', icon: '📊', exact: true },
     { path: '/admin/products', label: 'Products', icon: '📦' },
+    { path: '/admin/categories', label: 'Categories', icon: '🗂️' },
     { path: '/admin/sections', label: 'Sections', icon: '🏷️' },
     { path: '/admin/orders', label: 'Orders', icon: '🛒' },
     { path: '/admin/quotes', label: 'Quotes', icon: '💬' },
@@ -74,21 +75,19 @@ export default function AdminLayout() {
 
       {/* Sidebar */}
       <aside
-        className={`bg-dark-subtle border-r border-dark-border p-5 lg:p-6 fixed lg:sticky top-0 h-screen overflow-y-auto z-[1001] w-[280px] max-w-[85vw] transition-transform duration-300 ${
+        className={`admin-sidebar bg-dark-subtle border-r border-dark-border p-5 lg:p-6 fixed lg:sticky top-0 h-screen overflow-y-auto z-[1001] w-[280px] max-w-[85vw] transition-transform duration-300 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
         <div className="flex items-center justify-between mb-6">
-          <Link to="/admin" className="flex items-center gap-3 hover:opacity-85 transition-opacity">
-            <img
-              src="/assets/maxvolt-logo.png"
-              alt="MAXVOLT"
-              className="h-9 bg-white rounded-lg p-1"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-            />
-            <strong className="text-sm">Admin</strong>
+          <Link
+            to="/admin"
+            className="flex items-center gap-3 hover:opacity-90 transition-opacity group"
+          >
+            <BrandLogo size="sm" showTagline={false} as="static" />
+            <span className="text-[0.7rem] uppercase tracking-[0.2em] font-bold text-[var(--text-subtle)] border-l border-[var(--border-strong)] pl-2">
+              Admin
+            </span>
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}

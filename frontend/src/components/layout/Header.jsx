@@ -7,14 +7,15 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@context/AuthContext';
 import { useCart } from '@context/CartContext';
 import { openWhatsapp, initialsFrom } from '@lib/utils';
+import BrandLogo from './BrandLogo';
 
 const NAV_LINKS = [
   { to: '/',            label: 'Home' },
   { to: '/products',    label: 'Products' },
-  { to: '/#solutions',  label: 'Solutions' },
-  { to: '/#calculator', label: 'Calculator' },
-  { to: '/#why-maxvolt',label: 'Why MAXVOLT' },
-  { to: '/#contact',    label: 'Contact' },
+  { to: '/solutions',   label: 'Solutions' },
+  { to: '/calculator',  label: 'Calculator' },
+  { to: '/about',       label: 'About' },
+  { to: '/contact',     label: 'Contact' },
 ];
 
 export default function Header() {
@@ -43,7 +44,7 @@ export default function Header() {
     return () => { document.body.style.overflow = ''; };
   }, [isMenuOpen]);
 
-  // Smooth-scroll to hash sections
+  // Close the mobile menu on any nav click, and handle hash anchors
   const handleNavClick = (to, e) => {
     setIsMenuOpen(false);
 
@@ -52,17 +53,17 @@ export default function Header() {
     const [path, hash] = to.split('#');
     const targetPath = path || '/';
 
+    // If we're on a different page, let the router navigate first.
+    // The target page will smooth-scroll to the hash on mount.
     if (location.pathname !== targetPath) {
-      // Let React Router navigate; HomePage will pick up hash on mount
       return;
     }
 
-    // Already on the page — scroll manually
+    // Already on the target page — scroll to the section.
     if (e) e.preventDefault();
     const el = document.getElementById(hash);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      // Update URL without full nav
       navigate(to, { replace: true });
     }
   };
@@ -78,7 +79,7 @@ export default function Header() {
           </span>
           <a
             href="tel:+917595941311"
-            className="font-semibold hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/25 text-white font-bold text-[0.72rem] tracking-wide backdrop-blur-sm border border-white/15 hover:bg-black/40 hover:border-white/30 transition-all"
           >
             📞 +91 75959 41311
           </a>
@@ -109,42 +110,28 @@ export default function Header() {
             </button>
 
             {/* Logo */}
-            <Link
-              to="/"
-              className="flex items-center gap-2 shrink-0 group"
-              aria-label="MAXVOLT home"
-            >
-              <img
-                src="/assets/maxvolt-logo.png"
-                alt=""
-                className="h-8 sm:h-9 lg:h-10 w-auto transition-transform group-hover:scale-105"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  const parent = e.currentTarget.parentElement;
-                  if (parent && !parent.querySelector('.logo-fallback')) {
-                    const span = document.createElement('span');
-                    span.className = 'logo-fallback text-lg sm:text-xl font-black tracking-tight text-gradient-brand';
-                    span.textContent = 'MAXVOLT';
-                    parent.appendChild(span);
-                  }
-                }}
-              />
-            </Link>
+            <BrandLogo size="md" className="shrink-0" />
 
             {/* Desktop nav */}
             <nav className="hidden lg:flex flex-1 justify-center">
               <ul className="flex items-center gap-6 xl:gap-7">
-                {NAV_LINKS.map((link) => (
-                  <li key={link.to}>
-                    <Link
-                      to={link.to}
-                      onClick={(e) => handleNavClick(link.to, e)}
-                      className="nav-link"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
+                {NAV_LINKS.map((link) => {
+                  const isActive =
+                    link.to === '/'
+                      ? location.pathname === '/'
+                      : location.pathname.startsWith(link.to);
+                  return (
+                    <li key={link.to}>
+                      <Link
+                        to={link.to}
+                        onClick={(e) => handleNavClick(link.to, e)}
+                        className={`nav-link ${isActive ? 'text-[var(--text)]' : ''}`}
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </nav>
 
@@ -212,8 +199,7 @@ export default function Header() {
 
               {/* Get Quote */}
               <Link
-                to="/#quotation"
-                onClick={(e) => handleNavClick('/#quotation', e)}
+                to="/contact#quotation"
                 className="hidden md:inline-flex items-center px-4 py-2 rounded-xl bg-gradient-to-b from-accent to-accent-dark text-white text-[0.85rem] font-semibold shadow-md shadow-accent/25 hover:shadow-lg hover:shadow-accent/40 hover:-translate-y-0.5 transition-all"
               >
                 Get a Quote
@@ -288,9 +274,9 @@ export default function Header() {
                   WhatsApp
                 </button>
                 <Link
-                  to="/#quotation"
+                  to="/contact#quotation"
                   className="block px-4 py-3 rounded-xl text-center bg-gradient-to-b from-accent to-accent-dark text-white font-semibold"
-                  onClick={(e) => handleNavClick('/#quotation', e)}
+                  onClick={() => setIsMenuOpen(false)}
                 >
                   Get a Quote
                 </Link>

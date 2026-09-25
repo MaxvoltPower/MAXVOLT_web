@@ -46,6 +46,96 @@ export const COLLECTIONS = {
   CONTACTS: 'contacts',
 };
 
+// ------- Product numeric helpers -------
+
+/**
+ * Parse a price value into { min, max, isRange, invalid, raw }.
+ * Mirrors frontend/src/lib/utils.js parsePrice().
+ */
+export function parsePrice(value) {
+  if (value === null || value === undefined) {
+    return { min: 0, max: 0, isRange: false, invalid: true, raw: value };
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return { min: value, max: value, isRange: false, invalid: false, raw: value };
+  }
+  const str = String(value).trim();
+  if (!str) return { min: 0, max: 0, isRange: false, invalid: true, raw: value };
+
+  const nums = str.replace(/[₹,\s]/g, '').match(/\d+(?:\.\d+)?/g);
+  if (!nums || nums.length === 0) {
+    return { min: 0, max: 0, isRange: false, invalid: true, raw: value };
+  }
+  const parsed = nums.map(Number).filter(Number.isFinite);
+  if (!parsed.length) {
+    return { min: 0, max: 0, isRange: false, invalid: true, raw: value };
+  }
+  const min = Math.min(...parsed);
+  const max = Math.max(...parsed);
+  return { min, max, isRange: max !== min, invalid: false, raw: value };
+}
+
+/**
+ * Extract the first integer found in a string.
+ * "700VA" → 700, "12V / 160Ah" → 12, "" → 0
+ */
+export function extractNumber(input) {
+  if (input === null || input === undefined) return 0;
+  if (typeof input === 'number' && Number.isFinite(input)) return input;
+  const m = String(input).match(/\d+(?:\.\d+)?/);
+  return m ? parseFloat(m[0]) : 0;
+}
+
+/**
+ * Parse VA from a product. Prefers `vaNumeric` if set, falls back to parsing `va`.
+ * Handles "700VA", "650VA / 360W", "0.7kVA", "1.5 kVA".
+ */
+export function parseVaToNumber(product) {
+  if (!product) return 0;
+  if (typeof product.vaNumeric === 'number' && Number.isFinite(product.vaNumeric)) {
+    return product.vaNumeric;
+  }
+  const raw = product.va;
+  if (raw === null || raw === undefined) return 0;
+  const s = String(raw).trim();
+  if (!s) return 0;
+
+  // Handle kVA suffix
+  const kMatch = s.match(/(\d+(?:\.\d+)?)\s*k\s*va/i);
+  if (kMatch) return parseFloat(kMatch[1]) * 1000;
+
+  // Handle plain VA
+  const vaMatch = s.match(/(\d+(?:\.\d+)?)\s*va/i);
+  if (vaMatch) return parseFloat(vaMatch[1]);
+
+  // Fallback: first number
+  return extractNumber(s);
+}
+
+/**
+ * Parse battery capacity (Ah) from a product.
+ * Prefers `capacityAh` if set, falls back to parsing `capacity`.
+ * Handles "150Ah", "12V / 160Ah", "12V / 105Ah", "120 Ah".
+ */
+export function parseAhToNumber(product) {
+  if (!product) return 0;
+  if (typeof product.capacityAh === 'number' && Number.isFinite(product.capacityAh)) {
+    return product.capacityAh;
+  }
+  const raw = product.capacity;
+  if (raw === null || raw === undefined) return 0;
+  const s = String(raw).trim();
+  if (!s) return 0;
+
+  const ahMatch = s.match(/(\d+(?:\.\d+)?)\s*ah/i);
+  if (ahMatch) return parseFloat(ahMatch[1]);
+
+  // If no "Ah" suffix, take the largest number (handles "12V / 160" → 160)
+  const nums = s.match(/\d+(?:\.\d+)?/g);
+  if (!nums || nums.length === 0) return 0;
+  return Math.max(...nums.map(Number));
+}
+
 // ------- Product image helpers (base64 stored directly in Mongo) -------
 // Images are stored as data URLs (data:image/png;base64,...) in product.image
 // This avoids needing an external file storage service.

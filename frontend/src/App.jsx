@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@context/AuthContext';
 import { CartProvider } from '@context/CartContext';
 import { ProductsProvider } from '@context/ProductsContext';
+import { CategoriesProvider } from '@context/CategoriesContext';
 import { ToastProvider } from '@components/ui/Toast';
 import Layout from '@components/layout/Layout';
 import ScrollToTop from '@components/layout/ScrollToTop';
@@ -11,6 +12,10 @@ import Chatbot from '@components/Chatbot';
 import HomePage from '@pages/HomePage';
 import ProductsPage from '@pages/ProductsPage';
 import ProductDetailPage from '@pages/ProductDetailPage';
+import SolutionsPage from '@pages/SolutionsPage';
+import CalculatorPage from '@pages/CalculatorPage';
+import AboutPage from '@pages/AboutPage';
+import ContactPage from '@pages/ContactPage';
 import CartPage from '@pages/CartPage';
 import CheckoutPage from '@pages/CheckoutPage';
 import OrderSuccessPage from '@pages/OrderSuccessPage';
@@ -28,14 +33,19 @@ function App() {
   return (
     <ToastProvider>
       <AuthProvider>
-        <ProductsProvider>
-          <CartProvider>
+        <CategoriesProvider>
+          <ProductsProvider>
+            <CartProvider>
             <ScrollToTop />
             <Routes>
               <Route path="/" element={<Layout />}>
                 <Route index element={<HomePage />} />
                 <Route path="products" element={<ProductsPage />} />
                 <Route path="product/:id" element={<ProductDetailPage />} />
+                <Route path="solutions" element={<SolutionsPage />} />
+                <Route path="calculator" element={<CalculatorPage />} />
+                <Route path="about" element={<AboutPage />} />
+                <Route path="contact" element={<ContactPage />} />
                 <Route path="cart" element={<CartPage />} />
                 <Route path="checkout" element={<CheckoutPage />} />
                 <Route path="order-success" element={<OrderSuccessPage />} />
@@ -57,9 +67,10 @@ function App() {
                 <Route path="*" element={<NotFoundPage />} />
               </Route>
             </Routes>
-            <Chatbot />
-          </CartProvider>
-        </ProductsProvider>
+              <Chatbot />
+            </CartProvider>
+          </ProductsProvider>
+        </CategoriesProvider>
       </AuthProvider>
     </ToastProvider>
   );

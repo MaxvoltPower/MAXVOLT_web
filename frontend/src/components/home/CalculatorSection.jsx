@@ -25,20 +25,50 @@ function requiredBatteryAh(loadWatts, hours) {
   return sizes.find((s) => s >= raw) || 300;
 }
 
-function extractNumber(str) {
-  const m = String(str || '').match(/\d+/);
-  return m ? parseInt(m[0], 10) : 0;
+/**
+ * Prefer structured numeric fields written by the API/seed script.
+ * Fall back to string parsing only if a legacy product has no numeric field.
+ */
+function getProductVa(product) {
+  if (!product) return 0;
+  if (typeof product.vaNumeric === 'number' && Number.isFinite(product.vaNumeric)) {
+    return product.vaNumeric;
+  }
+  const raw = product.va;
+  if (!raw) return 0;
+  const s = String(raw).trim();
+  const kMatch = s.match(/(\d+(?:\.\d+)?)\s*k\s*va/i);
+  if (kMatch) return Math.round(parseFloat(kMatch[1]) * 1000);
+  const vaMatch = s.match(/(\d+(?:\.\d+)?)\s*va/i);
+  if (vaMatch) return Math.round(parseFloat(vaMatch[1]));
+  const m = s.match(/\d+(?:\.\d+)?/);
+  return m ? Math.round(parseFloat(m[0])) : 0;
+}
+
+function getProductAh(product) {
+  if (!product) return 0;
+  if (typeof product.capacityAh === 'number' && Number.isFinite(product.capacityAh)) {
+    return product.capacityAh;
+  }
+  const raw = product.capacity;
+  if (!raw) return 0;
+  const s = String(raw).trim();
+  const ahMatch = s.match(/(\d+(?:\.\d+)?)\s*ah/i);
+  if (ahMatch) return Math.round(parseFloat(ahMatch[1]));
+  const nums = s.match(/\d+(?:\.\d+)?/g);
+  if (!nums || nums.length === 0) return 0;
+  return Math.round(Math.max(...nums.map(Number)));
 }
 
 function scoreProduct(product, targets) {
   const category = product.category;
   if (category === 'homeInverters' || category === 'inverter') {
-    const va = extractNumber(product.va);
+    const va = getProductVa(product);
     if (!va) return 9999;
     return Math.abs(va - targets.va) + (va < targets.va ? 500 : 0);
   }
   if (category === 'homeInverterBatteries') {
-    const ah = extractNumber(product.capacity);
+    const ah = getProductAh(product);
     if (!ah) return 9999;
     return Math.abs(ah - targets.ah) + (ah < targets.ah ? 500 : 0);
   }
@@ -101,12 +131,12 @@ export default function CalculatorSection() {
       .sort((a, b) => a.score - b.score);
 
     const validInverter = inverters.find((i) => {
-      const va = extractNumber(i.p.va);
+      const va = getProductVa(i.p);
       return va >= totalWatts * 0.8;
     });
 
     const validBattery = batteries.find((b) => {
-      const ah = extractNumber(b.p.capacity);
+      const ah = getProductAh(b.p);
       return ah >= targets.ah * 0.8;
     });
 
@@ -233,7 +263,7 @@ function ResultCard({ result, onReset }) {
         <p className="mt-3 text-sm">Please contact us directly for a custom solution.</p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Link
-            to="/#quotation"
+            to="/contact#quotation"
             className="inline-flex px-4 sm:px-5 py-2.5 rounded-xl bg-gradient-to-b from-brand to-brand-dark text-white font-semibold text-sm"
           >
             Get Custom Quote
@@ -302,7 +332,7 @@ function ResultCard({ result, onReset }) {
 
       <div className="flex flex-wrap gap-2">
         <Link
-          to="/#quotation"
+          to="/contact#quotation"
           className="inline-flex px-4 sm:px-5 py-2.5 rounded-xl bg-gradient-to-b from-brand to-brand-dark text-white font-semibold text-sm"
         >
           Get Personalized Quote

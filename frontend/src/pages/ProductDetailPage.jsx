@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useProducts } from '@context/ProductsContext';
 import ProductDetail from '@components/products/ProductDetail';
 import ProductGrid from '@components/products/ProductGrid';
+import ReviewSection from '@components/products/ReviewSection';
 import Button from '@components/ui/Button';
 
 export default function ProductDetailPage() {
@@ -80,6 +81,8 @@ export default function ProductDetailPage() {
       <section className="container-custom py-10 sm:py-16">
         <ProductDetail product={product} />
       </section>
+
+      <ReviewSection productId={product.id || product._id} />
 
       {related.length > 0 && (
         <section className="band">

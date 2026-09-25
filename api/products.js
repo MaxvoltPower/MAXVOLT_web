@@ -11,6 +11,9 @@ import {
   COLLECTIONS,
   normalizeImageInput,
   resolveProductImage,
+  parseVaToNumber,
+  parseAhToNumber,
+  parsePrice,
 } from './_lib/mongodb.js';
 import { ObjectId } from 'mongodb';
 
@@ -72,6 +75,28 @@ export default async function handler(req, res) {
     if (method === 'PUT' || method === 'PATCH') {
       const body = parseBody(req);
       delete body._id;
+
+      // Recompute structured numeric fields whenever the string source changes
+      if ('va' in body || 'vaNumeric' in body) {
+        body.vaNumeric = parseVaToNumber({
+          va: body.va,
+          vaNumeric: body.vaNumeric,
+        });
+      }
+      if ('capacity' in body || 'capacityAh' in body) {
+        body.capacityAh = parseAhToNumber({
+          capacity: body.capacity,
+          capacityAh: body.capacityAh,
+        });
+      }
+      if ('price' in body || 'discountedPrice' in body) {
+        const priceInfo = parsePrice(
+          body.discountedPrice !== undefined && body.discountedPrice !== null
+            ? body.discountedPrice
+            : body.price
+        );
+        body.numericPrice = priceInfo.invalid ? 0 : priceInfo.min;
+      }
 
       if ('images' in body && Array.isArray(body.images)) {
         body.images = body.images
@@ -188,6 +213,9 @@ export default async function handler(req, res) {
         : null,
       stock: body.stock !== undefined ? Number(body.stock) : 0,
       active: body.active !== false,
+      // Structured numeric fields for the calculator + sorting
+      vaNumeric: parseVaToNumber(body),
+      capacityAh: parseAhToNumber(body),
       createdAt: new Date(),
       updatedAt: new Date(),
     };

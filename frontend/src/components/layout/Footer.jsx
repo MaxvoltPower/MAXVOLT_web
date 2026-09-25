@@ -4,17 +4,18 @@
 
 import { Link } from 'react-router-dom';
 import { openWhatsapp, CONFIG } from '@lib/utils';
+import BrandLogo from './BrandLogo';
 
 export default function Footer() {
   const year = new Date().getFullYear();
 
   const quickLinks = [
-    { to: '/',                label: 'Home' },
-    { to: '/products',        label: 'Products' },
-    { to: '/#solutions',      label: 'Solutions' },
-    { to: '/#calculator',     label: 'Calculator' },
-    { to: '/#about',          label: 'About' },
-    { to: '/#contact',        label: 'Contact' },
+    { to: '/',              label: 'Home' },
+    { to: '/products',      label: 'Products' },
+    { to: '/solutions',     label: 'Solutions' },
+    { to: '/calculator',    label: 'Calculator' },
+    { to: '/about',         label: 'About' },
+    { to: '/contact',       label: 'Contact' },
   ];
 
   const productLinks = [
@@ -42,21 +43,9 @@ export default function Footer() {
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10 mb-12">
           {/* Brand */}
           <div className="col-span-2 lg:col-span-1">
-            <img
-              src="/assets/maxvolt-logo.png"
-              alt="MAXVOLT"
-              className="h-10 sm:h-11 w-auto mb-4"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                const parent = e.currentTarget.parentElement;
-                if (parent && !parent.querySelector('.footer-brand-fallback')) {
-                  const div = document.createElement('div');
-                  div.className = 'footer-brand-fallback text-2xl font-black text-gradient-brand mb-4 tracking-tight';
-                  div.textContent = 'MAXVOLT';
-                  parent.prepend(div);
-                }
-              }}
-            />
+            <div className="mb-4 brand-on-dark">
+              <BrandLogo size="lg" />
+            </div>
             <p className="text-xs font-bold tracking-[0.2em] text-[var(--text-subtle)] mb-3">
               ⚡ TRUSTED POWER ALWAYS
             </p>

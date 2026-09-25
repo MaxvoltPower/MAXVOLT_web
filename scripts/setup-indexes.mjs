@@ -20,6 +20,17 @@ try {
     { unique: true, sparse: true }
   );
 
+  // Reviews: one review per user per product, fast lookup by product
+  await db.collection('reviews').createIndex(
+    { productId: 1, uid: 1 },
+    { unique: true }
+  );
+  await db.collection('reviews').createIndex({ productId: 1, createdAt: -1 });
+
+  // Categories: unique slug, ordered listing
+  await db.collection('categories').createIndex({ slug: 1 }, { unique: true });
+  await db.collection('categories').createIndex({ order: 1, active: 1 });
+
   console.log('✅ Indexes created');
 } finally {
   await client.close();
