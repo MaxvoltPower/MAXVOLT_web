@@ -97,30 +97,91 @@ export function getWhatsappMessage(product = null) {
   return 'Hello MAXVOLT, I need help choosing a battery/inverter/power solution. Please contact me.';
 }
 
+// ------------------------------------------------------------
+// Image resolution — must mirror api/_lib/mongodb.js
+// ------------------------------------------------------------
+
+const JUNK_STRINGS = new Set([
+  '',
+  'undefined',
+  'null',
+  'nan',
+  'false',
+  'none',
+  '[object object]',
+]);
+
+function isJunkImageString(s) {
+  if (typeof s !== 'string') return true;
+  const t = s.trim();
+  if (!t) return true;
+  return JUNK_STRINGS.has(t.toLowerCase());
+}
+
 /**
- * Resolve a product image reference into a usable <img src>.
+ * Resolve a single image reference string into a usable <img src>.
+ * Returns null for junk.
+ */
+function resolveImageString(raw) {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== 'string') return null;
+
+  const s = raw.trim();
+  if (isJunkImageString(s)) return null;
+
+  if (s.startsWith('data:')) return s;              // base64 / svg data URL
+  if (s.startsWith('blob:')) return s;              // browser blob URL
+  if (s.startsWith('//')) return s;                 // protocol-relative
+  if (/^https?:\/\//i.test(s)) return s;            // external URL
+  if (s.startsWith('/')) return s;                  // absolute path
+  if (s.startsWith('assets/')) return '/' + s;      // normalise
+  if (s.startsWith('../')) return s.replace(/^\.\.\//, '/');
+  return `/assets/images/${s}`;                     // bare filename → assets/images
+}
+
+/**
+ * Resolve a product's image reference into a usable <img src>.
+ * Accepts EITHER:
+ *   - a product object (reads `.images[0]` then `.image`)
+ *   - a string (treated as a single image reference)
  * Returns null if no usable image — components should render a placeholder.
  */
-export function resolveProductImage(product) {
-  if (!product) return null;
+export function resolveProductImage(productOrString) {
+  if (!productOrString) return null;
 
-  const raw =
-    (Array.isArray(product.images) && product.images[0]) ||
-    product.image ||
-    null;
+  // String form — used when mapping over an array of image strings
+  if (typeof productOrString === 'string') {
+    return resolveImageString(productOrString);
+  }
 
-  if (!raw) return null;
-  const img = String(raw).trim();
+  // Object form — prefer images[0], fall back to image
+  if (Array.isArray(productOrString.images) && productOrString.images.length > 0) {
+    for (const candidate of productOrString.images) {
+      const resolved = resolveImageString(candidate);
+      if (resolved) return resolved;
+    }
+  }
 
-  // Guard against literal "undefined", "null", "NaN" strings
-  if (!img || img === 'undefined' || img === 'null' || img === 'NaN') return null;
+  return resolveImageString(productOrString.image);
+}
 
-  if (img.startsWith('data:')) return img;
-  if (/^https?:\/\//i.test(img)) return img;
-  if (img.startsWith('/')) return img;
-  if (img.startsWith('assets/')) return `/${img}`;
-  if (img.startsWith('../')) return img.replace(/^\.\.\//, '/');
-  return `/assets/images/${img}`;
+/**
+ * Resolve all images for a product into a clean array of usable strings.
+ */
+export function resolveProductImages(product) {
+  if (!product) return [];
+  const out = [];
+  if (Array.isArray(product.images)) {
+    for (const img of product.images) {
+      const r = resolveImageString(img);
+      if (r) out.push(r);
+    }
+  }
+  if (out.length === 0) {
+    const single = resolveImageString(product.image);
+    if (single) out.push(single);
+  }
+  return out;
 }
 
 export function getAvailabilityClass(availability) {

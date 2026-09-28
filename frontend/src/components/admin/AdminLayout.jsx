@@ -30,12 +30,12 @@ export default function AdminLayout() {
   const isActive = (path, exact) =>
     exact ? location.pathname === path : location.pathname.startsWith(path);
 
-  // Close on route change
+  // Close the mobile drawer on route change
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname]);
 
-  // Lock scroll when sidebar open on mobile
+  // Lock body scroll while the mobile drawer is open
   useEffect(() => {
     if (sidebarOpen && window.innerWidth < 1024) {
       document.body.style.overflow = 'hidden';
@@ -53,7 +53,7 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] min-h-screen">
+    <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Mobile top bar */}
       <div className="lg:hidden sticky top-16 z-40 bg-[var(--bg-elev)] border-b border-[var(--border)] px-4 py-2 flex items-center justify-between">
         <button
@@ -61,7 +61,13 @@ export default function AdminLayout() {
           className="inline-flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[var(--bg-muted)]"
           aria-label="Open admin menu"
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
           <span className="text-sm font-semibold">Admin Menu</span>
@@ -74,11 +80,13 @@ export default function AdminLayout() {
         </Link>
       </div>
 
-      {/* Sidebar */}
+      {/* Sidebar — off-canvas drawer on mobile, sticky column on desktop */}
       <aside
-        className={`admin-sidebar bg-[var(--bg-elev)] border-r border-[var(--border)] p-5 lg:p-6 fixed lg:sticky top-0 h-screen overflow-y-auto z-[1001] w-[280px] max-w-[85vw] transition-transform duration-300 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        }`}
+        className={`admin-sidebar bg-[var(--bg-elev)] border-r border-[var(--border)] p-5 lg:p-6
+          fixed lg:sticky top-0 h-screen overflow-y-auto z-[1001]
+          w-[280px] max-w-[85vw] lg:w-[260px] lg:max-w-none shrink-0
+          transition-transform duration-300
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         <div className="flex items-center justify-between mb-6">
           <Link
@@ -146,7 +154,7 @@ export default function AdminLayout() {
         )}
       </aside>
 
-      {/* Backdrop */}
+      {/* Backdrop for the mobile drawer */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/60 z-[1000] lg:hidden"
@@ -155,9 +163,11 @@ export default function AdminLayout() {
         />
       )}
 
-      {/* Main */}
-      <main className="p-4 sm:p-6 lg:p-8 max-w-7xl w-full overflow-x-hidden">
-        <Outlet />
+      {/* Main content */}
+      <main className="flex-1 min-w-0 overflow-x-hidden">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

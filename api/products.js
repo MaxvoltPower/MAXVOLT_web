@@ -11,6 +11,7 @@ import {
   getCollection,
   COLLECTIONS,
   normalizeImageInput,
+  normalizeImageArray,
   resolveProductImage,
   parseVaToNumber,
   parseAhToNumber,
@@ -114,19 +115,27 @@ export default async function handler(req, res) {
         body.numericPrice = priceInfo.invalid ? 0 : priceInfo.min;
       }
 
-      if ('images' in body && Array.isArray(body.images)) {
-        body.images = body.images
-          .map((img) => {
-            const norm = normalizeImageInput(img);
-            return norm.ok ? norm.value : null;
-          })
-          .filter(Boolean);
-        body.image = body.images[0] || null;
-      } else if ('image' in body) {
-        const norm = normalizeImageInput(body.image);
-        if (!norm.ok) return fail(res, norm.error);
-        body.image = norm.value;
-        body.images = [norm.value];
+      // ---- Image handling ----
+      // Accept either `images` (array) or `image` (single) or both.
+      const touchedImages = 'images' in body || 'image' in body;
+
+      if (touchedImages) {
+        let nextImages = [];
+
+        if (Array.isArray(body.images)) {
+          nextImages = normalizeImageArray(body.images);
+        }
+
+        // If only `image` was provided, or the images array came back empty,
+        // try to interpret `image` as a single source.
+        if (nextImages.length === 0 && 'image' in body) {
+          const norm = normalizeImageInput(body.image);
+          if (!norm.ok) return fail(res, norm.error);
+          if (norm.value) nextImages = [norm.value];
+        }
+
+        body.images = nextImages;
+        body.image = nextImages[0] || null;
       }
 
       if ('discountedPrice' in body) {
@@ -138,8 +147,12 @@ export default async function handler(req, res) {
         body.stock = Number.isFinite(n) && n >= 0 ? n : 0;
       }
       if ('price' in body) {
-        const n = Number(body.price);
-        body.price = Number.isFinite(n) && n >= 0 ? n : 0;
+        // Keep `price` as either a number or a free-text range string.
+        if (typeof body.price === 'number') {
+          body.price = Number.isFinite(body.price) && body.price >= 0 ? body.price : 0;
+        } else if (body.price !== null && body.price !== undefined) {
+          body.price = String(body.price);
+        }
       }
 
       body.updatedAt = new Date();
@@ -203,22 +216,20 @@ export default async function handler(req, res) {
       return fail(res, 'model, brand, category are required');
     }
 
-    let imageValue = null;
+    // ---- Image handling ----
     let imagesValue = [];
-    if (Array.isArray(body.images) && body.images.length) {
-      imagesValue = body.images
-        .map((img) => {
-          const norm = normalizeImageInput(img);
-          return norm.ok ? norm.value : null;
-        })
-        .filter(Boolean);
-      imageValue = imagesValue[0] || null;
-    } else if (body.image) {
+
+    if (Array.isArray(body.images)) {
+      imagesValue = normalizeImageArray(body.images);
+    }
+
+    if (imagesValue.length === 0 && body.image) {
       const norm = normalizeImageInput(body.image);
       if (!norm.ok) return fail(res, norm.error);
-      imageValue = norm.value;
-      imagesValue = [imageValue];
+      if (norm.value) imagesValue = [norm.value];
     }
+
+    const imageValue = imagesValue[0] || null;
 
     const doc = {
       ...body,
@@ -242,17 +253,40 @@ export default async function handler(req, res) {
   return fail(res, 'Method not allowed', 405);
 }
 
+/**
+ * Convert a raw Mongo product document into a shape safe to send to the client.
+ *
+ * IMPORTANT: `doc.images` is an array of STRINGS. `resolveProductImage` accepts
+ * either a string or a product object, so mapping over the array works. We also
+ * filter out nulls so we never send `images: [null]` to the frontend.
+ */
 function toPublicProduct(doc) {
   if (!doc) return doc;
   const out = { ...doc };
+
+  // Resolve the primary image first
   out.image = resolveProductImage(doc);
+
+  // Resolve each image in the array, dropping unusable entries
+  let resolvedImages = [];
   if (Array.isArray(doc.images)) {
-    out.images = doc.images.map(resolveProductImage);
-  } else if (out.image) {
-    out.images = [out.image];
-  } else {
-    out.images = [];
+    resolvedImages = doc.images
+      .map((img) => resolveProductImage(img)) // string-aware
+      .filter(Boolean);
   }
+
+  // If the array is empty but we do have a primary image, use that
+  if (resolvedImages.length === 0 && out.image) {
+    resolvedImages = [out.image];
+  }
+
+  out.images = resolvedImages;
+
+  // If we have images but no primary image, promote the first one
+  if (!out.image && resolvedImages.length > 0) {
+    out.image = resolvedImages[0];
+  }
+
   return out;
 }
 

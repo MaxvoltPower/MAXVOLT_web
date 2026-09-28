@@ -6,7 +6,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { api } from '@lib/api';
 import { useProducts } from '@context/ProductsContext';
 import { useCategories } from '@context/CategoriesContext';
-import { formatPrice, resolveProductImage } from '@lib/utils';
+import { formatPrice, resolveProductImage, resolveProductImages } from '@lib/utils';
 import { useToast } from '@components/ui/Toast';
 import Button from '@components/ui/Button';
 import Input from '@components/ui/Input';
@@ -42,8 +42,15 @@ const EMPTY_FORM = {
   stock: '',
   active: true,
   featured: false,
-  image: '',
+  images: [''], // array of strings (URL / base64 / filename)
 };
+
+/** Extract a usable array of images from a product document. */
+function imagesFromProduct(product) {
+  const list = resolveProductImages(product);
+  if (list.length === 0) return [''];
+  return list;
+}
 
 export default function ProductsManager() {
   const { reload } = useProducts();
@@ -54,6 +61,7 @@ export default function ProductsManager() {
     dbCategories && dbCategories.length > 0
       ? categoryLabelsFromDb
       : FALLBACK_CATEGORY_LABELS;
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -98,7 +106,7 @@ export default function ProductsManager() {
       stock: product.stock ?? '',
       active: product.active !== false,
       featured: product.featured === true,
-      image: product.image || '',
+      images: imagesFromProduct(product),
     });
     setModalOpen(true);
   };
@@ -126,11 +134,22 @@ export default function ProductsManager() {
     if (saving) return;
     setSaving(true);
     try {
+      // Clean image list: drop empty entries, keep order
+      const cleanImages = (formData.images || [])
+        .map((s) => (typeof s === 'string' ? s.trim() : ''))
+        .filter(Boolean);
+
+      const payload = {
+        ...formData,
+        images: cleanImages,
+        image: cleanImages[0] || null,
+      };
+
       if (editingProduct) {
-        await api.updateProduct(editingProduct._id, formData);
+        await api.updateProduct(editingProduct._id, payload);
         showToast('Product updated', 'success');
       } else {
-        await api.createProduct(formData);
+        await api.createProduct(payload);
         showToast('Product created', 'success');
       }
       setModalOpen(false);
@@ -149,6 +168,36 @@ export default function ProductsManager() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
+  };
+
+  // ---- Image array helpers ----
+  const updateImage = (index, value) => {
+    setFormData((prev) => {
+      const next = [...prev.images];
+      next[index] = value;
+      return { ...prev, images: next };
+    });
+  };
+
+  const addImageField = () => {
+    setFormData((prev) => ({ ...prev, images: [...prev.images, ''] }));
+  };
+
+  const removeImageField = (index) => {
+    setFormData((prev) => {
+      const next = prev.images.filter((_, i) => i !== index);
+      return { ...prev, images: next.length ? next : [''] };
+    });
+  };
+
+  const moveImage = (index, direction) => {
+    setFormData((prev) => {
+      const next = [...prev.images];
+      const target = index + direction;
+      if (target < 0 || target >= next.length) return prev;
+      [next[index], next[target]] = [next[target], next[index]];
+      return { ...prev, images: next };
+    });
   };
 
   const filtered = useMemo(() => {
@@ -432,13 +481,108 @@ export default function ProductsManager() {
             />
           </div>
 
-          <Input
-            label="Image URL (base64 or path)"
-            name="image"
-            value={formData.image}
-            onChange={handleChange}
-            placeholder="data:image/... or filename.jpg"
-          />
+          {/* ---------- Images ---------- */}
+          <div className="form-group">
+            <label className="block mb-2 font-semibold text-sm text-[var(--text)]">
+              Product Images
+            </label>
+            <p className="text-xs text-[var(--text-subtle)] mb-3">
+              Paste a full URL (<code>https://…</code>), a data URL
+              (<code>data:image/…</code>), an absolute path
+              (<code>/assets/images/foo.jpg</code>), or just a filename
+              (<code>foo.jpg</code>). The first image is used as the main
+              thumbnail. Up to ~1.8 MB per image.
+            </p>
+
+            <div className="space-y-3">
+              {formData.images.map((img, index) => {
+                const preview = resolveProductImage({ image: img });
+                return (
+                  <div
+                    key={index}
+                    className="flex items-start gap-3 p-3 rounded-xl border border-dark-border bg-dark-muted"
+                  >
+                    {/* Preview */}
+                    <div className="w-16 h-16 shrink-0 rounded-lg bg-dark-elevated border border-dark-border grid place-items-center overflow-hidden">
+                      {preview ? (
+                        <img
+                          src={preview}
+                          alt=""
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const parent = e.currentTarget.parentElement;
+                            if (parent && !parent.querySelector('.img-warn')) {
+                              const span = document.createElement('span');
+                              span.className = 'img-warn text-xl';
+                              span.textContent = '⚠️';
+                              parent.appendChild(span);
+                            }
+                          }}
+                        />
+                      ) : (
+                        <span className="text-xl text-[var(--text-subtle)]">🖼️</span>
+                      )}
+                    </div>
+
+                    {/* Input + controls */}
+                    <div className="flex-1 min-w-0">
+                      <input
+                        type="text"
+                        value={img}
+                        onChange={(e) => updateImage(index, e.target.value)}
+                        placeholder="https://… or foo.jpg or data:image/…"
+                        className="w-full px-3 py-2 rounded-lg border-[1.5px] border-dark-border bg-dark-elevated text-xs font-mono"
+                      />
+                      {index === 0 && (
+                        <p className="text-[10px] text-emerald-400 mt-1 font-semibold uppercase tracking-wide">
+                          Main image
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Reorder + remove */}
+                    <div className="flex flex-col gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => moveImage(index, -1)}
+                        disabled={index === 0}
+                        className="w-7 h-7 rounded-md border border-dark-border text-xs hover:bg-dark-elevated disabled:opacity-30"
+                        aria-label="Move up"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveImage(index, 1)}
+                        disabled={index === formData.images.length - 1}
+                        className="w-7 h-7 rounded-md border border-dark-border text-xs hover:bg-dark-elevated disabled:opacity-30"
+                        aria-label="Move down"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeImageField(index)}
+                        className="w-7 h-7 rounded-md border border-red-500/40 text-xs text-red-400 hover:bg-red-500/10"
+                        aria-label="Remove image"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={addImageField}
+              className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-lg border-[1.5px] border-dashed border-dark-border-strong text-xs font-semibold hover:bg-dark-muted hover:border-accent transition-all"
+            >
+              + Add another image
+            </button>
+          </div>
 
           <div className="flex flex-wrap gap-5">
             <label className="flex items-center gap-2 cursor-pointer">

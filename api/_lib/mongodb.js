@@ -140,37 +140,88 @@ export function parseAhToNumber(product) {
 // Images are stored as data URLs (data:image/png;base64,...) in product.image
 // This avoids needing an external file storage service.
 
+const JUNK_STRINGS = new Set([
+  '',
+  'undefined',
+  'null',
+  'nan',
+  'false',
+  'none',
+  '[object object]',
+]);
+
+function isJunkImageString(s) {
+  if (typeof s !== 'string') return true;
+  const t = s.trim();
+  if (!t) return true;
+  return JUNK_STRINGS.has(t.toLowerCase());
+}
+
 /**
  * Validate & normalise an incoming image value.
  * Accepts:
  *   - "" / null / undefined           -> returns null
  *   - "data:image/...;base64,..."     -> validated, returned as-is
- *   - "/assets/images/foo.jpg"        -> treated as a static asset path
- *   - "http(s)://..."                 -> external URL
+ *   - "data:image/svg+xml;utf8,..."   -> validated, returned as-is
+ *   - "blob:http://..."               -> accepted as-is (dev only)
+ *   - "//cdn.example.com/x.jpg"       -> accepted as-is (protocol-relative)
+ *   - "https://..." / "http://..."    -> external URL
+ *   - "/assets/images/foo.jpg"        -> absolute static asset path
+ *   - "assets/images/foo.jpg"         -> normalised to "/assets/images/foo.jpg"
+ *   - "foo.jpg" (bare filename)       -> treated as "assets/images/foo.jpg"
  * Returns { ok: boolean, value: string|null, error?: string }
  */
 export function normalizeImageInput(input) {
   if (input === undefined || input === null) return { ok: true, value: null };
-  const s = String(input).trim();
-  if (!s) return { ok: true, value: null };
+  if (typeof input !== 'string') {
+    // Ignore non-string junk (numbers, objects) silently
+    return { ok: true, value: null };
+  }
+  const s = input.trim();
+  if (isJunkImageString(s)) return { ok: true, value: null };
 
-  // Data URL
+  // Base64 data URL (standard + URL-safe alphabet)
   if (s.startsWith('data:image/')) {
     // Cap size to ~2.5MB base64 (roughly 1.8MB binary)
     if (s.length > 2_500_000) {
       return { ok: false, error: 'Image too large (max ~1.8 MB after compression)' };
     }
-    const match = s.match(/^data:image\/(png|jpe?g|gif|webp|svg\+xml);base64,[A-Za-z0-9+/=]+$/);
-    if (!match) return { ok: false, error: 'Unsupported image format. Use PNG, JPG, WEBP, GIF or SVG.' };
+
+    // Non-base64 data URLs (e.g. SVG utf8) are allowed
+    if (!/;base64,/i.test(s)) {
+      return { ok: true, value: s };
+    }
+
+    // Validate base64 payload (allow URL-safe chars)
+    const match = s.match(
+      /^data:image\/(png|jpe?g|gif|webp|svg\+xml|avif|bmp|x-icon|vnd\.microsoft\.icon);base64,[A-Za-z0-9+/_=-]+$/i
+    );
+    if (!match) {
+      return {
+        ok: false,
+        error: 'Unsupported image format. Use PNG, JPG, WEBP, GIF, SVG or AVIF.',
+      };
+    }
     return { ok: true, value: s };
   }
 
-  // External / relative URL
-  if (/^https?:\/\//i.test(s) || s.startsWith('/') || s.startsWith('assets/') || s.startsWith('../')) {
-    return { ok: true, value: s };
-  }
+  // Blob URL (browser-local, useful in dev)
+  if (s.startsWith('blob:')) return { ok: true, value: s };
 
-  // Bare filename -> assume it lives in assets/images/
+  // Protocol-relative URL
+  if (s.startsWith('//')) return { ok: true, value: s };
+
+  // External URL
+  if (/^https?:\/\//i.test(s)) return { ok: true, value: s };
+
+  // Absolute path
+  if (s.startsWith('/')) return { ok: true, value: s };
+
+  // Relative path already pointing at assets/
+  if (s.startsWith('assets/')) return { ok: true, value: '/' + s };
+  if (s.startsWith('../')) return { ok: true, value: s.replace(/^\.\.\//, '/') };
+
+  // Bare filename → assume it lives in assets/images/
   if (/^[A-Za-z0-9_\-.\s]+$/.test(s)) {
     return { ok: true, value: `assets/images/${s}` };
   }
@@ -179,18 +230,63 @@ export function normalizeImageInput(input) {
 }
 
 /**
- * Resolve a product's image field for public consumption.
- * Returns a string usable directly in <img src="...">.
+ * Resolve a single image reference (string) into a usable <img src>.
+ * Returns null if the reference is unusable.
  */
-export function resolveProductImage(product) {
-  if (!product || !product.image) return null;
-  const img = product.image;
-  if (typeof img !== 'string') return null;
-  const s = img.trim();
-  if (!s) return null;
-  if (s.startsWith('data:')) return s;             // base64
-  if (/^https?:\/\//i.test(s)) return s;           // external
-  if (s.startsWith('/')) return s;                 // absolute path
-  if (s.startsWith('assets/')) return '/' + s;     // normalise
-  return '/assets/images/' + s;                    // bare filename → assets/images
+function resolveImageString(raw) {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== 'string') return null;
+
+  const s = raw.trim();
+  if (isJunkImageString(s)) return null;
+
+  if (s.startsWith('data:')) return s;              // base64 / svg data URL
+  if (s.startsWith('blob:')) return s;              // browser blob URL
+  if (s.startsWith('//')) return s;                 // protocol-relative
+  if (/^https?:\/\//i.test(s)) return s;            // external URL
+  if (s.startsWith('/')) return s;                  // absolute path
+  if (s.startsWith('assets/')) return '/' + s;      // normalise
+  if (s.startsWith('../')) return s.replace(/^\.\.\//, '/');
+  return '/assets/images/' + s;                     // bare filename → assets/images
+}
+
+/**
+ * Resolve a product's image field for public consumption.
+ * Accepts EITHER:
+ *   - a product object (reads `.images[0]` then `.image`)
+ *   - a string (treated as a single image reference)
+ * Returns a string usable directly in <img src="...">, or null.
+ */
+export function resolveProductImage(productOrString) {
+  if (!productOrString) return null;
+
+  // String form — used when mapping over an array of image strings
+  if (typeof productOrString === 'string') {
+    return resolveImageString(productOrString);
+  }
+
+  // Object form — prefer images[0], fall back to image
+  if (Array.isArray(productOrString.images) && productOrString.images.length > 0) {
+    for (const candidate of productOrString.images) {
+      const resolved = resolveImageString(candidate);
+      if (resolved) return resolved;
+    }
+  }
+
+  return resolveImageString(productOrString.image);
+}
+
+/**
+ * Normalise an array of raw image inputs into a clean array of stored values.
+ * Filters out nulls, junk, and invalid entries. Applies `normalizeImageInput`
+ * to each entry so that stored values are consistent.
+ */
+export function normalizeImageArray(input) {
+  if (!Array.isArray(input)) return [];
+  const out = [];
+  for (const raw of input) {
+    const norm = normalizeImageInput(raw);
+    if (norm.ok && norm.value) out.push(norm.value);
+  }
+  return out;
 }
