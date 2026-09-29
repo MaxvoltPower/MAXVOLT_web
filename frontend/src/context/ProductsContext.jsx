@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { api } from '@lib/api';
 import { fallbackProducts } from '@data/products';
 
@@ -145,17 +145,87 @@ export function ProductsProvider({ children }) {
     [products, groupedProducts]
   );
 
+  // ------------------------------------------------------------
+  // Sale / Combo helpers
+  // ------------------------------------------------------------
+
+  /** All sections of a given type that are currently active */
+  const sectionsByType = useCallback(
+    (type) => {
+      return (sections || []).filter(
+        (s) => s && s.active !== false && s.type === type
+      );
+    },
+    [sections]
+  );
+
+  const saleSections = useMemo(() => sectionsByType('sale'), [sectionsByType]);
+  const comboSections = useMemo(() => sectionsByType('combo'), [sectionsByType]);
+  const featuredSections = useMemo(() => sectionsByType('featured'), [sectionsByType]);
+
+  const hasActiveSale = saleSections.length > 0;
+
+  /**
+   * Flat list of products that appear in ANY active sale section.
+   * Deduplicated by product id.
+   */
+  const getSaleProducts = useCallback(() => {
+    const ids = new Set();
+    const out = [];
+    for (const section of saleSections) {
+      for (const pid of section.products || []) {
+        const p = findProductById(pid);
+        if (!p) continue;
+        const key = p.id || p._id;
+        if (ids.has(key)) continue;
+        ids.add(key);
+        out.push(p);
+      }
+    }
+    return out;
+  }, [saleSections, findProductById]);
+
+  /**
+   * Array of combo bundles. Each bundle = { section, products: [...] }
+   * Skips bundles with zero resolvable products.
+   */
+  const getComboBundles = useCallback(() => {
+    const bundles = [];
+    for (const section of comboSections) {
+      const products = (section.products || [])
+        .map((pid) => findProductById(pid))
+        .filter(Boolean);
+      if (products.length === 0) continue;
+      bundles.push({ section, products });
+    }
+    return bundles;
+  }, [comboSections, findProductById]);
+
   const value = {
     products,
     groupedProducts,
     loading,
     error,
     sections,
+
+    // section helpers
+    sectionsByType,
+    saleSections,
+    comboSections,
+    featuredSections,
+    hasActiveSale,
+    getSaleProducts,
+    getComboBundles,
+
+    // product helpers
     findProductById,
     getProductsByCategory,
     getFeaturedProducts,
+
+    // reload
     reload: loadProducts,
     reloadSections: loadSections,
+
     normalizeCategory,
   };
 

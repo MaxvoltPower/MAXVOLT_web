@@ -13,12 +13,10 @@ export const CONFIG = {
  * Parse a price value into { min, max, isRange, invalid, raw }.
  */
 export function parsePrice(value) {
-  // Explicit null/undefined → invalid
   if (value === null || value === undefined) {
     return { min: 0, max: 0, isRange: false, invalid: true, raw: value };
   }
 
-  // Numeric 0 is a valid price
   if (typeof value === 'number' && Number.isFinite(value)) {
     return { min: value, max: value, isRange: false, invalid: false, raw: value };
   }
@@ -26,7 +24,6 @@ export function parsePrice(value) {
   const str = String(value).trim();
   if (!str) return { min: 0, max: 0, isRange: false, invalid: true, raw: value };
 
-  // Extract all numbers (strip currency symbols, commas, spaces)
   const nums = str.replace(/[₹,\s]/g, '').match(/\d+(?:\.\d+)?/g);
 
   if (!nums || nums.length === 0) {
@@ -118,10 +115,6 @@ function isJunkImageString(s) {
   return JUNK_STRINGS.has(t.toLowerCase());
 }
 
-/**
- * Resolve a single image reference string into a usable <img src>.
- * Returns null for junk.
- */
 function resolveImageString(raw) {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'string') return null;
@@ -129,32 +122,23 @@ function resolveImageString(raw) {
   const s = raw.trim();
   if (isJunkImageString(s)) return null;
 
-  if (s.startsWith('data:')) return s;              // base64 / svg data URL
-  if (s.startsWith('blob:')) return s;              // browser blob URL
-  if (s.startsWith('//')) return s;                 // protocol-relative
-  if (/^https?:\/\//i.test(s)) return s;            // external URL
-  if (s.startsWith('/')) return s;                  // absolute path
-  if (s.startsWith('assets/')) return '/' + s;      // normalise
+  if (s.startsWith('data:')) return s;
+  if (s.startsWith('blob:')) return s;
+  if (s.startsWith('//')) return s;
+  if (/^https?:\/\//i.test(s)) return s;
+  if (s.startsWith('/')) return s;
+  if (s.startsWith('assets/')) return '/' + s;
   if (s.startsWith('../')) return s.replace(/^\.\.\//, '/');
-  return `/assets/images/${s}`;                     // bare filename → assets/images
+  return `/assets/images/${s}`;
 }
 
-/**
- * Resolve a product's image reference into a usable <img src>.
- * Accepts EITHER:
- *   - a product object (reads `.images[0]` then `.image`)
- *   - a string (treated as a single image reference)
- * Returns null if no usable image — components should render a placeholder.
- */
 export function resolveProductImage(productOrString) {
   if (!productOrString) return null;
 
-  // String form — used when mapping over an array of image strings
   if (typeof productOrString === 'string') {
     return resolveImageString(productOrString);
   }
 
-  // Object form — prefer images[0], fall back to image
   if (Array.isArray(productOrString.images) && productOrString.images.length > 0) {
     for (const candidate of productOrString.images) {
       const resolved = resolveImageString(candidate);
@@ -165,9 +149,6 @@ export function resolveProductImage(productOrString) {
   return resolveImageString(productOrString.image);
 }
 
-/**
- * Resolve all images for a product into a clean array of usable strings.
- */
 export function resolveProductImages(product) {
   if (!product) return [];
   const out = [];
@@ -213,9 +194,6 @@ export function initialsFrom(nameOrEmail) {
   return (parts[0][0] + parts[1][1] || parts[0][0]).toUpperCase();
 }
 
-/**
- * Smooth-scroll to an element by id. Falls back to top if not found.
- */
 export function scrollToId(id) {
   if (!id) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -223,4 +201,167 @@ export function scrollToId(id) {
   }
   const el = document.getElementById(id.replace(/^#/, ''));
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ============================================================
+// Natural-language "needs" parser (used by the calculator)
+// ------------------------------------------------------------
+// Extracts appliance mentions, quantities and backup hours from a
+// free-text sentence like:
+//   "I want to run 2 fans, 4 lights and a fridge for 5 hours"
+// Returns:
+//   {
+//     matched: [{ id, name, qty, watts, icon }],
+//     hours: number|null,
+//     watts: number,           // total continuous watt load
+//     raw: string,
+//     confidence: 0..1,        // how sure we are
+//   }
+// ============================================================
+
+export const APPLIANCE_KEYWORDS = [
+  { id: 'fan',       name: 'Ceiling Fan',       icon: '🌀', watts: 70,   aliases: ['fan', 'fans', 'ceiling fan', 'ceiling fans', 'pankha', 'pankhe'] },
+  { id: 'light',     name: 'LED Light',         icon: '💡', watts: 12,   aliases: ['light', 'lights', 'led', 'leds', 'bulb', 'bulbs', 'lamp', 'lamps', 'batti'] },
+  { id: 'tube',      name: 'Tube Light',        icon: '🔆', watts: 40,   aliases: ['tube light', 'tube lights', 'tubelight', 'tubelights', 'tube', 'tubes'] },
+  { id: 'tv',        name: 'Television',        icon: '📺', watts: 110,  aliases: ['tv', 'television', 'tvs', 'televisions', 'led tv'] },
+  { id: 'fridge',    name: 'Refrigerator',      icon: '🧊', watts: 180,  aliases: ['fridge', 'refrigerator', 'refrigerators', 'freezer', 'fridges'] },
+  { id: 'router',    name: 'Wi-Fi Router',      icon: '📶', watts: 15,   aliases: ['router', 'wifi', 'wi-fi', 'wifi router', 'internet'] },
+  { id: 'computer',  name: 'Desktop Computer',  icon: '💻', watts: 200,  aliases: ['computer', 'desktop', 'pc', 'computers', 'desktops', 'pcs'] },
+  { id: 'laptop',    name: 'Laptop',            icon: '💻', watts: 60,   aliases: ['laptop', 'laptops', 'notebook'] },
+  { id: 'ac',        name: 'Air Conditioner',   icon: '❄️', watts: 1500, aliases: ['ac', 'a.c', 'air conditioner', 'aircon', 'air con', 'acs'] },
+  { id: 'microwave', name: 'Microwave',         icon: '📡', watts: 1200, aliases: ['microwave', 'microwaves', 'oven'] },
+  { id: 'mixer',     name: 'Mixer / Grinder',   icon: '🥤', watts: 500,  aliases: ['mixer', 'mixers', 'grinder', 'grinders', 'mixie'] },
+  { id: 'iron',      name: 'Iron',              icon: '👔', watts: 1000, aliases: ['iron', 'irons', 'press'] },
+  { id: 'waterpump', name: 'Water Pump',        icon: '🚰', watts: 750,  aliases: ['water pump', 'water pumps', 'pump', 'pumps', 'motor', 'motors'] },
+  { id: 'cctv',      name: 'CCTV Camera',       icon: '📹', watts: 10,   aliases: ['cctv', 'camera', 'cameras', 'cctv camera', 'surveillance'] },
+  { id: 'printer',   name: 'Printer',           icon: '🖨️', watts: 300,  aliases: ['printer', 'printers'] },
+];
+
+const WORD_NUMBERS = {
+  zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5,
+  six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+  a: 1, an: 1, couple: 2, few: 3, 'a couple': 2,
+};
+
+function wordToNumber(word) {
+  if (!word) return null;
+  const w = word.toLowerCase().trim();
+  if (/^\d+$/.test(w)) return parseInt(w, 10);
+  if (w in WORD_NUMBERS) return WORD_NUMBERS[w];
+  return null;
+}
+
+/**
+ * Try to find a number immediately before/after an alias match.
+ * Examples:
+ *   "2 fans"     → qty 2 (before)
+ *   "fans 2"     → qty 2 (after)
+ *   "a fridge"   → qty 1
+ *   "fans"       → qty 1 (default)
+ */
+function extractQtyNear(text, aliasStart, aliasEnd) {
+  // Look backwards up to 12 chars for "N " or word-number
+  const before = text.slice(Math.max(0, aliasStart - 12), aliasStart);
+  const beforeMatch = before.match(/(\d+|[a-z]+)\s*$/i);
+  if (beforeMatch) {
+    const n = wordToNumber(beforeMatch[1]);
+    if (n !== null && n > 0 && n <= 50) return n;
+  }
+
+  // Look forwards: "fans 2" or "fans: 2"
+  const after = text.slice(aliasEnd, aliasEnd + 8);
+  const afterMatch = after.match(/^\s*[:\-]?\s*(\d+)\b/);
+  if (afterMatch) {
+    const n = parseInt(afterMatch[1], 10);
+    if (n > 0 && n <= 50) return n;
+  }
+
+  return 1;
+}
+
+/**
+ * Parse a free-text "needs" description into structured appliance data.
+ */
+export function parseNeedsText(rawText) {
+  const raw = String(rawText || '').trim();
+  const result = {
+    matched: [],
+    hours: null,
+    watts: 0,
+    raw,
+    confidence: 0,
+  };
+
+  if (!raw) return result;
+
+  const text = raw.toLowerCase();
+  const claimedRanges = []; // to avoid double-matching overlapping aliases
+
+  // --- Hours extraction ---
+  // "for 4 hours", "4 hrs", "4h", "backup of 5 hours"
+  const hoursMatch =
+    text.match(/(?:for|backup(?:\s*of)?|about|around|approx(?:imately)?)?\s*(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|h)\b/) ||
+    text.match(/(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|h)\b/);
+  if (hoursMatch) {
+    const h = parseFloat(hoursMatch[1]);
+    if (h > 0 && h <= 72) result.hours = h;
+  }
+
+  // --- Appliance extraction ---
+  for (const appliance of APPLIANCE_KEYWORDS) {
+    // Sort aliases longest-first to prefer "tube light" over "light"
+    const aliases = [...appliance.aliases].sort((a, b) => b.length - a.length);
+
+    for (const alias of aliases) {
+      // Word-boundary regex, escape special chars
+      const escaped = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(`\\b${escaped}\\b`, 'gi');
+
+      let match;
+      while ((match = re.exec(text)) !== null) {
+        const start = match.index;
+        const end = start + match[0].length;
+
+        // Skip if overlaps a previous, longer match (e.g. "tube light" vs "light")
+        const overlaps = claimedRanges.some(
+          ([s, e]) => !(end <= s || start >= e)
+        );
+        if (overlaps) continue;
+
+        claimedRanges.push([start, end]);
+
+        const qty = extractQtyNear(text, start, end);
+        const existing = result.matched.find((m) => m.id === appliance.id);
+        if (existing) {
+          existing.qty += qty;
+        } else {
+          result.matched.push({
+            id: appliance.id,
+            name: appliance.name,
+            icon: appliance.icon,
+            watts: appliance.watts,
+            qty,
+          });
+        }
+        break; // one alias match per appliance is enough
+      }
+
+      if (result.matched.find((m) => m.id === appliance.id)) break;
+    }
+  }
+
+  // --- Totals ---
+  result.watts = result.matched.reduce(
+    (sum, m) => sum + m.qty * m.watts,
+    0
+  );
+
+  // Confidence: how many meaningful signals we got
+  let score = 0;
+  if (result.matched.length > 0) score += 0.6;
+  if (result.hours !== null) score += 0.3;
+  if (result.watts >= 200) score += 0.1;
+  result.confidence = Math.min(1, score);
+
+  return result;
 }

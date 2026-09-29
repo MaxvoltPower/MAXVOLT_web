@@ -28,6 +28,8 @@ import AdminPage from '@pages/AdminPage';
 import PrivacyPage from '@pages/PrivacyPage';
 import TermsPage from '@pages/TermsPage';
 import NotFoundPage from '@pages/NotFoundPage';
+import SalePage from '@pages/SalePage';
+import ComboPage from '@pages/ComboPage';
 
 function App() {
   return (
@@ -36,37 +38,41 @@ function App() {
         <CategoriesProvider>
           <ProductsProvider>
             <CartProvider>
-            <ScrollToTop />
-            <Routes>
-              <Route path="/" element={<Layout />}>
-                <Route index element={<HomePage />} />
-                <Route path="products" element={<ProductsPage />} />
-                <Route path="product/:id" element={<ProductDetailPage />} />
-                <Route path="solutions" element={<SolutionsPage />} />
-                <Route path="calculator" element={<CalculatorPage />} />
-                <Route path="about" element={<AboutPage />} />
-                <Route path="contact" element={<ContactPage />} />
-                <Route path="cart" element={<CartPage />} />
-                <Route path="checkout" element={<CheckoutPage />} />
-                <Route path="order-success" element={<OrderSuccessPage />} />
-                <Route path="privacy-policy" element={<PrivacyPage />} />
-                <Route path="terms-conditions" element={<TermsPage />} />
+              <ScrollToTop />
+              <Routes>
+                <Route path="/" element={<Layout />}>
+                  <Route index element={<HomePage />} />
+                  <Route path="products" element={<ProductsPage />} />
+                  <Route path="product/:id" element={<ProductDetailPage />} />
+                  <Route path="solutions" element={<SolutionsPage />} />
+                  <Route path="calculator" element={<CalculatorPage />} />
+                  <Route path="about" element={<AboutPage />} />
+                  <Route path="contact" element={<ContactPage />} />
+                  <Route path="cart" element={<CartPage />} />
+                  <Route path="checkout" element={<CheckoutPage />} />
+                  <Route path="order-success" element={<OrderSuccessPage />} />
+                  <Route path="privacy-policy" element={<PrivacyPage />} />
+                  <Route path="terms-conditions" element={<TermsPage />} />
 
-                {/* Account routes */}
-                <Route path="account">
-                  <Route path="login" element={<LoginPage />} />
-                  <Route path="register" element={<RegisterPage />} />
-                  <Route path="forgot-password" element={<ForgotPasswordPage />} />
-                  <Route path="profile" element={<ProfilePage />} />
-                  <Route path="orders" element={<OrdersPage />} />
+                  {/* Sale & Combo */}
+                  <Route path="sale" element={<SalePage />} />
+                  <Route path="combo" element={<ComboPage />} />
+
+                  {/* Account routes */}
+                  <Route path="account">
+                    <Route path="login" element={<LoginPage />} />
+                    <Route path="register" element={<RegisterPage />} />
+                    <Route path="forgot-password" element={<ForgotPasswordPage />} />
+                    <Route path="profile" element={<ProfilePage />} />
+                    <Route path="orders" element={<OrdersPage />} />
+                  </Route>
+
+                  {/* Admin routes */}
+                  <Route path="admin/*" element={<AdminPage />} />
+
+                  <Route path="*" element={<NotFoundPage />} />
                 </Route>
-
-                {/* Admin routes */}
-                <Route path="admin/*" element={<AdminPage />} />
-
-                <Route path="*" element={<NotFoundPage />} />
-              </Route>
-            </Routes>
+              </Routes>
               <Chatbot />
             </CartProvider>
           </ProductsProvider>

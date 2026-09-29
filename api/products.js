@@ -40,7 +40,6 @@ export default async function handler(req, res) {
   const method = req.method;
 
   // ---- Folded-in reviews handler ----
-  // If the original URL was /api/reviews/* we route to reviews logic.
   const rawUrl = (req.url || '').split('?')[0];
   if (rawUrl.startsWith('/api/reviews')) {
     return handleReviews(req, res);
@@ -116,7 +115,6 @@ export default async function handler(req, res) {
       }
 
       // ---- Image handling ----
-      // Accept either `images` (array) or `image` (single) or both.
       const touchedImages = 'images' in body || 'image' in body;
 
       if (touchedImages) {
@@ -126,8 +124,6 @@ export default async function handler(req, res) {
           nextImages = normalizeImageArray(body.images);
         }
 
-        // If only `image` was provided, or the images array came back empty,
-        // try to interpret `image` as a single source.
         if (nextImages.length === 0 && 'image' in body) {
           const norm = normalizeImageInput(body.image);
           if (!norm.ok) return fail(res, norm.error);
@@ -147,7 +143,6 @@ export default async function handler(req, res) {
         body.stock = Number.isFinite(n) && n >= 0 ? n : 0;
       }
       if ('price' in body) {
-        // Keep `price` as either a number or a free-text range string.
         if (typeof body.price === 'number') {
           body.price = Number.isFinite(body.price) && body.price >= 0 ? body.price : 0;
         } else if (body.price !== null && body.price !== undefined) {
@@ -240,7 +235,6 @@ export default async function handler(req, res) {
         : null,
       stock: body.stock !== undefined ? Number(body.stock) : 0,
       active: body.active !== false,
-      // Structured numeric fields for the calculator + sorting
       vaNumeric: parseVaToNumber(body),
       capacityAh: parseAhToNumber(body),
       createdAt: new Date(),
@@ -264,6 +258,11 @@ function toPublicProduct(doc) {
   if (!doc) return doc;
   const out = { ...doc };
 
+  // Ensure `id` is present and stable for the frontend
+  if (!out.id && out._id) {
+    out.id = String(out._id);
+  }
+
   // Resolve the primary image first
   out.image = resolveProductImage(doc);
 
@@ -271,7 +270,7 @@ function toPublicProduct(doc) {
   let resolvedImages = [];
   if (Array.isArray(doc.images)) {
     resolvedImages = doc.images
-      .map((img) => resolveProductImage(img)) // string-aware
+      .map((img) => resolveProductImage(img))
       .filter(Boolean);
   }
 

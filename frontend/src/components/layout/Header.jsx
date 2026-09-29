@@ -6,10 +6,11 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@context/AuthContext';
 import { useCart } from '@context/CartContext';
+import { useProducts } from '@context/ProductsContext';
 import { openWhatsapp, initialsFrom } from '@lib/utils';
 import BrandLogo from './BrandLogo';
 
-const NAV_LINKS = [
+const BASE_NAV_LINKS = [
   { to: '/',            label: 'Home' },
   { to: '/products',    label: 'Products' },
   { to: '/solutions',   label: 'Solutions' },
@@ -23,10 +24,21 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const { user, isAdmin } = useAuth();
   const { getCartCount } = useCart();
+  const { hasActiveSale, comboSections } = useProducts();
   const location = useLocation();
   const navigate = useNavigate();
 
   const cartCount = getCartCount();
+  const hasCombo = comboSections && comboSections.length > 0;
+
+  // Build nav links dynamically
+  const navLinks = [...BASE_NAV_LINKS];
+  if (hasActiveSale) {
+    navLinks.splice(2, 0, { to: '/sale', label: '🔥 Sale', highlight: 'sale' });
+  }
+  if (hasCombo) {
+    navLinks.splice(hasActiveSale ? 3 : 2, 0, { to: '/combo', label: 'Combo Offers', highlight: 'combo' });
+  }
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 8);
@@ -44,7 +56,6 @@ export default function Header() {
     return () => { document.body.style.overflow = ''; };
   }, [isMenuOpen]);
 
-  // Close the mobile menu on any nav click, and handle hash anchors
   const handleNavClick = (to, e) => {
     setIsMenuOpen(false);
 
@@ -53,13 +64,8 @@ export default function Header() {
     const [path, hash] = to.split('#');
     const targetPath = path || '/';
 
-    // If we're on a different page, let the router navigate first.
-    // The target page will smooth-scroll to the hash on mount.
-    if (location.pathname !== targetPath) {
-      return;
-    }
+    if (location.pathname !== targetPath) return;
 
-    // Already on the target page — scroll to the section.
     if (e) e.preventDefault();
     const el = document.getElementById(hash);
     if (el) {
@@ -72,17 +78,29 @@ export default function Header() {
     <>
       {/* Announcement bar */}
       <div className="hidden md:block bg-gradient-to-r from-brand-dark via-brand to-accent text-white text-xs">
-        <div className="container-custom flex items-center justify-between py-2">
-          <span className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
-            Genuine batteries · GST-inclusive pricing · Same-day delivery in Kolkata
+        <div className="container-custom flex items-center justify-between py-2 gap-3">
+          <span className="flex items-center gap-2 min-w-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse shrink-0" />
+            <span className="truncate">
+              Genuine batteries · GST-inclusive pricing · Same-day delivery in Kolkata
+            </span>
           </span>
-          <a
-            href="tel:+917595941311"
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/25 text-white font-bold text-[0.72rem] tracking-wide backdrop-blur-sm border border-white/15 hover:bg-black/40 hover:border-white/30 transition-all"
-          >
-            📞 +91 75959 41311
-          </a>
+          <div className="flex items-center gap-2 shrink-0">
+            {hasActiveSale && (
+              <Link
+                to="/sale"
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500 text-white font-bold text-[0.72rem] tracking-wide shadow-md hover:bg-red-600 transition-colors"
+              >
+                🔥 Sale Live
+              </Link>
+            )}
+            <a
+              href="tel:+917595941311"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/25 text-white font-bold text-[0.72rem] tracking-wide backdrop-blur-sm border border-white/15 hover:bg-black/40 hover:border-white/30 transition-all"
+            >
+              📞 +91 75959 41311
+            </a>
+          </div>
         </div>
       </div>
 
@@ -115,11 +133,52 @@ export default function Header() {
             {/* Desktop nav */}
             <nav className="hidden lg:flex flex-1 justify-center">
               <ul className="flex items-center gap-6 xl:gap-7">
-                {NAV_LINKS.map((link) => {
+                {navLinks.map((link) => {
                   const isActive =
                     link.to === '/'
                       ? location.pathname === '/'
                       : location.pathname.startsWith(link.to);
+
+                  // Special styling for Sale / Combo
+                  if (link.highlight === 'sale') {
+                    return (
+                      <li key={link.to}>
+                        <Link
+                          to={link.to}
+                          onClick={(e) => handleNavClick(link.to, e)}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[0.85rem] font-bold transition-all ${
+                            isActive
+                              ? 'bg-red-500 text-white shadow-md shadow-red-500/40'
+                              : 'bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25'
+                          }`}
+                        >
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                          </span>
+                          Sale
+                        </Link>
+                      </li>
+                    );
+                  }
+                  if (link.highlight === 'combo') {
+                    return (
+                      <li key={link.to}>
+                        <Link
+                          to={link.to}
+                          onClick={(e) => handleNavClick(link.to, e)}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[0.85rem] font-bold transition-all ${
+                            isActive
+                              ? 'bg-accent text-white shadow-md shadow-accent/40'
+                              : 'bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25'
+                          }`}
+                        >
+                          🎁 Combo
+                        </Link>
+                      </li>
+                    );
+                  }
+
                   return (
                     <li key={link.to}>
                       <Link
@@ -217,17 +276,49 @@ export default function Header() {
         >
           <div className="container-custom py-5 max-h-[75vh] overflow-y-auto">
             <ul className="flex flex-col gap-1">
-              {NAV_LINKS.map((link) => (
-                <li key={link.to}>
-                  <Link
-                    to={link.to}
-                    className="block px-4 py-3 rounded-xl text-[var(--text)] font-medium hover:bg-[var(--bg-muted)] transition-colors"
-                    onClick={(e) => handleNavClick(link.to, e)}
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
+              {navLinks.map((link) => {
+                if (link.highlight === 'sale') {
+                  return (
+                    <li key={link.to}>
+                      <Link
+                        to={link.to}
+                        className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 font-bold hover:bg-red-500/25 transition-colors"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                        </span>
+                        Sale Live
+                      </Link>
+                    </li>
+                  );
+                }
+                if (link.highlight === 'combo') {
+                  return (
+                    <li key={link.to}>
+                      <Link
+                        to={link.to}
+                        className="flex items-center gap-2 px-4 py-3 rounded-xl bg-accent/15 border border-accent/30 text-accent font-bold hover:bg-accent/25 transition-colors"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        🎁 Combo Offers
+                      </Link>
+                    </li>
+                  );
+                }
+                return (
+                  <li key={link.to}>
+                    <Link
+                      to={link.to}
+                      className="block px-4 py-3 rounded-xl text-[var(--text)] font-medium hover:bg-[var(--bg-muted)] transition-colors"
+                      onClick={(e) => handleNavClick(link.to, e)}
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                );
+              })}
               <li className="pt-3 mt-3 border-t border-[var(--border)] flex flex-col gap-2">
                 {user ? (
                   <>
