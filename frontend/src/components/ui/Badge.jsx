@@ -31,7 +31,7 @@ export default function Badge({ children, variant = 'default', className }) {
   return (
     <span
       className={classNames(
-        'inline-flex items-center px-2.5 py-1 rounded-full text-2xs font-bold uppercase tracking-wide border',
+        'inline-flex items-center px-2.5 py-1 rounded-full text-2xs font-bold uppercase tracking-wide border whitespace-nowrap',
         variants[variant] || variants.default,
         className
       )}

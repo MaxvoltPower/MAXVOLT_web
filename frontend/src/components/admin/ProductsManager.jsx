@@ -169,6 +169,7 @@ export default function ProductsManager() {
           options: STOCK_OPTIONS,
           customFilter: true,
         },
+        width: '130px',
         render: (val) => {
           const stock = Number(val) || 0;
           const variant = stock > 5 ? 'delivered' : stock > 0 ? 'confirmed' : 'failed';
