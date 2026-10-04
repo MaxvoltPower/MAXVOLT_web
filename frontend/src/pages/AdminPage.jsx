@@ -4,6 +4,7 @@ import { useAuth } from '@context/AuthContext';
 import AdminLayout from '@components/admin/AdminLayout';
 import Dashboard from '@components/admin/Dashboard';
 import ProductsManager from '@components/admin/ProductsManager';
+import BulkImportExport from '@components/admin/BulkImportExport';
 import OrdersManager from '@components/admin/OrdersManager';
 import QuotesManager from '@components/admin/QuotesManager';
 import UsersManager from '@components/admin/UsersManager';
@@ -72,6 +73,7 @@ export default function AdminPage() {
       <Route element={<AdminLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="products" element={<ProductsManager />} />
+        <Route path="bulk" element={<BulkImportExport />} />
         <Route path="categories" element={<CategoriesManager />} />
         <Route path="sections" element={<SectionsManager />} />
         <Route path="orders" element={<OrdersManager />} />

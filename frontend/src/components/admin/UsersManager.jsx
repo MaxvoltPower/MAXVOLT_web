@@ -1,19 +1,25 @@
-import { useEffect, useState } from 'react';
+// ============================================================
+// MAXVOLT — Admin users manager (enhanced)
+// ============================================================
+
+import { useEffect, useState, useMemo } from 'react';
 import { api } from '@lib/api';
 import { formatDate } from '@lib/utils';
 import { useToast } from '@components/ui/Toast';
 import Badge from '@components/ui/Badge';
+import AdminTable from './AdminTable';
+import { ROLE_OPTIONS } from '@hooks/useAdminFilters';
 
 export default function UsersManager() {
   const { showToast } = useToast();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [selectedIds, setSelectedIds] = useState([]);
 
-  const load = async (q = '') => {
+  const load = async () => {
     setLoading(true);
     try {
-      const data = await api.getUsers(q);
+      const data = await api.getUsers();
       setUsers(data || []);
     } catch (err) {
       showToast(err.message, 'error');
@@ -31,77 +37,157 @@ export default function UsersManager() {
     try {
       await api.setUserRole(uid, role);
       showToast('Role updated', 'success');
-      load(search);
+      load();
     } catch (err) {
       showToast(err.message, 'error');
     }
   };
 
+  const handleBulkRole = async (uids, role) => {
+    if (!confirm(`Change ${uids.length} user(s) role to "${role}"?`)) return;
+    try {
+      await Promise.all(uids.map((uid) => api.setUserRole(uid, role)));
+      showToast(`${uids.length} user(s) updated`, 'success');
+      setSelectedIds([]);
+      load();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  const columns = useMemo(
+    () => [
+      {
+        key: 'displayName',
+        label: 'Name',
+        sortable: true,
+        filterable: true,
+        filter: { type: 'text', placeholder: 'Filter name...' },
+        render: (val, user) => (
+          <div>
+            <div className="font-medium">{val || '—'}</div>
+            {user.phone && (
+              <div className="text-xs text-[var(--text-subtle)]">{user.phone}</div>
+            )}
+          </div>
+        ),
+      },
+      {
+        key: 'email',
+        label: 'Email',
+        sortable: true,
+        filterable: true,
+        filter: { type: 'text', placeholder: 'Filter email...' },
+        render: (val) => <span className="text-sm">{val || '—'}</span>,
+      },
+      {
+        key: 'role',
+        label: 'Role',
+        sortable: true,
+        filterable: true,
+        filter: { type: 'select', options: ROLE_OPTIONS },
+        render: (val) => (
+          <Badge variant={val === 'admin' ? 'won' : 'new'}>
+            {val || 'customer'}
+          </Badge>
+        ),
+      },
+      {
+        key: 'city',
+        label: 'City',
+        sortable: true,
+        filterable: true,
+        filter: { type: 'text', placeholder: 'Filter city...' },
+        render: (val) => <span className="text-sm">{val || '—'}</span>,
+      },
+      {
+        key: 'createdAt',
+        label: 'Joined',
+        sortable: true,
+        filterable: true,
+        filter: { type: 'date-range', label: 'Join Date' },
+        render: (val) => (
+          <span className="text-xs text-[var(--text-subtle)] whitespace-nowrap">
+            {formatDate(val)}
+          </span>
+        ),
+      },
+      {
+        key: 'lastLoginAt',
+        label: 'Last Login',
+        sortable: true,
+        render: (val) => (
+          <span className="text-xs text-[var(--text-subtle)] whitespace-nowrap">
+            {val ? formatDate(val) : 'Never'}
+          </span>
+        ),
+      },
+      {
+        key: 'actions',
+        label: 'Actions',
+        sortable: false,
+        searchable: false,
+        render: (_, user) => (
+          <div className="flex gap-1">
+            {user.role !== 'admin' ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRoleChange(user.uid, 'admin');
+                }}
+                className="px-2.5 py-1.5 rounded-lg bg-brand/15 text-brand-light text-xs font-semibold hover:bg-brand/25"
+              >
+                Make Admin
+              </button>
+            ) : (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRoleChange(user.uid, 'customer');
+                }}
+                className="px-2.5 py-1.5 rounded-lg border border-[var(--border-strong)] text-xs font-semibold hover:bg-[var(--bg-muted)]"
+              >
+                Make Customer
+              </button>
+            )}
+          </div>
+        ),
+      },
+    ],
+    []
+  );
+
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <h1 className="text-2xl">Users</h1>
-        <input
-          type="text"
-          placeholder="Search by email/name..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            load(e.target.value);
-          }}
-          className="max-w-xs px-4 py-2.5 rounded-xl border-[1.5px] border-dark-border bg-dark-muted"
-        />
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div>
+          <h1 className="text-xl sm:text-2xl mb-1">Users</h1>
+          <p className="text-sm text-[var(--text-subtle)]">
+            {users.length} registered users
+          </p>
+        </div>
       </div>
 
-      {loading ? (
-        <p>Loading...</p>
-      ) : !users.length ? (
-        <p className="text-center text-[var(--text-subtle)] py-12">No users found</p>
-      ) : (
-        <div className="overflow-x-auto rounded-2xl border border-dark-border bg-dark-elevated">
-          <table className="w-full text-sm">
-            <thead className="bg-dark-muted">
-              <tr>
-                <th className="px-3 py-3 text-left text-xs font-bold uppercase">Name</th>
-                <th className="px-3 py-3 text-left text-xs font-bold uppercase">Email</th>
-                <th className="px-3 py-3 text-left text-xs font-bold uppercase">Role</th>
-                <th className="px-3 py-3 text-left text-xs font-bold uppercase">Joined</th>
-                <th className="px-3 py-3 text-left text-xs font-bold uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.uid || u._id} className="border-t border-dark-border hover:bg-accent/5">
-                  <td className="px-3 py-3">{u.displayName || '-'}</td>
-                  <td className="px-3 py-3">{u.email || '-'}</td>
-                  <td className="px-3 py-3">
-                    <Badge variant={u.role === 'admin' ? 'won' : 'new'}>
-                      {u.role || 'customer'}
-                    </Badge>
-                  </td>
-                  <td className="px-3 py-3 text-[var(--text-subtle)]">
-                    {formatDate(u.createdAt)}
-                  </td>
-                  <td className="px-3 py-3">
-                    <button
-                      onClick={() => handleRoleChange(u.uid, 'customer')}
-                      className="px-3 py-1.5 rounded-lg border-2 border-dark-border-strong text-xs font-semibold hover:bg-dark-muted mr-1"
-                    >
-                      Make Customer
-                    </button>
-                    <button
-                      onClick={() => handleRoleChange(u.uid, 'admin')}
-                      className="px-3 py-1.5 rounded-lg bg-gradient-to-br from-primary-light to-primary text-white text-xs font-semibold"
-                    >
-                      Make Admin
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <AdminTable
+        columns={columns}
+        data={users}
+        loading={loading}
+        keyField="uid"
+        emptyMessage="No users found"
+        selectable
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
+        bulkActions={[
+          {
+            label: '👑 Make Admin',
+            onClick: (uids) => handleBulkRole(uids, 'admin'),
+          },
+          {
+            label: '👤 Make Customer',
+            onClick: (uids) => handleBulkRole(uids, 'customer'),
+          },
+        ]}
+      />
     </>
   );
 }

@@ -1,5 +1,5 @@
 // ============================================================
-// MAXVOLT — Admin categories manager
+// MAXVOLT — Admin categories manager (enhanced)
 // ============================================================
 
 import { useEffect, useState, useMemo } from 'react';
@@ -10,7 +10,7 @@ import { useToast } from '@components/ui/Toast';
 import Button from '@components/ui/Button';
 import Input from '@components/ui/Input';
 import Modal from '@components/ui/Modal';
-import Badge from '@components/ui/Badge';
+import AdminTable from './AdminTable';
 
 const EMPTY = {
   name: '',
@@ -22,7 +22,6 @@ const EMPTY = {
   active: true,
 };
 
-/** Auto-derive a slug preview from the name */
 function autoSlug(name) {
   if (!name) return '';
   const words = String(name)
@@ -48,6 +47,7 @@ export default function CategoriesManager() {
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedIds, setSelectedIds] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [formData, setFormData] = useState(EMPTY);
@@ -72,7 +72,6 @@ export default function CategoriesManager() {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const productCountBySlug = useMemo(() => {
@@ -111,7 +110,6 @@ export default function CategoriesManager() {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => {
       const next = { ...prev, [name]: type === 'checkbox' ? checked : value };
-      // Auto-slug from name unless the user has manually edited the slug
       if (name === 'name' && !slugTouched) {
         next.slug = autoSlug(value);
       }
@@ -192,13 +190,181 @@ export default function CategoriesManager() {
     }
   };
 
+  const handleBulkToggleActive = async (ids, active) => {
+    try {
+      await Promise.all(ids.map((id) => api.updateCategory(id, { active })));
+      showToast(`${ids.length} category(ies) ${active ? 'shown' : 'hidden'}`, 'success');
+      setSelectedIds([]);
+      await load();
+      reloadCategories();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  const columns = useMemo(
+    () => [
+      {
+        key: 'icon',
+        label: '',
+        width: '60px',
+        sortable: false,
+        searchable: false,
+        render: (val, cat) => {
+          if (cat.image) {
+            return (
+              <img
+                src={cat.image}
+                alt=""
+                className="w-10 h-10 object-cover rounded-md bg-[var(--bg-muted)]"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            );
+          }
+          return (
+            <div className="w-10 h-10 grid place-items-center bg-[var(--bg-muted)] rounded-md text-lg">
+              {val || '📦'}
+            </div>
+          );
+        },
+      },
+      {
+        key: 'name',
+        label: 'Name',
+        sortable: true,
+        filterable: true,
+        filter: { type: 'text', placeholder: 'Filter name...' },
+        render: (val) => <span className="font-semibold">{val || '—'}</span>,
+      },
+      {
+        key: 'slug',
+        label: 'Slug',
+        sortable: true,
+        filterable: true,
+        filter: { type: 'text', placeholder: 'Filter slug...' },
+        render: (val) => (
+          <span className="text-xs font-mono text-[var(--text-subtle)]">
+            {val || '—'}
+          </span>
+        ),
+      },
+      {
+        key: 'description',
+        label: 'Description',
+        sortable: false,
+        searchable: true,
+        render: (val) => (
+          <span className="text-xs text-[var(--text-muted)] max-w-[200px] block truncate">
+            {val || '—'}
+          </span>
+        ),
+      },
+      {
+        key: 'productCount',
+        label: 'Products',
+        sortable: true,
+        sorter: (a, b, rowA, rowB) => {
+          const countA = productCountBySlug[rowA.slug] || 0;
+          const countB = productCountBySlug[rowB.slug] || 0;
+          return countA - countB;
+        },
+        filterable: true,
+        filter: {
+          type: 'number-range',
+          label: 'Product Count',
+          customFilter: true,
+        },
+        render: (_, cat) => {
+          const count = productCountBySlug[cat.slug] || 0;
+          return (
+            <span
+              className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                count > 0
+                  ? 'bg-emerald-500/15 text-emerald-400'
+                  : 'bg-slate-500/15 text-slate-400'
+              }`}
+            >
+              {count}
+            </span>
+          );
+        },
+      },
+      {
+        key: 'order',
+        label: 'Order',
+        sortable: true,
+        filterable: true,
+        filter: { type: 'number-range', label: 'Display Order' },
+        render: (val) => <span className="tabular-nums">{val ?? 0}</span>,
+      },
+      {
+        key: 'active',
+        label: 'Status',
+        sortable: true,
+        filterable: true,
+        filter: { type: 'boolean', trueLabel: 'Visible', falseLabel: 'Hidden' },
+        render: (val, cat) => (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleActive(cat);
+            }}
+            className="inline-flex"
+            title={val === false ? 'Click to show' : 'Click to hide'}
+          >
+            <span
+              className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase ${
+                val === false
+                  ? 'bg-red-500/15 text-red-400'
+                  : 'bg-emerald-500/15 text-emerald-400'
+              }`}
+            >
+              {val === false ? 'Hidden' : 'Visible'}
+            </span>
+          </button>
+        ),
+      },
+      {
+        key: 'actions',
+        label: 'Actions',
+        sortable: false,
+        searchable: false,
+        render: (_, cat) => (
+          <div className="flex gap-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                openEdit(cat);
+              }}
+              className="px-2.5 py-1.5 rounded-lg border border-[var(--border-strong)] text-xs font-semibold hover:bg-[var(--bg-muted)]"
+            >
+              Edit
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(cat);
+              }}
+              className="px-2.5 py-1.5 rounded-lg bg-red-500/15 text-red-400 text-xs font-semibold hover:bg-red-500/25"
+            >
+              Delete
+            </button>
+          </div>
+        ),
+      },
+    ],
+    [productCountBySlug]
+  );
+
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-xl sm:text-2xl mb-1">Categories</h1>
           <p className="text-sm text-[var(--text-subtle)]">
-            Add, edit, reorder, and hide product categories shown on the homepage.
+            {categories.length} categories configured
           </p>
         </div>
         <Button onClick={openAdd} variant="primary" size="sm">
@@ -206,88 +372,26 @@ export default function CategoriesManager() {
         </Button>
       </div>
 
-      {loading ? (
-        <p className="py-12 text-center text-[var(--text-subtle)]">Loading categories...</p>
-      ) : categories.length === 0 ? (
-        <div className="surface text-center py-12">
-          <div className="text-4xl mb-3 opacity-60">📦</div>
-          <p className="mb-4 text-[var(--text-muted)]">No categories yet.</p>
-          <Button onClick={openAdd} variant="primary">Create your first category</Button>
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-2xl border border-dark-border bg-dark-elevated">
-          <table className="w-full text-sm min-w-[720px]">
-            <thead className="bg-dark-muted">
-              <tr>
-                <th className="px-3 py-3 w-16"></th>
-                <th className="px-3 py-3 text-left text-xs font-bold uppercase">Name</th>
-                <th className="px-3 py-3 text-left text-xs font-bold uppercase">Slug</th>
-                <th className="px-3 py-3 text-left text-xs font-bold uppercase">Products</th>
-                <th className="px-3 py-3 text-left text-xs font-bold uppercase">Order</th>
-                <th className="px-3 py-3 text-left text-xs font-bold uppercase">Status</th>
-                <th className="px-3 py-3 text-left text-xs font-bold uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {categories.map((cat) => (
-                <tr key={cat._id} className="border-t border-dark-border hover:bg-accent/5">
-                  <td className="px-3 py-3">
-                    {cat.image ? (
-                      <img
-                        src={cat.image}
-                        alt=""
-                        className="w-11 h-11 object-cover rounded-md bg-dark-muted"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <div className="w-11 h-11 grid place-items-center bg-dark-muted rounded-md text-lg">
-                        {cat.icon || '📦'}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-3 py-3 font-semibold">{cat.name}</td>
-                  <td className="px-3 py-3 text-xs font-mono text-[var(--text-subtle)]">
-                    {cat.slug}
-                  </td>
-                  <td className="px-3 py-3">
-                    <Badge variant={productCountBySlug[cat.slug] ? 'delivered' : 'pending'}>
-                      {productCountBySlug[cat.slug] || 0}
-                    </Badge>
-                  </td>
-                  <td className="px-3 py-3 tabular-nums">{cat.order ?? 0}</td>
-                  <td className="px-3 py-3">
-                    <button
-                      onClick={() => toggleActive(cat)}
-                      className="inline-flex"
-                      title={cat.active === false ? 'Click to show' : 'Click to hide'}
-                    >
-                      <Badge variant={cat.active === false ? 'failed' : 'delivered'}>
-                        {cat.active === false ? 'Hidden' : 'Visible'}
-                      </Badge>
-                    </button>
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap">
-                    <button
-                      onClick={() => openEdit(cat)}
-                      className="px-3 py-1.5 rounded-lg border-2 border-dark-border-strong text-xs font-semibold hover:bg-dark-muted mr-1"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(cat)}
-                      className="px-3 py-1.5 rounded-lg bg-gradient-to-br from-secondary to-secondary-light text-white text-xs font-semibold"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <AdminTable
+        columns={columns}
+        data={categories}
+        loading={loading}
+        keyField="_id"
+        emptyMessage="No categories yet"
+        selectable
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
+        bulkActions={[
+          {
+            label: '✓ Show',
+            onClick: (ids) => handleBulkToggleActive(ids, true),
+          },
+          {
+            label: '✗ Hide',
+            onClick: (ids) => handleBulkToggleActive(ids, false),
+          },
+        ]}
+      />
 
       <Modal
         isOpen={modalOpen}
@@ -338,7 +442,6 @@ export default function CategoriesManager() {
               value={formData.image}
               onChange={handleChange}
               placeholder="https://images.unsplash.com/..."
-              hint="Full-width cover image on the category card."
             />
             <Input
               label="Icon (fallback)"
@@ -346,7 +449,6 @@ export default function CategoriesManager() {
               value={formData.icon}
               onChange={handleChange}
               placeholder="🏠"
-              hint="Shown when no image URL is set."
             />
           </div>
 
@@ -357,7 +459,6 @@ export default function CategoriesManager() {
               type="number"
               value={formData.order}
               onChange={handleChange}
-              hint="Lower numbers appear first."
             />
             <div className="flex items-end pb-3">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -366,7 +467,7 @@ export default function CategoriesManager() {
                   name="active"
                   checked={formData.active}
                   onChange={handleChange}
-                  className="w-5 h-5 accent-secondary"
+                  className="w-5 h-5 accent-accent"
                 />
                 Visible on homepage
               </label>
@@ -374,11 +475,11 @@ export default function CategoriesManager() {
           </div>
 
           {formData.image && (
-            <div className="rounded-xl border border-dark-border overflow-hidden">
+            <div className="rounded-xl border border-[var(--border)] overflow-hidden">
               <img
                 src={formData.image}
                 alt="Preview"
-                className="w-full h-40 object-cover bg-dark-muted"
+                className="w-full h-40 object-cover bg-[var(--bg-muted)]"
                 onError={(e) => {
                   e.currentTarget.style.opacity = '0.3';
                 }}

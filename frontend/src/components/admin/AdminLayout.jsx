@@ -18,6 +18,7 @@ export default function AdminLayout() {
   const navItems = [
     { path: '/admin', label: 'Dashboard', icon: '📊', exact: true },
     { path: '/admin/products', label: 'Products', icon: '📦' },
+    { path: '/admin/bulk', label: 'Bulk Import/Export', icon: '📥' },
     { path: '/admin/categories', label: 'Categories', icon: '🗂️' },
     { path: '/admin/sections', label: 'Sections', icon: '🏷️' },
     { path: '/admin/orders', label: 'Orders', icon: '🛒' },

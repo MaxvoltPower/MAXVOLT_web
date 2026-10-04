@@ -25,6 +25,8 @@
     { "source": "/admin/index.html", "destination": "/admin", "permanent": true }
   ],
   "rewrites": [
+    { "source": "/api/products/bulk-export", "destination": "/api/products?path=bulk-export" },
+    { "source": "/api/products/bulk-import", "destination": "/api/products?path=bulk-import" },
     { "source": "/api/products/:path*", "destination": "/api/products?path=:path*" },
     { "source": "/api/reviews/:path*", "destination": "/api/products?__module=reviews&path=:path*" },
     { "source": "/api/orders/:path*", "destination": "/api/orders" },

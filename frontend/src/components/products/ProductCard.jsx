@@ -79,11 +79,11 @@ export default function ProductCard({ product }) {
           )}
         </Link>
 
-        {hasDiscount && (
-          <span className="absolute top-3 left-3 px-2.5 py-1 rounded-md bg-gradient-to-b from-accent to-accent-dark text-white text-[10px] font-bold uppercase tracking-wider shadow-md">
-            Sale
-          </span>
-        )}
+      {hasDiscount && (
+        <span className="absolute top-2.5 left-2.5 z-10 inline-flex items-center px-2 py-1 rounded-md bg-gradient-to-b from-accent to-accent-dark text-white text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shadow-md leading-none">
+          Sale
+        </span>
+      )}
         {outOfStock && (
           <span className="absolute top-3 right-3 px-2.5 py-1 rounded-md bg-red-500/90 text-white text-[10px] font-bold uppercase tracking-wider">
             Out of Stock

@@ -78,6 +78,14 @@ export const api = {
     request(`/api/products/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
   deleteProduct: (id) => request(`/api/products/${id}`, { method: 'DELETE' }),
 
+  // ---- Bulk product import / export ----
+  bulkExportProducts: () => request('/api/products/bulk-export'),
+  bulkImportProducts: (payload) =>
+    request('/api/products/bulk-import', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
   // ---- Orders ----
   getOrders: () => request('/api/orders'),
   createOrder: (payload) =>

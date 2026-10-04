@@ -25,6 +25,8 @@ import { ObjectId } from 'mongodb';
  *  POST   /api/products                → create (admin)
  *  GET    /api/products/categories     → list categories
  *  POST   /api/products/categories     → create category (admin)
+ *  GET    /api/products/bulk-export    → export full catalogue (admin)
+ *  POST   /api/products/bulk-import    → bulk upsert from rows (admin)
  *  GET    /api/products/:id            → single product
  *  PUT    /api/products/:id            → update (admin)
  *  DELETE /api/products/:id            → delete (admin)
@@ -53,6 +55,156 @@ export default async function handler(req, res) {
       req.query?.path
     )}`
   );
+
+  // ---- /api/products/bulk-export ----
+  if (first === 'bulk-export' && method === 'GET') {
+    const admin = await requireAdmin(req, res);
+    if (!admin) return;
+
+    const col = await getCollection(COLLECTIONS.PRODUCTS);
+    const items = await col
+      .find({})
+      .sort({ category: 1, brand: 1, model: 1 })
+      .toArray();
+
+    // Return the FULL raw documents so the admin can edit every field,
+    // including ones the public API strips (numericPrice, vaNumeric, etc.).
+    return ok(res, {
+      items: items.map((d) => ({ ...d, _id: String(d._id) })),
+      total: items.length,
+      exportedAt: new Date().toISOString(),
+    });
+  }
+
+  // ---- /api/products/bulk-import ----
+  if (first === 'bulk-import' && method === 'POST') {
+    const admin = await requireAdmin(req, res);
+    if (!admin) return;
+
+    const body = parseBody(req);
+    const { rows = [], mode = 'upsert' } = body;
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return fail(res, 'rows array is required');
+    }
+    if (rows.length > 5000) {
+      return fail(res, 'Too many rows (max 5000 per import)');
+    }
+    if (!['update', 'upsert', 'replace'].includes(mode)) {
+      return fail(res, 'mode must be update | upsert | replace');
+    }
+
+    const col = await getCollection(COLLECTIONS.PRODUCTS);
+
+    // Build a lookup of existing products by _id AND by custom `id`.
+    const allExisting = await col.find({}).toArray();
+    const byMongoId = new Map(allExisting.map((p) => [String(p._id), p]));
+    const byCustomId = new Map(
+      allExisting.filter((p) => p.id).map((p) => [String(p.id), p])
+    );
+
+    const results = {
+      created: [],
+      updated: [],
+      skipped: [],
+      errors: [],
+    };
+
+    const now = new Date();
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const rowNum = i + 2; // header is row 1
+
+      try {
+        const mongoId = row._id ? String(row._id).trim() : '';
+        const customId = row.id ? String(row.id).trim() : '';
+
+        let existing = null;
+        if (mongoId && ObjectId.isValid(mongoId)) {
+          existing = byMongoId.get(mongoId) || null;
+        }
+        if (!existing && customId) {
+          existing = byCustomId.get(customId) || null;
+        }
+
+        // Validate required fields
+        if (!row.model || !row.brand || !row.category) {
+          results.skipped.push({
+            row: rowNum,
+            id: customId || mongoId || '(none)',
+            reason: 'model, brand, category are required',
+          });
+          continue;
+        }
+
+        const doc = buildProductDocFromRow(row, now);
+
+        if (existing) {
+          if (mode === 'update' || mode === 'upsert') {
+            delete doc._id;
+            // Recompute derived numerics
+            doc.vaNumeric = parseVaToNumber(doc);
+            doc.capacityAh = parseAhToNumber(doc);
+            await col.updateOne({ _id: existing._id }, { $set: doc });
+            results.updated.push({
+              row: rowNum,
+              id: String(existing._id),
+              customId: doc.id || existing.id,
+              model: doc.model,
+            });
+          } else {
+            results.skipped.push({
+              row: rowNum,
+              id: String(existing._id),
+              reason: 'already exists (mode=replace)',
+            });
+          }
+        } else {
+          // New product
+          if (mode === 'update') {
+            results.skipped.push({
+              row: rowNum,
+              id: customId || '(new)',
+              reason: 'not found in DB (mode=update)',
+            });
+            continue;
+          }
+          if (!customId) {
+            doc.id = `IMP-${Date.now()}-${i}`;
+          }
+          doc.vaNumeric = parseVaToNumber(doc);
+          doc.capacityAh = parseAhToNumber(doc);
+          doc.createdAt = now;
+          doc.updatedAt = now;
+          const ins = await col.insertOne(doc);
+          results.created.push({
+            row: rowNum,
+            id: String(ins.insertedId),
+            customId: doc.id,
+            model: doc.model,
+          });
+        }
+      } catch (err) {
+        results.errors.push({
+          row: rowNum,
+          id: row.id || row._id || '(unknown)',
+          reason: err.message,
+        });
+      }
+    }
+
+    return ok(res, {
+      summary: {
+        total: rows.length,
+        created: results.created.length,
+        updated: results.updated.length,
+        skipped: results.skipped.length,
+        errors: results.errors.length,
+      },
+      results,
+    });
+  }
 
   // ---- /api/products/categories ----
   if (first === 'categories') {
@@ -287,6 +439,77 @@ function toPublicProduct(doc) {
   }
 
   return out;
+}
+
+// ============================================================
+// Bulk import helper
+// ============================================================
+
+/**
+ * Build a normalized product document from a spreadsheet row.
+ * Only keys present (non-empty) in the row are written, so partial
+ * updates don't blank out existing fields.
+ */
+function buildProductDocFromRow(row, now) {
+  const doc = { updatedAt: now };
+
+  // Strings
+  const strFields = [
+    'id', 'brand', 'model', 'category', 'type', 'capacity', 'voltage',
+    'va', 'warranty', 'waveType', 'runtime', 'terminal', 'suitableCars',
+    'suitableLoad', 'suitableFor', 'bestFor', 'configurable',
+    'availability', 'image', 'imageAlt',
+  ];
+  for (const k of strFields) {
+    if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== '') {
+      doc[k] = String(row[k]).trim();
+    }
+  }
+
+  // Numbers
+  if (row.price !== undefined && row.price !== '') doc.price = row.price;
+  if (row.discountedPrice !== undefined && row.discountedPrice !== '') {
+    const n = Number(row.discountedPrice);
+    doc.discountedPrice = Number.isFinite(n) && n > 0 ? n : null;
+  }
+  if (row.stock !== undefined && row.stock !== '') {
+    const n = Number(row.stock);
+    doc.stock = Number.isFinite(n) && n >= 0 ? n : 0;
+  }
+
+  // Booleans (accept TRUE/FALSE/1/0/yes/no)
+  doc.active = truthy(row.active, true);
+  doc.featured = truthy(row.featured, false);
+
+  // Images — accept a pipe-separated list in a single cell
+  if (row.images !== undefined && row.images !== null && String(row.images).trim() !== '') {
+    const list = String(row.images)
+      .split('|')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    doc.images = list;
+    doc.image = list[0] || null;
+  } else if (doc.image) {
+    doc.images = [doc.image];
+  }
+
+  // Recompute numericPrice from whatever price/discountedPrice we ended up with
+  const priceInfo = parsePrice(
+    doc.discountedPrice !== undefined && doc.discountedPrice !== null
+      ? doc.discountedPrice
+      : doc.price
+  );
+  doc.numericPrice = priceInfo.invalid ? 0 : priceInfo.min;
+
+  return doc;
+}
+
+function truthy(v, fallback) {
+  if (v === undefined || v === null || v === '') return fallback;
+  const s = String(v).trim().toLowerCase();
+  if (['true', '1', 'yes', 'y', 'active', 'visible'].includes(s)) return true;
+  if (['false', '0', 'no', 'n', 'inactive', 'hidden'].includes(s)) return false;
+  return fallback;
 }
 
 // ============================================================
