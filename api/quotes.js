@@ -22,7 +22,6 @@ export default async function handler(req, res) {
     )}`
   );
 
-  // ---- /api/quotes/:id (admin only) ----
   if (id) {
     const admin = await requireAdmin(req, res);
     if (!admin) return;
@@ -45,20 +44,21 @@ export default async function handler(req, res) {
       const result = await quotes.findOneAndUpdate(
         { _id },
         { $set: update },
-        { returnDocument: 'after' }
+        { returnDocument: 'after', includeResultMetadata: false }
       );
+      if (!result) return fail(res, 'Quote not found', 404);
       return ok(res, result);
     }
 
     if (method === 'DELETE') {
-      await quotes.deleteOne({ _id });
+      const r = await quotes.deleteOne({ _id });
+      if (r.deletedCount === 0) return fail(res, 'Quote not found', 404);
       return ok(res, { deleted: true });
     }
 
     return fail(res, 'Method not allowed', 405);
   }
 
-  // ---- /api/quotes (root) ----
   if (method === 'POST') {
     const body = parseBody(req);
     const { name, phone, email, requirement, location, message } = body;

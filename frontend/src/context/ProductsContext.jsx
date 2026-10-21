@@ -59,6 +59,11 @@ export function ProductsProvider({ children }) {
       grouped[key].push(p);
     });
 
+    // Sort each group by order
+    for (const key in grouped) {
+      grouped[key].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+    }
+
     setGroupedProducts(grouped);
   }, []);
 
@@ -129,17 +134,24 @@ export function ProductsProvider({ children }) {
 
   const getFeaturedProducts = useCallback(
     (limit = 4) => {
-      const flagged = products.filter((p) => p.featured === true);
+      const flagged = products
+        .filter((p) => p.featured === true)
+        .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+
       if (flagged.length >= limit) return flagged.slice(0, limit);
 
-      const homePool = (groupedProducts.homeInverterBatteries || []).filter(
-        (p) => !flagged.includes(p)
-      );
+      const homePool = (groupedProducts.homeInverterBatteries || [])
+        .filter((p) => !flagged.includes(p))
+        .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+
       const combined = [...flagged, ...homePool];
 
       if (combined.length >= limit) return combined.slice(0, limit);
 
-      const extraAny = products.filter((p) => !combined.includes(p));
+      const extraAny = products
+        .filter((p) => !combined.includes(p))
+        .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+
       return [...combined, ...extraAny].slice(0, limit);
     },
     [products, groupedProducts]

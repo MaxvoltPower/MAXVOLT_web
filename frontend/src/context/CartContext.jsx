@@ -1,5 +1,5 @@
 // ============================================================
-// MAXVOLT — Cart context
+// MAXVOLT — Cart context (with per-product add debounce)
 // ============================================================
 
 import {
@@ -9,12 +9,17 @@ import {
   useState,
   useCallback,
   useMemo,
+  useRef,
 } from 'react';
 import { useToast } from '@components/ui/Toast';
 import { parsePriceToNumber } from '@lib/utils';
 
 const CartContext = createContext(null);
 const CART_KEY = 'maxvolt_cart_v2';
+
+// Guard against accidental rapid double-clicks on "Add to Cart".
+// A second click on the same product within this window is ignored.
+const ADD_DEBOUNCE_MS = 400;
 
 function readCartFromStorage() {
   try {
@@ -30,6 +35,7 @@ function readCartFromStorage() {
 export function CartProvider({ children }) {
   const [cart, setCart] = useState(readCartFromStorage);
   const { showToast } = useToast();
+  const lastAddRef = useRef({ id: null, at: 0 });
 
   // Persist
   useEffect(() => {
@@ -59,6 +65,13 @@ export function CartProvider({ children }) {
     (product, qty = 1) => {
       const id = product?.id || product?._id;
       if (!product || !id) return;
+
+      // Debounce rapid double-clicks on the same product
+      const now = Date.now();
+      if (lastAddRef.current.id === id && now - lastAddRef.current.at < ADD_DEBOUNCE_MS) {
+        return;
+      }
+      lastAddRef.current = { id, at: now };
 
       const numericPrice = parsePriceToNumber(
         product.discountedPrice || product.price

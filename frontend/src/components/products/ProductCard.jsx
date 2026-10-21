@@ -2,10 +2,10 @@
 // MAXVOLT — Product card
 // ============================================================
 
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useCart } from '@context/CartContext';
 import {
-  openWhatsapp,
-  getWhatsappMessage,
   resolveProductImage,
   formatPrice,
   getAvailabilityClass,
@@ -28,6 +28,9 @@ function PlaceholderImage({ model }) {
 }
 
 export default function ProductCard({ product }) {
+  const { addToCart } = useCart();
+  const [imgError, setImgError] = useState(false);
+
   const productId = product.id || product._id;
   const imageSrc = resolveProductImage(product);
   const outOfStock = typeof product.stock === 'number' && product.stock <= 0;
@@ -56,34 +59,24 @@ export default function ProductCard({ product }) {
           className="block w-full h-full"
           aria-label={`View ${product.brand} ${product.model}`}
         >
-          {imageSrc ? (
+          {imageSrc && !imgError ? (
             <img
               src={imageSrc}
               alt={`${product.brand || ''} ${product.model || ''}`.trim()}
               loading="lazy"
               className="w-full h-full object-contain p-3 bg-gradient-to-br from-[#0B1220] to-[#121A2A] transition-transform duration-500 group-hover:scale-105"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                const parent = e.currentTarget.parentElement;
-                if (parent && !parent.querySelector('.img-fallback')) {
-                  const div = document.createElement('div');
-                  div.className = 'img-fallback absolute inset-0';
-                  div.innerHTML =
-                    '<div class="w-full h-full grid place-items-center bg-gradient-to-br from-[#0B1220] via-[#0E1A2E] to-[#121A2A]"><div class="text-center"><div class="text-5xl mb-1">🔋</div><div class="text-[10px] tracking-[0.3em] text-[var(--text-subtle)] font-bold">MAXVOLT</div></div></div>';
-                  parent.appendChild(div);
-                }
-              }}
+              onError={() => setImgError(true)}
             />
           ) : (
             <PlaceholderImage model={product.model} />
           )}
         </Link>
 
-      {hasDiscount && (
-        <span className="absolute top-2.5 left-2.5 z-10 inline-flex items-center px-2 py-1 rounded-md bg-gradient-to-b from-accent to-accent-dark text-white text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shadow-md leading-none">
-          Sale
-        </span>
-      )}
+        {hasDiscount && (
+          <span className="absolute top-2.5 left-2.5 z-10 inline-flex items-center px-2 py-1 rounded-md bg-gradient-to-b from-accent to-accent-dark text-white text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shadow-md leading-none">
+            Sale
+          </span>
+        )}
         {outOfStock && (
           <span className="absolute top-3 right-3 px-2.5 py-1 rounded-md bg-red-500/90 text-white text-[10px] font-bold uppercase tracking-wider">
             Out of Stock
@@ -161,18 +154,20 @@ export default function ProductCard({ product }) {
           </Link>
           {outOfStock ? (
             <button
+              type="button"
               disabled
               className="flex-1 inline-flex items-center justify-center px-3 py-2.5 rounded-xl border-[1.5px] border-[var(--border-strong)] text-xs sm:text-sm font-semibold opacity-50 cursor-not-allowed"
             >
               Out of Stock
             </button>
           ) : (
-            <Link
-              to={`/product/${productId}?action=addToCart`}
+            <button
+              type="button"
+              onClick={() => addToCart(product, 1)}
               className="flex-1 inline-flex items-center justify-center px-3 py-2.5 rounded-xl bg-gradient-to-b from-accent to-accent-dark text-white text-xs sm:text-sm font-semibold hover:shadow-lg hover:shadow-accent/40 hover:-translate-y-0.5 transition-all"
             >
               Add to Cart
-            </Link>
+            </button>
           )}
         </div>
       </div>

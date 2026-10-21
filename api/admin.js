@@ -9,15 +9,18 @@ import { getCollection, COLLECTIONS } from './_lib/mongodb.js';
 import { setUserRole } from './_lib/firebase-admin.js';
 
 const SETTINGS_KEY = 'site';
+const CHAT_KEY = 'chatbot';
 
 /**
- * Router for /api/admin/*
- *  GET   /api/admin/stats
- *  GET   /api/admin/users?q=
- *  PATCH /api/admin/users            (body: { uid, role })
- *  GET   /api/admin/settings
- *  PUT   /api/admin/settings
+ * Mask a secret string for GET responses.
+ * "gsk_abcdef123456" → "••••••••3456"
  */
+function maskSecret(v) {
+  if (!v || typeof v !== 'string') return '';
+  if (v.length <= 4) return '••••';
+  return '••••••••' + v.slice(-4);
+}
+
 export default async function handler(req, res) {
   const segments = getPathSegments(req, 'admin');
   const action = segments[0] || '';
@@ -46,14 +49,8 @@ export default async function handler(req, res) {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const [
-      totalUsers,
-      totalProducts,
-      totalOrders,
-      totalQuotes,
-      ordersToday,
-      ordersThisMonth,
-      newQuotes,
-      revenueAgg,
+      totalUsers, totalProducts, totalOrders, totalQuotes,
+      ordersToday, ordersThisMonth, newQuotes, revenueAgg,
     ] = await Promise.all([
       users.countDocuments(),
       products.countDocuments({ active: { $ne: false } }),
@@ -62,24 +59,14 @@ export default async function handler(req, res) {
       orders.countDocuments({ createdAt: { $gte: startOfDay } }),
       orders.countDocuments({ createdAt: { $gte: startOfMonth } }),
       quotes.countDocuments({ status: 'new' }),
-      orders
-        .aggregate([
-          { $match: { paymentStatus: 'paid' } },
-          { $group: { _id: null, total: { $sum: '$total' } } },
-        ])
-        .toArray(),
+      orders.aggregate([
+        { $match: { paymentStatus: 'paid' } },
+        { $group: { _id: null, total: { $sum: '$total' } } },
+      ]).toArray(),
     ]);
 
-    const recentOrders = await orders
-      .find({})
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .toArray();
-    const recentQuotes = await quotes
-      .find({})
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .toArray();
+    const recentOrders = await orders.find({}).sort({ createdAt: -1 }).limit(5).toArray();
+    const recentQuotes = await quotes.find({}).sort({ createdAt: -1 }).limit(5).toArray();
 
     return ok(res, {
       totals: {
@@ -110,11 +97,7 @@ export default async function handler(req, res) {
             ],
           }
         : {};
-      const items = await users
-        .find(query)
-        .sort({ createdAt: -1 })
-        .limit(200)
-        .toArray();
+      const items = await users.find(query).sort({ createdAt: -1 }).limit(200).toArray();
       return ok(res, items);
     }
     if (method === 'PATCH') {
@@ -134,10 +117,16 @@ export default async function handler(req, res) {
       const settings = await getCollection(COLLECTIONS.SETTINGS);
 
       if (method === 'GET') {
-        const doc = await settings.findOne({ key: SETTINGS_KEY });
-        const chatbot = await settings.findOne({ key: 'chatbot' });
-        return ok(res, { ...(doc?.value || {}), ...(chatbot?.value || {}) });
+        const siteDoc = await settings.findOne({ key: SETTINGS_KEY });
+        const chatDoc = await settings.findOne({ key: CHAT_KEY });
+        const chatValue = { ...(chatDoc?.value || {}) };
+        // Never send the plaintext Groq key to the browser.
+        if (chatValue.chatApiKey) {
+          chatValue.chatApiKey = maskSecret(chatValue.chatApiKey);
+        }
+        return ok(res, { ...(siteDoc?.value || {}), ...chatValue });
       }
+
       if (method === 'PUT' || method === 'PATCH') {
         const body = parseBody(req);
         const chatKeys = ['chatApiKey', 'chatModel'];
@@ -147,6 +136,16 @@ export default async function handler(req, res) {
           if (chatKeys.includes(k)) chatValue[k] = body[k];
           else siteValue[k] = body[k];
         }
+
+        // If the admin only changed the *masked* value (or left it untouched),
+        // don't overwrite the real key in the DB.
+        if (
+          typeof chatValue.chatApiKey === 'string' &&
+          chatValue.chatApiKey.startsWith('••••')
+        ) {
+          delete chatValue.chatApiKey;
+        }
+
         if (Object.keys(siteValue).length) {
           await settings.updateOne(
             { key: SETTINGS_KEY },
@@ -163,10 +162,10 @@ export default async function handler(req, res) {
         }
         if (Object.keys(chatValue).length) {
           await settings.updateOne(
-            { key: 'chatbot' },
+            { key: CHAT_KEY },
             {
               $set: {
-                key: 'chatbot',
+                key: CHAT_KEY,
                 value: chatValue,
                 updatedAt: new Date(),
                 updatedBy: admin.uid,

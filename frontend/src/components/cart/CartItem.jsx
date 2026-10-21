@@ -2,29 +2,24 @@
 // MAXVOLT — Cart item row
 // ============================================================
 
+import { useState } from 'react';
 import { useCart } from '@context/CartContext';
 import { resolveProductImage, formatINR } from '@lib/utils';
 
 export default function CartItem({ item }) {
   const { updateQty, removeFromCart } = useCart();
+  const [imgError, setImgError] = useState(false);
   const imageSrc = resolveProductImage({ image: item.image });
 
   return (
     <div className="grid grid-cols-[72px_1fr] sm:grid-cols-[88px_1fr_auto_auto] gap-3 sm:gap-4 items-start sm:items-center p-3 sm:p-4 bg-dark-elevated border border-dark-border rounded-2xl mb-3">
       <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-dark-muted grid place-items-center overflow-hidden shrink-0">
-        {imageSrc ? (
+        {imageSrc && !imgError ? (
           <img
             src={imageSrc}
             alt=""
             className="w-full h-full object-contain p-1.5"
-            onError={(e) => {
-              e.currentTarget.replaceWith(
-                Object.assign(document.createElement('span'), {
-                  className: 'text-3xl',
-                  textContent: '🔋',
-                })
-              );
-            }}
+            onError={() => setImgError(true)}
           />
         ) : (
           <span className="text-3xl">🔋</span>

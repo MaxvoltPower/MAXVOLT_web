@@ -64,7 +64,9 @@ export default function ProductsPage() {
 
     // Sort
     const sorted = [...list];
-    if (sort === 'price-asc') {
+    if (sort === 'default') {
+      sorted.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+    } else if (sort === 'price-asc') {
       sorted.sort(
         (a, b) =>
           parsePriceToNumber(a.discountedPrice || a.price) -

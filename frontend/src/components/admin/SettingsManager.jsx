@@ -15,6 +15,11 @@ const KEYS = {
   's-chatModel': 'chatModel',
 };
 
+// The backend masks secrets with '••••••••' + last 4 chars.
+// We must never send that masked value back to the API.
+const isMaskedValue = (v) =>
+  typeof v === 'string' && v.startsWith('••••');
+
 export default function SettingsManager() {
   const { showToast } = useToast();
   const [values, setValues] = useState({
@@ -58,7 +63,12 @@ export default function SettingsManager() {
     e.preventDefault();
     setSaving(true);
     try {
-      await api.saveSettings(values);
+      // Don't send back a masked key — the backend already knows the real one.
+      const payload = { ...values };
+      if (isMaskedValue(payload.chatApiKey)) {
+        delete payload.chatApiKey;
+      }
+      await api.saveSettings(payload);
       showToast('✓ Settings saved', 'success');
     } catch (err) {
       showToast('✗ ' + err.message, 'error');
@@ -70,14 +80,21 @@ export default function SettingsManager() {
   const handleTestChat = async () => {
     setTestStatus('loading');
     setTestResult('Testing…');
+
+    // Only send an override if the admin typed a REAL key (not the masked one).
+    // Otherwise, let the server fall back to its stored/env key.
+    const apiKeyOverride =
+      values.chatApiKey && !isMaskedValue(values.chatApiKey)
+        ? values.chatApiKey.trim()
+        : undefined;
+
     try {
       const data = await api.chat({
         message: 'Say hi in one short sentence.',
         history: [],
-        apiKeyOverride: values.chatApiKey?.trim() || undefined,
+        apiKeyOverride,
         modelOverride: values.chatModel?.trim() || undefined,
       });
-      // data is the unwrapped payload from api.request() → { reply, model }
       const reply =
         data && typeof data === 'object' && typeof data.reply === 'string'
           ? data.reply
@@ -96,6 +113,8 @@ export default function SettingsManager() {
   if (loading) {
     return <p>Loading settings...</p>;
   }
+
+  const chatKeyIsMasked = isMaskedValue(values.chatApiKey);
 
   return (
     <>
@@ -144,10 +163,12 @@ export default function SettingsManager() {
             type="password"
             value={values.chatApiKey}
             onChange={(e) => handleChange('chatApiKey', e.target.value)}
-            placeholder="gsk_..."
+            placeholder={chatKeyIsMasked ? 'Saved (enter a new key to replace)' : 'gsk_...'}
           />
           <small className="text-xs text-[var(--text-subtle)]">
-            Get from console.groq.com
+            {chatKeyIsMasked
+              ? 'A key is already saved. Leave this field untouched to keep it, or type a new one to replace it.'
+              : 'Get from console.groq.com'}
           </small>
         </div>
 

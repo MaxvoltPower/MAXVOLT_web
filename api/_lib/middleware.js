@@ -65,9 +65,6 @@ export async function ensureUserDoc(user) {
   const users = await getCollection(COLLECTIONS.USERS);
   const now = new Date();
 
-  // Don't blindly overwrite the stored role with the Firebase claim — the
-  // claim can be stale if an admin was demoted in Mongo. Only set the role
-  // on first insert; afterwards, trust the database.
   await users.updateOne(
     { uid: user.uid },
     {
@@ -96,30 +93,47 @@ export function parseBody(req) {
 /**
  * Extract path segments after a given prefix from the request URL.
  *
- * Vercel's rewrites strip the tail and forward the request to the function
- * as /api/<entry>, but Vercel ALSO populates req.query.path with the
- * catch-all segments when the rewrite uses `:path*`. This helper supports
- * both Vercel and the local dev server.
+ * Works in three modes:
+ *   1. Vercel sets req.query.path from the :path* rewrite
+ *   2. Local dev server sets req.query.path in router.mjs
+ *   3. Fallback: parse req.url directly
+ *
+ * Also supports the folded-module pattern: if req.query.__module is set
+ * and matches the prefix we're asking for (e.g. __module='reviews' with
+ * prefix='reviews' on the /api/products handler), we return the path
+ * segments regardless of what req.url says.
  */
 export function getPathSegments(req, prefix) {
-  // 1) Vercel may populate req.query.path directly (array or string)
+  // 1) Vercel / local server populates req.query.path directly
   if (req.query && req.query.path !== undefined) {
     const p = req.query.path;
-    if (Array.isArray(p)) {
-      return p.filter(Boolean);
-    }
+    if (Array.isArray(p)) return p.filter(Boolean);
     if (typeof p === 'string' && p.length > 0) {
       return p.split('/').filter(Boolean);
     }
   }
 
-  // 2) Fallback: parse from req.url (full path, before rewrite)
+  // 2) Folded-module fallback: /api/reviews/* is served by api/products.js
+  //    (and /api/categories/* by api/sections.js). When __module matches
+  //    the requested prefix, the path is already what we want.
+  if (req.query && req.query.__module === prefix) {
+    if (req.query.path !== undefined) {
+      const p = req.query.path;
+      if (Array.isArray(p)) return p.filter(Boolean);
+      if (typeof p === 'string' && p.length > 0) {
+        return p.split('/').filter(Boolean);
+      }
+    }
+    return [];
+  }
+
+  // 3) Fallback: parse from req.url (full path, before rewrite)
   const url = (req.url || '').split('?')[0];
   const parts = url.split('/').filter(Boolean);
   const idx = parts.indexOf(prefix);
   if (idx >= 0) return parts.slice(idx + 1);
 
-  // 3) Last resort: if prefix is the first segment after /api, return the rest
+  // 4) Last resort: if prefix is the first segment after /api, return the rest
   if (parts[0] === 'api' && parts.length > 2) {
     return parts.slice(2);
   }

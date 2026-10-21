@@ -38,6 +38,21 @@ const TYPE_INFO = {
   },
 };
 
+function SectionThumb({ src }) {
+  const [error, setError] = useState(false);
+  if (src && !error) {
+    return (
+      <img
+        src={src}
+        alt=""
+        className="w-7 h-7 object-contain bg-[var(--bg-elev)] rounded"
+        onError={() => setError(true)}
+      />
+    );
+  }
+  return <span className="w-7 inline-block text-center">🔋</span>;
+}
+
 export default function SectionsManager() {
   const { showToast } = useToast();
   const { products, reload } = useProducts();
@@ -243,49 +258,28 @@ export default function SectionsManager() {
         label: 'Actions',
         sortable: false,
         searchable: false,
-        render: (_, section) => {
-          const info = TYPE_INFO[section.type] || TYPE_INFO.featured;
-          return (
-            <div className="flex flex-wrap gap-1">
-              {section.type === 'sale' && section.active !== false && (
-                <Link
-                  to="/sale"
-                  className="px-2 py-1.5 rounded-lg border border-red-500/50 text-red-400 text-xs font-semibold hover:bg-red-500/10"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  View Sale
-                </Link>
-              )}
-              {section.type === 'combo' && section.active !== false && (
-                <Link
-                  to="/combo"
-                  className="px-2 py-1.5 rounded-lg border border-accent/50 text-accent text-xs font-semibold hover:bg-accent/10"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  View Combo
-                </Link>
-              )}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openEdit(section);
-                }}
-                className="px-2.5 py-1.5 rounded-lg border border-[var(--border-strong)] text-xs font-semibold hover:bg-[var(--bg-muted)]"
-              >
-                Edit
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(section._id);
-                }}
-                className="px-2.5 py-1.5 rounded-lg bg-red-500/15 text-red-400 text-xs font-semibold hover:bg-red-500/25"
-              >
-                Delete
-              </button>
-            </div>
-          );
-        },
+        render: (_, section) => (
+          <div className="flex gap-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                openEdit(section);
+              }}
+              className="px-2.5 py-1.5 rounded-lg border border-[var(--border-strong)] text-xs font-semibold hover:bg-[var(--bg-muted)]"
+            >
+              Edit
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(section._id);
+              }}
+              className="px-2.5 py-1.5 rounded-lg bg-red-500/15 text-red-400 text-xs font-semibold hover:bg-red-500/25"
+            >
+              Delete
+            </button>
+          </div>
+        ),
       },
     ],
     []
@@ -295,9 +289,9 @@ export default function SectionsManager() {
     <>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-xl sm:text-2xl mb-1">Website Sections</h1>
+          <h1 className="text-xl sm:text-2xl mb-1">Homepage Sections</h1>
           <p className="text-sm text-[var(--text-subtle)]">
-            {sections.length} sections configured
+            {sections.length} section(s) configured
           </p>
         </div>
         <Button onClick={openAdd} variant="primary" size="sm">
@@ -310,7 +304,7 @@ export default function SectionsManager() {
         data={sections}
         loading={loading}
         keyField="_id"
-        emptyMessage="No sections yet. Click '+ Add Section' to create one."
+        emptyMessage="No sections yet"
         selectable
         selectedIds={selectedIds}
         onSelectionChange={setSelectedIds}
@@ -338,20 +332,22 @@ export default function SectionsManager() {
         size="xl"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Section Title"
-            required
-            value={formData.title}
-            onChange={(e) => setFormData((p) => ({ ...p, title: e.target.value }))}
-            placeholder="e.g., Summer Sale, Featured Products"
-          />
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Section Title"
+              required
+              value={formData.title}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, title: e.target.value }))
+              }
+              placeholder="e.g., Featured Home Batteries"
+            />
             <Select
               label="Section Type"
-              required
               value={formData.type}
-              onChange={(e) => setFormData((p) => ({ ...p, type: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, type: e.target.value }))
+              }
             >
               {SECTION_TYPE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -359,98 +355,112 @@ export default function SectionsManager() {
                 </option>
               ))}
             </Select>
+          </div>
 
+          <p className="text-xs text-[var(--text-subtle)]">
+            {TYPE_INFO[formData.type]?.desc || ''}
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Display Order"
               type="number"
               value={formData.order}
-              onChange={(e) => setFormData((p) => ({ ...p, order: e.target.value }))}
-              hint="Lower numbers appear first."
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, order: e.target.value }))
+              }
+              hint="Lower numbers appear first"
             />
+            <div className="flex items-end pb-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.active}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, active: e.target.checked }))
+                  }
+                  className="w-5 h-5 accent-accent"
+                />
+                Active (visible on homepage)
+              </label>
+            </div>
           </div>
 
-          {TYPE_INFO[formData.type] && (
-            <div className="p-3 rounded-xl bg-[var(--bg-muted)] border border-[var(--border)] text-xs text-[var(--text-muted)]">
-              <strong className={TYPE_INFO[formData.type].color}>
-                {TYPE_INFO[formData.type].label}:
-              </strong>{' '}
-              {TYPE_INFO[formData.type].desc}
-            </div>
-          )}
-
-          <div>
+          {/* Product picker */}
+          <div className="form-group">
             <label className="block mb-2 font-semibold text-sm text-[var(--text)]">
-              Select Products{' '}
-              <span className="text-[var(--text-subtle)] font-normal">
-                ({selectedProducts.length} selected)
-              </span>
+              Products in this section ({selectedProducts.length} selected)
             </label>
+
             <input
               type="text"
-              placeholder="🔍 Search by brand or model..."
+              placeholder="Search products by brand or model..."
               value={productSearch}
               onChange={(e) => setProductSearch(e.target.value)}
-              className="mb-2"
+              className="w-full mb-3 px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-muted)] text-sm"
             />
-            <div className="max-h-80 overflow-y-auto border border-[var(--border)] rounded-lg p-2 bg-[var(--bg-muted)]">
-              {!filteredProducts.length ? (
-                <div className="p-4 text-center text-[var(--text-subtle)]">
-                  No products match
-                </div>
+
+            <div className="max-h-[400px] overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--bg-muted)] p-3 space-y-4">
+              {Object.keys(grouped).length === 0 ? (
+                <p className="text-sm text-[var(--text-subtle)] text-center py-6">
+                  No products match your search.
+                </p>
               ) : (
-                Object.entries(grouped).map(([cat, items]) => (
-                  <div key={cat} className="mb-2">
-                    <div className="text-xs uppercase tracking-widest text-[var(--text-subtle)] px-2 py-1.5 font-bold">
-                      {cat}
+                Object.entries(grouped).map(([category, items]) => (
+                  <div key={category}>
+                    <div className="text-[0.65rem] uppercase tracking-widest font-bold text-[var(--text-subtle)] mb-2">
+                      {category}
                     </div>
-                    {items.map((p) => {
-                      const pid = p._id || p.id;
-                      const checked = selectedProducts.includes(pid);
-                      const img = p.image ? resolveProductImage(p) : null;
-                      return (
-                        <label
-                          key={pid}
-                          className="flex items-center gap-3 px-2 py-2 rounded-md cursor-pointer hover:bg-[var(--bg-elev)]"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => toggleProduct(pid)}
-                            className="w-4 h-4 accent-accent"
-                          />
-                          {img ? (
-                            <img src={img} alt="" className="w-7 h-7 object-contain bg-[var(--bg-elev)] rounded" />
-                          ) : (
-                            <span className="w-7 inline-block text-center">🔋</span>
-                          )}
-                          <span className="flex-1 text-sm text-[var(--text)] truncate">
-                            {p.brand} {p.model}
-                          </span>
-                        </label>
-                      );
-                    })}
+                    <div className="space-y-1">
+                      {items.map((p) => {
+                        const pid = p.id || p._id;
+                        const checked = selectedProducts.includes(pid);
+                        return (
+                          <label
+                            key={pid}
+                            className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
+                              checked
+                                ? 'bg-accent/10 border border-accent/40'
+                                : 'hover:bg-[var(--bg-elev)] border border-transparent'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleProduct(pid)}
+                              className="w-4 h-4 accent-accent shrink-0"
+                            />
+                            <SectionThumb src={resolveProductImage(p)} />
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-medium truncate text-[var(--text)]">
+                                {p.brand} {p.model}
+                              </div>
+                              {p.capacity && (
+                                <div className="text-xs text-[var(--text-subtle)]">
+                                  {p.capacity}
+                                </div>
+                              )}
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
                   </div>
                 ))
               )}
             </div>
           </div>
 
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.active}
-              onChange={(e) => setFormData((p) => ({ ...p, active: e.target.checked }))}
-              className="w-5 h-5 accent-accent"
-            />
-            <span className="text-sm">Active (visible to customers)</span>
-          </label>
-
           <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setModalOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" variant="primary">
-              Save
+              {editingSection ? 'Update' : 'Create'}
             </Button>
           </div>
         </form>

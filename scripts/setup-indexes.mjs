@@ -13,6 +13,7 @@ try {
   await db.collection('orders').createIndex({ uid: 1, createdAt: -1 });
   await db.collection('orders').createIndex({ razorpayOrderId: 1 });
   await db.collection('quotes').createIndex({ status: 1, createdAt: -1 });
+  await db.collection('products').createIndex({ order: 1, category: 1, brand: 1 });
   await db.collection('products').createIndex({ category: 1, active: 1 });
   await db.collection('products').createIndex({ brand: 1 });
   await db.collection('products').createIndex(

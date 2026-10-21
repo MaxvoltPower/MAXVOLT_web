@@ -5,15 +5,10 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { classNames } from '@lib/utils';
 
-/**
- * Reusable admin table with:
- * - Column sorting (click header to toggle asc/desc/none)
- * - Global search
- * - Per-column filters (text, select, range, date)
- * - Pagination
- * - Row selection
- * - Bulk actions
- */
+// When the user picks "Show all" we still cap rendering at this many rows.
+// Large tables (10k+) freeze the browser otherwise.
+const SHOW_ALL_CAP = 1000;
+
 export default function AdminTable({
   columns,
   data,
@@ -31,27 +26,18 @@ export default function AdminTable({
   stickyHeader = true,
   className,
 }) {
-  // ----------------------------------------------------------
-  // State
-  // ----------------------------------------------------------
   const [sortKey, setSortKey] = useState(null);
-  const [sortDir, setSortDir] = useState('asc'); // 'asc' | 'desc'
+  const [sortDir, setSortDir] = useState('asc');
   const [search, setSearch] = useState('');
-  const [filters, setFilters] = useState({}); // { [colKey]: value }
+  const [filters, setFilters] = useState({});
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(initialPageSize);
   const [showFilters, setShowFilters] = useState(false);
 
-  // ----------------------------------------------------------
-  // Reset page when data/filters change
-  // ----------------------------------------------------------
   useEffect(() => {
     setPage(0);
   }, [search, filters, sortKey, sortDir, pageSize]);
 
-  // ----------------------------------------------------------
-  // Filter columns that have filterable config
-  // ----------------------------------------------------------
   const filterableColumns = useMemo(
     () => columns.filter((c) => c.filterable || c.filter),
     [columns]
@@ -62,13 +48,9 @@ export default function AdminTable({
     [filters]
   );
 
-  // ----------------------------------------------------------
-  // Apply search + filters
-  // ----------------------------------------------------------
   const filteredData = useMemo(() => {
     let result = [...data];
 
-    // Global search across searchable columns
     if (search.trim()) {
       const q = search.toLowerCase();
       const searchableCols = columns.filter((c) => c.searchable !== false);
@@ -81,7 +63,6 @@ export default function AdminTable({
       );
     }
 
-    // Per-column filters
     for (const col of filterableColumns) {
       const filterVal = filters[col.key];
       if (filterVal === undefined || filterVal === null || filterVal === '') continue;
@@ -132,9 +113,6 @@ export default function AdminTable({
     return result;
   }, [data, search, filters, columns, filterableColumns]);
 
-  // ----------------------------------------------------------
-  // Apply sorting
-  // ----------------------------------------------------------
   const sortedData = useMemo(() => {
     if (!sortKey) return filteredData;
 
@@ -147,7 +125,6 @@ export default function AdminTable({
 
       if (sorter) return sorter(aVal, bVal, a, b);
 
-      // Default sorting logic
       if (aVal === null || aVal === undefined) return 1;
       if (bVal === null || bVal === undefined) return -1;
 
@@ -164,28 +141,31 @@ export default function AdminTable({
     return sortDir === 'desc' ? sorted.reverse() : sorted;
   }, [filteredData, sortKey, sortDir, columns]);
 
-  // ----------------------------------------------------------
-  // Pagination
-  // ----------------------------------------------------------
-  const effectivePageSize = pageSize === 'all' ? sortedData.length || 1 : pageSize;
-  const totalPages = Math.max(1, Math.ceil(sortedData.length / effectivePageSize));
+  // Effectively render at most SHOW_ALL_CAP rows in "all" mode
+  const cappedData = useMemo(() => {
+    if (pageSize === 'all' && sortedData.length > SHOW_ALL_CAP) {
+      return sortedData.slice(0, SHOW_ALL_CAP);
+    }
+    return sortedData;
+  }, [sortedData, pageSize]);
+
+  const effectivePageSize =
+    pageSize === 'all' ? cappedData.length || 1 : pageSize;
+  const totalPages = Math.max(1, Math.ceil(cappedData.length / effectivePageSize));
   const safePage = Math.min(page, totalPages - 1);
 
   const pagedData = useMemo(() => {
-    if (pageSize === 'all') return sortedData;
+    if (pageSize === 'all') return cappedData;
     const start = safePage * effectivePageSize;
-    return sortedData.slice(start, start + effectivePageSize);
-  }, [sortedData, safePage, effectivePageSize, pageSize]);
+    return cappedData.slice(start, start + effectivePageSize);
+  }, [cappedData, safePage, effectivePageSize, pageSize]);
 
-  const rangeStart = sortedData.length === 0 ? 0 : safePage * effectivePageSize + 1;
+  const rangeStart = cappedData.length === 0 ? 0 : safePage * effectivePageSize + 1;
   const rangeEnd =
     pageSize === 'all'
-      ? sortedData.length
-      : Math.min((safePage + 1) * effectivePageSize, sortedData.length);
+      ? cappedData.length
+      : Math.min((safePage + 1) * effectivePageSize, cappedData.length);
 
-  // ----------------------------------------------------------
-  // Selection helpers
-  // ----------------------------------------------------------
   const allOnPageSelected =
     selectable &&
     pagedData.length > 0 &&
@@ -218,9 +198,6 @@ export default function AdminTable({
     [selectedIds, onSelectionChange]
   );
 
-  // ----------------------------------------------------------
-  // Sort toggle
-  // ----------------------------------------------------------
   const handleSort = (key) => {
     const col = columns.find((c) => c.key === key);
     if (col?.sortable === false) return;
@@ -237,9 +214,6 @@ export default function AdminTable({
     }
   };
 
-  // ----------------------------------------------------------
-  // Clear all filters
-  // ----------------------------------------------------------
   const clearFilters = () => {
     setFilters({});
     setSearch('');
@@ -247,15 +221,16 @@ export default function AdminTable({
     setSortDir('asc');
   };
 
-  // ----------------------------------------------------------
-  // Render
-  // ----------------------------------------------------------
+  const truncatedCount =
+    pageSize === 'all' && sortedData.length > SHOW_ALL_CAP
+      ? sortedData.length - SHOW_ALL_CAP
+      : 0;
+
   return (
     <div className={classNames('rounded-2xl border border-[var(--border)] bg-[var(--bg-elev)] overflow-hidden', className)}>
       {/* Toolbar */}
       <div className="px-3 sm:px-4 py-3 bg-[var(--bg-muted)] border-b border-[var(--border)]">
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          {/* Search */}
           <div className="relative flex-1 min-w-[200px]">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-subtle)] text-xs pointer-events-none">
               🔍
@@ -269,7 +244,6 @@ export default function AdminTable({
             />
           </div>
 
-          {/* Filter toggle */}
           {filterableColumns.length > 0 && (
             <button
               type="button"
@@ -291,7 +265,6 @@ export default function AdminTable({
             </button>
           )}
 
-          {/* Clear */}
           {(search || hasActiveFilters || sortKey) && (
             <button
               type="button"
@@ -302,11 +275,9 @@ export default function AdminTable({
             </button>
           )}
 
-          {/* Custom toolbar */}
           {toolbar && <div className="flex items-center gap-2 ml-auto">{toolbar}</div>}
         </div>
 
-        {/* Filter panel */}
         {showFilters && filterableColumns.length > 0 && (
           <div className="mt-3 pt-3 border-t border-[var(--border)] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {filterableColumns.map((col) => (
@@ -320,7 +291,6 @@ export default function AdminTable({
           </div>
         )}
 
-        {/* Bulk actions */}
         {selectable && selectedIds.length > 0 && bulkActions.length > 0 && (
           <div className="mt-3 pt-3 border-t border-[var(--border)] flex flex-wrap items-center gap-2">
             <span className="text-xs text-[var(--text-subtle)]">
@@ -461,12 +431,19 @@ export default function AdminTable({
       <div className="px-3 sm:px-4 py-3 bg-[var(--bg-muted)] border-t border-[var(--border)] flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3 text-xs text-[var(--text-subtle)]">
           <span>
-            {sortedData.length === 0 ? (
+            {cappedData.length === 0 ? (
               'No items'
             ) : pageSize === 'all' ? (
-              <>Showing <strong className="text-[var(--text)]">{sortedData.length}</strong> items</>
+              <>
+                Showing <strong className="text-[var(--text)]">{cappedData.length}</strong> items
+                {truncatedCount > 0 && (
+                  <span className="ml-1 text-amber-400">
+                    (showing first {SHOW_ALL_CAP} of {sortedData.length} — refine your filter to see the rest)
+                  </span>
+                )}
+              </>
             ) : (
-              <>Showing <strong className="text-[var(--text)]">{rangeStart}–{rangeEnd}</strong> of <strong className="text-[var(--text)]">{sortedData.length}</strong></>
+              <>Showing <strong className="text-[var(--text)]">{rangeStart}–{rangeEnd}</strong> of <strong className="text-[var(--text)]">{cappedData.length}</strong></>
             )}
           </span>
 
@@ -512,10 +489,6 @@ export default function AdminTable({
     </div>
   );
 }
-
-// ============================================================
-// Sub-components
-// ============================================================
 
 function SortIndicator({ active, dir }) {
   if (!active) {
@@ -652,10 +625,6 @@ function PagerButton({ children, onClick, disabled, ...rest }) {
     </button>
   );
 }
-
-// ============================================================
-// Helpers
-// ============================================================
 
 function getNestedValue(obj, path) {
   if (!path || !obj) return undefined;

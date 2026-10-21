@@ -39,6 +39,41 @@ function autoSlug(name) {
     .join('');
 }
 
+function CategoryThumb({ image, icon }) {
+  const [error, setError] = useState(false);
+  if (image && !error) {
+    return (
+      <img
+        src={image}
+        alt=""
+        className="w-10 h-10 object-cover rounded-md bg-[var(--bg-muted)]"
+        onError={() => setError(true)}
+      />
+    );
+  }
+  return (
+    <div className="w-10 h-10 grid place-items-center bg-[var(--bg-muted)] rounded-md text-lg">
+      {icon || '📦'}
+    </div>
+  );
+}
+
+function CategoryImagePreview({ src }) {
+  const [error, setError] = useState(false);
+  useEffect(() => setError(false), [src]);
+  if (!src || error) return null;
+  return (
+    <div className="rounded-xl border border-[var(--border)] overflow-hidden">
+      <img
+        src={src}
+        alt="Preview"
+        className="w-full h-40 object-cover bg-[var(--bg-muted)]"
+        onError={() => setError(true)}
+      />
+    </div>
+  );
+}
+
 export default function CategoriesManager() {
   const { showToast } = useToast();
   const { reload: reloadCategories } = useCategories();
@@ -210,25 +245,9 @@ export default function CategoriesManager() {
         width: '60px',
         sortable: false,
         searchable: false,
-        render: (val, cat) => {
-          if (cat.image) {
-            return (
-              <img
-                src={cat.image}
-                alt=""
-                className="w-10 h-10 object-cover rounded-md bg-[var(--bg-muted)]"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            );
-          }
-          return (
-            <div className="w-10 h-10 grid place-items-center bg-[var(--bg-muted)] rounded-md text-lg">
-              {val || '📦'}
-            </div>
-          );
-        },
+        render: (val, cat) => (
+          <CategoryThumb image={cat.image} icon={val} />
+        ),
       },
       {
         key: 'name',
@@ -474,18 +493,7 @@ export default function CategoriesManager() {
             </div>
           </div>
 
-          {formData.image && (
-            <div className="rounded-xl border border-[var(--border)] overflow-hidden">
-              <img
-                src={formData.image}
-                alt="Preview"
-                className="w-full h-40 object-cover bg-[var(--bg-muted)]"
-                onError={(e) => {
-                  e.currentTarget.style.opacity = '0.3';
-                }}
-              />
-            </div>
-          )}
+          <CategoryImagePreview src={formData.image} />
 
           <div className="flex justify-end gap-3 pt-4">
             <Button

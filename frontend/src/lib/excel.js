@@ -30,6 +30,7 @@ export const COLUMNS = [
   { key: 'suitableFor',     label: 'suitableFor',                 width: 18 },
   { key: 'bestFor',         label: 'bestFor',                     width: 22 },
   { key: 'configurable',    label: 'configurable',                width: 22 },
+  { key: 'order',           label: 'order (number)',              width: 12 },
   { key: 'price',           label: 'price (raw)',                 width: 16 },
   { key: 'discountedPrice', label: 'discountedPrice (number)',    width: 20 },
   { key: 'stock',           label: 'stock',                       width: 10 },

@@ -12,31 +12,17 @@ import { ObjectId } from 'mongodb';
 const SECTIONS_COLLECTION = 'sections';
 const CATEGORIES_COLLECTION = 'categories';
 
-/**
- * Router for /api/sections/*
- *   GET    /api/sections      → list active sections (public)
- *                               admins see all with ?all=1
- *   POST   /api/sections      → create (admin)
- *   PUT    /api/sections/:id  → update (admin)
- *   DELETE /api/sections/:id  → delete (admin)
- *
- * Router for /api/categories/*  (folded in to stay under Hobby plan function limit)
- *   GET    /api/categories     → list (public: only active; admin: all with ?all=1)
- *   POST   /api/categories     → create (admin)
- *   GET    /api/categories/:id → single (admin)
- *   PUT    /api/categories/:id → update (admin)
- *   DELETE /api/categories/:id → delete (admin)
- */
 export default async function handler(req, res) {
   const rawUrl = (req.url || '').split('?')[0];
-  if (rawUrl.startsWith('/api/categories')) {
+  if (
+    rawUrl.startsWith('/api/categories') ||
+    req.query?.__module === 'categories'
+  ) {
     return handleCategories(req, res);
   }
   const segments = getPathSegments(req, 'sections');
   const first = segments[0] || '';
-  if (first === 'categories') {
-    return handleCategories(req, res);
-  }
+  if (first === 'categories') return handleCategories(req, res);
   return handleSections(req, res, segments);
 }
 
@@ -73,17 +59,20 @@ async function handleSections(req, res, segments) {
   if (id) {
     if (!ObjectId.isValid(id)) return fail(res, 'Invalid ID');
     const _id = new ObjectId(id);
+
     if (req.method === 'PUT' || req.method === 'PATCH') {
       const body = parseBody(req);
       const result = await col.findOneAndUpdate(
         { _id },
         { $set: { ...body, updatedAt: new Date() } },
-        { returnDocument: 'after' }
+        { returnDocument: 'after', includeResultMetadata: false }
       );
+      if (!result) return fail(res, 'Section not found', 404);
       return ok(res, result);
     }
     if (req.method === 'DELETE') {
-      await col.deleteOne({ _id });
+      const r = await col.deleteOne({ _id });
+      if (r.deletedCount === 0) return fail(res, 'Section not found', 404);
       return ok(res, { deleted: true });
     }
   }
@@ -120,7 +109,13 @@ function toSlug(input) {
 }
 
 async function handleCategories(req, res) {
-  const segments = getPathSegments(req, 'categories');
+  let segments = getPathSegments(req, 'categories');
+  if (segments.length === 0 && req.query?.__module === 'categories') {
+    const p = req.query.path;
+    if (Array.isArray(p)) segments = p.filter(Boolean);
+    else if (typeof p === 'string' && p) segments = p.split('/').filter(Boolean);
+  }
+
   const id = segments[0];
   const method = req.method;
   const categories = await getCollection(CATEGORIES_COLLECTION);
@@ -131,7 +126,6 @@ async function handleCategories(req, res) {
     )}`
   );
 
-  // ---- GET /api/categories ----  (public read of active ones)
   if (!id && method === 'GET') {
     let isAdmin = false;
     try {
@@ -143,16 +137,13 @@ async function handleCategories(req, res) {
 
     const { all } = req.query;
     const query = isAdmin && all === '1' ? {} : { active: { $ne: false } };
-
     const items = await categories.find(query).sort({ order: 1, name: 1 }).toArray();
     return ok(res, items);
   }
 
-  // Everything below requires admin
   const admin = await requireAdmin(req, res);
   if (!admin) return;
 
-  // ---- GET /api/categories/:id ----
   if (id && method === 'GET') {
     if (!ObjectId.isValid(id)) return fail(res, 'Invalid category ID');
     const doc = await categories.findOne({ _id: new ObjectId(id) });
@@ -160,20 +151,18 @@ async function handleCategories(req, res) {
     return ok(res, doc);
   }
 
-  // ---- POST /api/categories ----
   if (!id && method === 'POST') {
     const body = parseBody(req);
     const { name, slug, description, image, icon, order, active } = body;
     if (!name || !String(name).trim()) return fail(res, 'name is required');
 
-    const finalSlug = slug && String(slug).trim()
-      ? String(slug).trim()
-      : toSlug(name);
-
+    const finalSlug = slug && String(slug).trim() ? String(slug).trim() : toSlug(name);
     if (!finalSlug) return fail(res, 'Could not generate a valid slug from name');
 
     const existing = await categories.findOne({ slug: finalSlug });
-    if (existing) return fail(res, `Category with slug "${finalSlug}" already exists`, 409);
+    if (existing) {
+      return fail(res, `Category with slug "${finalSlug}" already exists`, 409);
+    }
 
     const doc = {
       name: String(name).trim(),
@@ -191,7 +180,6 @@ async function handleCategories(req, res) {
     return ok(res, { _id: result.insertedId, ...doc }, 201);
   }
 
-  // ---- PUT/PATCH /api/categories/:id ----
   if (id && (method === 'PUT' || method === 'PATCH')) {
     if (!ObjectId.isValid(id)) return fail(res, 'Invalid category ID');
     const _id = new ObjectId(id);
@@ -217,13 +205,12 @@ async function handleCategories(req, res) {
     const result = await categories.findOneAndUpdate(
       { _id },
       { $set: update },
-      { returnDocument: 'after' }
+      { returnDocument: 'after', includeResultMetadata: false }
     );
     if (!result) return fail(res, 'Category not found', 404);
     return ok(res, result);
   }
 
-  // ---- DELETE /api/categories/:id ----
   if (id && method === 'DELETE') {
     if (!ObjectId.isValid(id)) return fail(res, 'Invalid category ID');
     const _id = new ObjectId(id);

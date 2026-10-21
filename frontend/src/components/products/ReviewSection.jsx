@@ -15,7 +15,10 @@ function Stars({ value = 0, size = 'md', onChange = null, interactive = false })
   const sizeClass = size === 'sm' ? 'text-sm' : size === 'lg' ? 'text-2xl' : 'text-lg';
 
   return (
-    <div className={`inline-flex items-center gap-0.5 ${sizeClass}`} role={interactive ? 'radiogroup' : undefined}>
+    <div
+      className={`inline-flex items-center gap-0.5 ${sizeClass}`}
+      role={interactive ? 'radiogroup' : undefined}
+    >
       {[1, 2, 3, 4, 5].map((n) => {
         const filled = (hover || value) >= n;
         return (
@@ -40,7 +43,7 @@ function Stars({ value = 0, size = 'md', onChange = null, interactive = false })
 }
 
 export default function ReviewSection({ productId }) {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { showToast } = useToast();
 
   const [reviews, setReviews] = useState([]);
@@ -63,9 +66,7 @@ export default function ReviewSection({ productId }) {
         average: data?.average ?? 0,
         distribution: data?.distribution ?? {},
       });
-      if (user) {
-        setHasReviewed(items.some((r) => r.uid === user.uid));
-      }
+      if (user) setHasReviewed(items.some((r) => r.uid === user.uid));
     } catch (err) {
       console.warn('Failed to load reviews:', err.message);
       setReviews([]);
@@ -117,7 +118,6 @@ export default function ReviewSection({ productId }) {
   };
 
   const dist = stats.distribution || {};
-  const maxCount = Math.max(1, ...Object.values(dist).map((n) => Number(n) || 0));
 
   return (
     <section id="reviews" className="band">
@@ -132,7 +132,6 @@ export default function ReviewSection({ productId }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8 max-w-5xl mx-auto">
-        {/* Summary panel */}
         <aside className="surface h-fit">
           <div className="text-center mb-4">
             <div className="text-5xl font-extrabold text-amber-400 leading-none mb-2">
@@ -166,9 +165,7 @@ export default function ReviewSection({ productId }) {
           </div>
         </aside>
 
-        {/* Form + list */}
         <div>
-          {/* Write review form */}
           {!user ? (
             <div className="surface mb-6 text-center">
               <p className="mb-3 text-[var(--text-muted)]">
@@ -228,7 +225,6 @@ export default function ReviewSection({ productId }) {
             </form>
           )}
 
-          {/* Reviews list */}
           {loading ? (
             <div className="text-center py-8 text-[var(--text-subtle)]">
               Loading reviews...
@@ -256,7 +252,7 @@ export default function ReviewSection({ productId }) {
                         {formatDate(r.createdAt)}
                       </div>
                     </div>
-                    {(user?.uid === r.uid || user?.isAdmin) && (
+                    {(user?.uid === r.uid || isAdmin) && (
                       <button
                         onClick={() => handleDelete(r._id)}
                         className="text-xs text-red-400 hover:text-red-300 hover:underline"

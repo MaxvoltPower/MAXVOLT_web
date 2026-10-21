@@ -1,16 +1,12 @@
 // ============================================================
-// MAXVOLT — Razorpay webhook
+// MAXVOLT — Razorpay webhook (idempotent, stock-safe)
 // ============================================================
 
 import crypto from 'crypto';
 import { getCollection, COLLECTIONS } from './_lib/mongodb.js';
+import { ObjectId } from 'mongodb';
 
-// Vercel: disable body parsing so we can read the raw body for signature verification
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+export const config = { api: { bodyParser: false } };
 
 async function readRawBody(req) {
   if (req.rawBody && Buffer.isBuffer(req.rawBody)) return req.rawBody;
@@ -24,6 +20,37 @@ async function readRawBody(req) {
   });
 }
 
+/**
+ * Decrement stock for every item in an order exactly once.
+ * The order doc is atomically flipped from stockDecremented:false →
+ * stockDecremented:true so Razorpay webhook retries never double-decrement.
+ */
+async function decrementStockOnce(orders, orderId) {
+  // Atomically claim the "decrement" slot
+  const claimed = await orders.findOneAndUpdate(
+    { _id: orderId, stockDecremented: { $ne: true } },
+    { $set: { stockDecremented: true } },
+    { returnDocument: 'after', includeResultMetadata: false }
+  );
+  if (!claimed) return; // already processed by an earlier webhook delivery
+
+  const items = Array.isArray(claimed.items) ? claimed.items : [];
+  if (items.length === 0) return;
+
+  const products = await getCollection(COLLECTIONS.PRODUCTS);
+  for (const item of items) {
+    if (!item?.productId || !item?.qty) continue;
+    const filterById = ObjectId.isValid(item.productId)
+      ? { _id: new ObjectId(item.productId), stock: { $gte: item.qty } }
+      : { id: item.productId, stock: { $gte: item.qty } };
+    try {
+      await products.updateOne(filterById, { $inc: { stock: -item.qty } });
+    } catch (err) {
+      console.warn(`[webhook] stock decrement failed for ${item.productId}:`, err.message);
+    }
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
@@ -34,7 +61,6 @@ export default async function handler(req, res) {
     console.error('RAZORPAY_WEBHOOK_SECRET not set');
     return res.status(500).json({ error: 'Webhook secret not configured' });
   }
-
   if (!signature) {
     return res.status(400).json({ error: 'Missing signature' });
   }
@@ -42,7 +68,7 @@ export default async function handler(req, res) {
   let raw;
   try {
     raw = await readRawBody(req);
-  } catch (err) {
+  } catch {
     return res.status(400).json({ error: 'Failed to read body' });
   }
 
@@ -51,7 +77,6 @@ export default async function handler(req, res) {
     .update(raw)
     .digest('hex');
 
-  // Constant-time compare
   let valid = false;
   try {
     valid =
@@ -82,9 +107,9 @@ export default async function handler(req, res) {
 
   try {
     switch (event.event) {
-      case 'payment.captured':
+      case 'payment.captured': {
         if (rpOrderId) {
-          await orders.updateOne(
+          const updated = await orders.findOneAndUpdate(
             { razorpayOrderId: rpOrderId },
             {
               $set: {
@@ -94,12 +119,17 @@ export default async function handler(req, res) {
                 paidAt: new Date(),
                 updatedAt: new Date(),
               },
-            }
+            },
+            { returnDocument: 'after', includeResultMetadata: false }
           );
+          if (updated?._id) {
+            await decrementStockOnce(orders, updated._id);
+          }
         }
         break;
+      }
 
-      case 'payment.failed':
+      case 'payment.failed': {
         if (rpOrderId) {
           await orders.updateOne(
             { razorpayOrderId: rpOrderId },
@@ -107,6 +137,7 @@ export default async function handler(req, res) {
           );
         }
         break;
+      }
 
       default:
         break;

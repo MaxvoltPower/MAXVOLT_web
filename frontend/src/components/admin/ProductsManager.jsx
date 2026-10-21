@@ -2,7 +2,7 @@
 // MAXVOLT — Admin products manager (enhanced)
 // ============================================================
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { api } from '@lib/api';
 import { useProducts } from '@context/ProductsContext';
 import { useCategories } from '@context/CategoriesContext';
@@ -35,6 +35,7 @@ const EMPTY_FORM = {
   bestFor: '',
   va: '',
   stock: '',
+  order: 999,
   active: true,
   featured: false,
   images: [''],
@@ -44,6 +45,43 @@ function imagesFromProduct(product) {
   const list = resolveProductImages(product);
   if (list.length === 0) return [''];
   return list;
+}
+
+// Image preview cell that never mutates the DOM
+function ImagePreview({ src }) {
+  const [error, setError] = useState(false);
+  if (!src || error) {
+    return (
+      <div className="w-10 h-10 grid place-items-center bg-[var(--bg-muted)] rounded-md text-lg">
+        🔋
+      </div>
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt=""
+      className="w-10 h-10 object-contain bg-[var(--bg-muted)] rounded-md"
+      onError={() => setError(true)}
+    />
+  );
+}
+
+// Image preview inside the edit modal
+function FormImagePreview({ src }) {
+  const [error, setError] = useState(false);
+  useEffect(() => setError(false), [src]);
+  if (!src || error) {
+    return <span className="text-xl text-[var(--text-subtle)]">🖼️</span>;
+  }
+  return (
+    <img
+      src={src}
+      alt=""
+      className="w-full h-full object-contain"
+      onError={() => setError(true)}
+    />
+  );
 }
 
 export default function ProductsManager() {
@@ -59,7 +97,6 @@ export default function ProductsManager() {
   const [saving, setSaving] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
 
-  // Filter options
   const categoryOptions = useCategoryOptions(dbCategories);
   const brandOptions = useBrandOptions(products);
 
@@ -79,9 +116,6 @@ export default function ProductsManager() {
     load();
   }, []);
 
-  // ----------------------------------------------------------
-  // Column definitions with sortable + filterable config
-  // ----------------------------------------------------------
   const columns = useMemo(
     () => [
       {
@@ -90,33 +124,23 @@ export default function ProductsManager() {
         width: '60px',
         sortable: false,
         searchable: false,
-        render: (_, product) => {
-          const img = resolveProductImage(product);
-          return img ? (
-            <img
-              src={img}
-              alt=""
-              className="w-10 h-10 object-contain bg-[var(--bg-muted)] rounded-md"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-            />
-          ) : (
-            <div className="w-10 h-10 grid place-items-center bg-[var(--bg-muted)] rounded-md text-lg">
-              🔋
-            </div>
-          );
-        },
+        render: (_, product) => (
+          <ImagePreview src={resolveProductImage(product)} />
+        ),
+      },
+      {
+        key: 'order',
+        label: 'Order',
+        sortable: true,
+        width: '80px',
+        render: (val) => <span className="text-xs font-mono">{val ?? 999}</span>,
       },
       {
         key: 'brand',
         label: 'Brand',
         sortable: true,
         filterable: true,
-        filter: {
-          type: 'select',
-          options: brandOptions,
-        },
+        filter: { type: 'select', options: brandOptions },
         render: (val) => <span className="font-medium">{val || '—'}</span>,
       },
       {
@@ -132,14 +156,9 @@ export default function ProductsManager() {
         label: 'Category',
         sortable: true,
         filterable: true,
-        filter: {
-          type: 'select',
-          options: categoryOptions,
-        },
+        filter: { type: 'select', options: categoryOptions },
         render: (val) => (
-          <span className="text-xs">
-            {categoryLabelsFromDb[val] || val || '—'}
-          </span>
+          <span className="text-xs">{categoryLabelsFromDb[val] || val || '—'}</span>
         ),
       },
       {
@@ -164,11 +183,7 @@ export default function ProductsManager() {
         label: 'Stock',
         sortable: true,
         filterable: true,
-        filter: {
-          type: 'select',
-          options: STOCK_OPTIONS,
-          customFilter: true,
-        },
+        filter: { type: 'select', options: STOCK_OPTIONS, customFilter: true },
         width: '130px',
         render: (val) => {
           const stock = Number(val) || 0;
@@ -244,9 +259,6 @@ export default function ProductsManager() {
     [brandOptions, categoryOptions, categoryLabelsFromDb]
   );
 
-  // ----------------------------------------------------------
-  // Handlers
-  // ----------------------------------------------------------
   const handleEdit = (product) => {
     setEditingProduct(product);
     setFormData({
@@ -263,6 +275,7 @@ export default function ProductsManager() {
       bestFor: product.bestFor || '',
       va: product.va || '',
       stock: product.stock ?? '',
+      order: product.order ?? 999,
       active: product.active !== false,
       featured: product.featured === true,
       images: imagesFromProduct(product),
@@ -303,9 +316,7 @@ export default function ProductsManager() {
 
   const handleBulkToggleActive = async (ids, active) => {
     try {
-      await Promise.all(
-        ids.map((id) => api.updateProduct(id, { active }))
-      );
+      await Promise.all(ids.map((id) => api.updateProduct(id, { active })));
       showToast(`${ids.length} product(s) ${active ? 'activated' : 'hidden'}`, 'success');
       setSelectedIds([]);
       load();
@@ -355,7 +366,6 @@ export default function ProductsManager() {
     }));
   };
 
-  // Image helpers
   const updateImage = (index, value) => {
     setFormData((prev) => {
       const next = [...prev.images];
@@ -385,9 +395,6 @@ export default function ProductsManager() {
     });
   };
 
-  // ----------------------------------------------------------
-  // Render
-  // ----------------------------------------------------------
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
@@ -412,23 +419,12 @@ export default function ProductsManager() {
         selectedIds={selectedIds}
         onSelectionChange={setSelectedIds}
         bulkActions={[
-          {
-            label: '✓ Activate',
-            onClick: (ids) => handleBulkToggleActive(ids, true),
-          },
-          {
-            label: '✗ Hide',
-            onClick: (ids) => handleBulkToggleActive(ids, false),
-          },
-          {
-            label: '🗑️ Delete',
-            variant: 'danger',
-            onClick: handleBulkDelete,
-          },
+          { label: '✓ Activate', onClick: (ids) => handleBulkToggleActive(ids, true) },
+          { label: '✗ Hide', onClick: (ids) => handleBulkToggleActive(ids, false) },
+          { label: '🗑️ Delete', variant: 'danger', onClick: handleBulkDelete },
         ]}
       />
 
-      {/* Modal - same as before */}
       <Modal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -437,20 +433,8 @@ export default function ProductsManager() {
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Brand"
-              name="brand"
-              required
-              value={formData.brand}
-              onChange={handleChange}
-            />
-            <Input
-              label="Model"
-              name="model"
-              required
-              value={formData.model}
-              onChange={handleChange}
-            />
+            <Input label="Brand" name="brand" required value={formData.brand} onChange={handleChange} />
+            <Input label="Model" name="model" required value={formData.model} onChange={handleChange} />
           </div>
 
           <Select
@@ -468,34 +452,13 @@ export default function ProductsManager() {
           </Select>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Capacity"
-              name="capacity"
-              value={formData.capacity}
-              onChange={handleChange}
-              hint='e.g. "150Ah", "12V / 160Ah"'
-            />
-            <Input
-              label="Type"
-              name="type"
-              value={formData.type}
-              onChange={handleChange}
-            />
+            <Input label="Capacity" name="capacity" value={formData.capacity} onChange={handleChange} hint='e.g. "150Ah", "12V / 160Ah"' />
+            <Input label="Type" name="type" value={formData.type} onChange={handleChange} />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Voltage"
-              name="voltage"
-              value={formData.voltage}
-              onChange={handleChange}
-            />
-            <Input
-              label="Warranty"
-              name="warranty"
-              value={formData.warranty}
-              onChange={handleChange}
-            />
+            <Input label="Voltage" name="voltage" value={formData.voltage} onChange={handleChange} />
+            <Input label="Warranty" name="warranty" value={formData.warranty} onChange={handleChange} />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -516,34 +479,23 @@ export default function ProductsManager() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="VA (for inverters/UPS)"
-              name="va"
-              value={formData.va}
-              onChange={handleChange}
-            />
-            <Input
-              label="Stock Quantity"
-              name="stock"
-              type="number"
-              min="0"
-              value={formData.stock}
-              onChange={handleChange}
-            />
+            <Input label="VA (for inverters/UPS)" name="va" value={formData.va} onChange={handleChange} />
+            <Input label="Stock Quantity" name="stock" type="number" min="0" value={formData.stock} onChange={handleChange} />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input label="Availability" name="availability" value={formData.availability} onChange={handleChange} />
+            <Input label="Best For" name="bestFor" value={formData.bestFor} onChange={handleChange} />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Availability"
-              name="availability"
-              value={formData.availability}
+              label="Display Order"
+              name="order"
+              type="number"
+              value={formData.order}
               onChange={handleChange}
-            />
-            <Input
-              label="Best For"
-              name="bestFor"
-              value={formData.bestFor}
-              onChange={handleChange}
+              hint="Lower numbers appear first"
             />
           </div>
 
@@ -561,11 +513,7 @@ export default function ProductsManager() {
                     className="flex items-start gap-3 p-3 rounded-xl border border-[var(--border)] bg-[var(--bg-muted)]"
                   >
                     <div className="w-16 h-16 shrink-0 rounded-lg bg-[var(--bg-elev)] border border-[var(--border)] grid place-items-center overflow-hidden">
-                      {preview ? (
-                        <img src={preview} alt="" className="w-full h-full object-contain" />
-                      ) : (
-                        <span className="text-xl text-[var(--text-subtle)]">🖼️</span>
-                      )}
+                      <FormImagePreview src={preview} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <input
@@ -643,12 +591,7 @@ export default function ProductsManager() {
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setModalOpen(false)}
-              disabled={saving}
-            >
+            <Button type="button" variant="outline" onClick={() => setModalOpen(false)} disabled={saving}>
               Cancel
             </Button>
             <Button type="submit" variant="primary" loading={saving}>

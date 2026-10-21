@@ -5,6 +5,7 @@
 import { auth } from './firebase';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+const DEFAULT_TIMEOUT_MS = 20000;
 
 async function getToken() {
   if (!auth.currentUser) return null;
@@ -15,11 +16,6 @@ async function getToken() {
   }
 }
 
-/**
- * Core request wrapper.
- * Returns `data.data` (never `undefined` — falls back to `null`).
- * Throws on non-2xx or `success === false`.
- */
 async function request(path, options = {}) {
   const token = await getToken();
   const headers = {
@@ -29,13 +25,23 @@ async function request(path, options = {}) {
 
   if (token) headers.Authorization = `Bearer ${token}`;
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+
   let res;
   try {
-    res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+    res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers,
+      signal: controller.signal,
+    });
   } catch (err) {
-    throw new Error(
-      'Network error. Please check your connection and try again.'
-    );
+    if (err?.name === 'AbortError') {
+      throw new Error('Request timed out. Please check your connection and try again.');
+    }
+    throw new Error('Network error. Please check your connection and try again.');
+  } finally {
+    clearTimeout(timer);
   }
 
   const text = await res.text();
@@ -57,7 +63,6 @@ async function request(path, options = {}) {
     throw error;
   }
 
-  // Preserve null (some callers rely on it) — never return a bare `undefined`
   if (data.data === undefined) return null;
   return data.data;
 }

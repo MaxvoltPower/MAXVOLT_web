@@ -19,34 +19,18 @@ import {
 } from './_lib/mongodb.js';
 import { ObjectId } from 'mongodb';
 
-/**
- * Router for /api/products/*
- *  GET    /api/products                → list products (paginated)
- *  POST   /api/products                → create (admin)
- *  GET    /api/products/categories     → list categories
- *  POST   /api/products/categories     → create category (admin)
- *  GET    /api/products/bulk-export    → export full catalogue (admin)
- *  POST   /api/products/bulk-import    → bulk upsert from rows (admin)
- *  GET    /api/products/:id            → single product
- *  PUT    /api/products/:id            → update (admin)
- *  DELETE /api/products/:id            → delete (admin)
- *
- * Router for /api/reviews/*  (folded in to stay under Hobby plan function limit)
- *  GET    /api/reviews?productId=xxx   → list reviews (public)
- *  POST   /api/reviews                 → create review (auth)
- *  DELETE /api/reviews/:id             → delete own review (auth) or any (admin)
- */
 export default async function handler(req, res) {
   const segments = getPathSegments(req, 'products');
   const first = segments[0] || '';
   const method = req.method;
 
-  // ---- Folded-in reviews handler ----
+  // ---- Folded-in reviews handler (works on Vercel via __module marker) ----
   const rawUrl = (req.url || '').split('?')[0];
-  if (rawUrl.startsWith('/api/reviews')) {
-    return handleReviews(req, res);
-  }
-  if (first === 'reviews') {
+  if (
+    rawUrl.startsWith('/api/reviews') ||
+    req.query?.__module === 'reviews' ||
+    first === 'reviews'
+  ) {
     return handleReviews(req, res);
   }
 
@@ -64,11 +48,9 @@ export default async function handler(req, res) {
     const col = await getCollection(COLLECTIONS.PRODUCTS);
     const items = await col
       .find({})
-      .sort({ category: 1, brand: 1, model: 1 })
+      .sort({ order: 1, category: 1, brand: 1, model: 1 })
       .toArray();
 
-    // Return the FULL raw documents so the admin can edit every field,
-    // including ones the public API strips (numericPrice, vaNumeric, etc.).
     return ok(res, {
       items: items.map((d) => ({ ...d, _id: String(d._id) })),
       total: items.length,
@@ -96,25 +78,18 @@ export default async function handler(req, res) {
 
     const col = await getCollection(COLLECTIONS.PRODUCTS);
 
-    // Build a lookup of existing products by _id AND by custom `id`.
     const allExisting = await col.find({}).toArray();
     const byMongoId = new Map(allExisting.map((p) => [String(p._id), p]));
     const byCustomId = new Map(
       allExisting.filter((p) => p.id).map((p) => [String(p.id), p])
     );
 
-    const results = {
-      created: [],
-      updated: [],
-      skipped: [],
-      errors: [],
-    };
-
+    const results = { created: [], updated: [], skipped: [], errors: [] };
     const now = new Date();
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
-      const rowNum = i + 2; // header is row 1
+      const rowNum = i + 2;
 
       try {
         const mongoId = row._id ? String(row._id).trim() : '';
@@ -128,7 +103,6 @@ export default async function handler(req, res) {
           existing = byCustomId.get(customId) || null;
         }
 
-        // Validate required fields
         if (!row.model || !row.brand || !row.category) {
           results.skipped.push({
             row: rowNum,
@@ -138,15 +112,16 @@ export default async function handler(req, res) {
           continue;
         }
 
-        const doc = buildProductDocFromRow(row, now);
+        const { doc, unset } = buildProductDocFromRow(row, now);
 
         if (existing) {
           if (mode === 'update' || mode === 'upsert') {
             delete doc._id;
-            // Recompute derived numerics
             doc.vaNumeric = parseVaToNumber(doc);
             doc.capacityAh = parseAhToNumber(doc);
-            await col.updateOne({ _id: existing._id }, { $set: doc });
+            const update = { $set: doc };
+            if (Object.keys(unset).length) update.$unset = unset;
+            await col.updateOne({ _id: existing._id }, update);
             results.updated.push({
               row: rowNum,
               id: String(existing._id),
@@ -161,7 +136,6 @@ export default async function handler(req, res) {
             });
           }
         } else {
-          // New product
           if (mode === 'update') {
             results.skipped.push({
               row: rowNum,
@@ -206,25 +180,6 @@ export default async function handler(req, res) {
     });
   }
 
-  // ---- /api/products/categories ----
-  if (first === 'categories') {
-    const categories = await getCollection(COLLECTIONS.CATEGORIES);
-    if (method === 'GET') {
-      const items = await categories.find({}).sort({ order: 1 }).toArray();
-      return ok(res, items);
-    }
-    const admin = await requireAdmin(req, res);
-    if (!admin) return;
-    if (method === 'POST') {
-      const body = parseBody(req);
-      if (!body.slug || !body.name) return fail(res, 'slug and name required');
-      const doc = { ...body, createdAt: new Date() };
-      const result = await categories.insertOne(doc);
-      return ok(res, { _id: result.insertedId, ...doc }, 201);
-    }
-    return fail(res, 'Method not allowed', 405);
-  }
-
   // ---- /api/products/:id ----
   if (first && first !== 'list') {
     if (!ObjectId.isValid(first)) return fail(res, 'Invalid product ID');
@@ -234,7 +189,7 @@ export default async function handler(req, res) {
     if (method === 'GET') {
       const doc = await products.findOne({ _id });
       if (!doc) return fail(res, 'Product not found', 404);
-      return ok(res, toPublicProduct(doc));
+      return ok(res, toPublicProduct(doc, { fullImages: true }));
     }
 
     const admin = await requireAdmin(req, res);
@@ -244,12 +199,8 @@ export default async function handler(req, res) {
       const body = parseBody(req);
       delete body._id;
 
-      // Recompute structured numeric fields whenever the string source changes
       if ('va' in body || 'vaNumeric' in body) {
-        body.vaNumeric = parseVaToNumber({
-          va: body.va,
-          vaNumeric: body.vaNumeric,
-        });
+        body.vaNumeric = parseVaToNumber({ va: body.va, vaNumeric: body.vaNumeric });
       }
       if ('capacity' in body || 'capacityAh' in body) {
         body.capacityAh = parseAhToNumber({
@@ -266,22 +217,17 @@ export default async function handler(req, res) {
         body.numericPrice = priceInfo.invalid ? 0 : priceInfo.min;
       }
 
-      // ---- Image handling ----
       const touchedImages = 'images' in body || 'image' in body;
-
       if (touchedImages) {
         let nextImages = [];
-
         if (Array.isArray(body.images)) {
           nextImages = normalizeImageArray(body.images);
         }
-
         if (nextImages.length === 0 && 'image' in body) {
           const norm = normalizeImageInput(body.image);
           if (!norm.ok) return fail(res, norm.error);
           if (norm.value) nextImages = [norm.value];
         }
-
         body.images = nextImages;
         body.image = nextImages[0] || null;
       }
@@ -293,6 +239,10 @@ export default async function handler(req, res) {
       if ('stock' in body) {
         const n = Number(body.stock);
         body.stock = Number.isFinite(n) && n >= 0 ? n : 0;
+      }
+      if ('order' in body) {
+        const n = Number(body.order);
+        body.order = Number.isFinite(n) ? n : 999;
       }
       if ('price' in body) {
         if (typeof body.price === 'number') {
@@ -306,10 +256,10 @@ export default async function handler(req, res) {
       const result = await products.findOneAndUpdate(
         { _id },
         { $set: body },
-        { returnDocument: 'after' }
+        { returnDocument: 'after', includeResultMetadata: false }
       );
       if (!result) return fail(res, 'Product not found', 404);
-      return ok(res, toPublicProduct(result));
+      return ok(res, toPublicProduct(result, { fullImages: true }));
     }
 
     if (method === 'DELETE') {
@@ -342,13 +292,13 @@ export default async function handler(req, res) {
     const skip = ((parseInt(page) || 1) - 1) * lim;
     const items = await products
       .find(query)
-      .sort({ category: 1, brand: 1, createdAt: -1 })
+      .sort({ order: 1, category: 1, brand: 1, createdAt: -1 })
       .skip(skip)
       .limit(lim)
       .toArray();
     const total = await products.countDocuments(query);
     return ok(res, {
-      items: items.map(toPublicProduct),
+      items: items.map((d) => toPublicProduct(d, { fullImages: false })),
       total,
       page: parseInt(page) || 1,
       limit: lim,
@@ -363,13 +313,11 @@ export default async function handler(req, res) {
       return fail(res, 'model, brand, category are required');
     }
 
-    // ---- Image handling ----
+    // ---- Image handling (images[] wins, then fallback to single image) ----
     let imagesValue = [];
-
     if (Array.isArray(body.images)) {
       imagesValue = normalizeImageArray(body.images);
     }
-
     if (imagesValue.length === 0 && body.image) {
       const norm = normalizeImageInput(body.image);
       if (!norm.ok) return fail(res, norm.error);
@@ -382,10 +330,9 @@ export default async function handler(req, res) {
       ...body,
       image: imageValue,
       images: imagesValue,
-      discountedPrice: body.discountedPrice
-        ? Number(body.discountedPrice)
-        : null,
+      discountedPrice: body.discountedPrice ? Number(body.discountedPrice) : null,
       stock: body.stock !== undefined ? Number(body.stock) : 0,
+      order: body.order !== undefined ? Number(body.order) : 999,
       active: body.active !== false,
       vaNumeric: parseVaToNumber(body),
       capacityAh: parseAhToNumber(body),
@@ -393,7 +340,7 @@ export default async function handler(req, res) {
       updatedAt: new Date(),
     };
     const result = await products.insertOne(doc);
-    return ok(res, toPublicProduct({ _id: result.insertedId, ...doc }), 201);
+    return ok(res, toPublicProduct({ _id: result.insertedId, ...doc }, { fullImages: true }), 201);
   }
 
   return fail(res, 'Method not allowed', 405);
@@ -402,40 +349,35 @@ export default async function handler(req, res) {
 /**
  * Convert a raw Mongo product document into a shape safe to send to the client.
  *
- * IMPORTANT: `doc.images` is an array of STRINGS. `resolveProductImage` accepts
- * either a string or a product object, so mapping over the array works. We also
- * filter out nulls so we never send `images: [null]` to the frontend.
+ * When `fullImages` is false (list endpoints), the `images` array is omitted
+ * so responses stay small even when products store base64 data URLs.
  */
-function toPublicProduct(doc) {
+function toPublicProduct(doc, { fullImages = false } = {}) {
   if (!doc) return doc;
   const out = { ...doc };
 
-  // Ensure `id` is present and stable for the frontend
   if (!out.id && out._id) {
     out.id = String(out._id);
   }
 
-  // Resolve the primary image first
   out.image = resolveProductImage(doc);
 
-  // Resolve each image in the array, dropping unusable entries
-  let resolvedImages = [];
-  if (Array.isArray(doc.images)) {
-    resolvedImages = doc.images
-      .map((img) => resolveProductImage(img))
-      .filter(Boolean);
-  }
-
-  // If the array is empty but we do have a primary image, use that
-  if (resolvedImages.length === 0 && out.image) {
-    resolvedImages = [out.image];
-  }
-
-  out.images = resolvedImages;
-
-  // If we have images but no primary image, promote the first one
-  if (!out.image && resolvedImages.length > 0) {
-    out.image = resolvedImages[0];
+  if (fullImages) {
+    let resolvedImages = [];
+    if (Array.isArray(doc.images)) {
+      resolvedImages = doc.images
+        .map((img) => resolveProductImage(img))
+        .filter(Boolean);
+    }
+    if (resolvedImages.length === 0 && out.image) {
+      resolvedImages = [out.image];
+    }
+    out.images = resolvedImages;
+    if (!out.image && resolvedImages.length > 0) {
+      out.image = resolvedImages[0];
+    }
+  } else {
+    delete out.images;
   }
 
   return out;
@@ -445,15 +387,10 @@ function toPublicProduct(doc) {
 // Bulk import helper
 // ============================================================
 
-/**
- * Build a normalized product document from a spreadsheet row.
- * Only keys present (non-empty) in the row are written, so partial
- * updates don't blank out existing fields.
- */
 function buildProductDocFromRow(row, now) {
   const doc = { updatedAt: now };
+  const unset = {};
 
-  // Strings
   const strFields = [
     'id', 'brand', 'model', 'category', 'type', 'capacity', 'voltage',
     'va', 'warranty', 'waveType', 'runtime', 'terminal', 'suitableCars',
@@ -461,27 +398,38 @@ function buildProductDocFromRow(row, now) {
     'availability', 'image', 'imageAlt',
   ];
   for (const k of strFields) {
-    if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== '') {
-      doc[k] = String(row[k]).trim();
-    }
+    if (row[k] === undefined || row[k] === null) continue;
+    const s = String(row[k]).trim();
+    if (s) doc[k] = s;
+    else unset[k] = '';
   }
 
-  // Numbers
   if (row.price !== undefined && row.price !== '') doc.price = row.price;
-  if (row.discountedPrice !== undefined && row.discountedPrice !== '') {
+  if (row.discountedPrice === '' || row.discountedPrice === null) {
+    unset.discountedPrice = '';
+    doc.discountedPrice = null;
+  } else if (row.discountedPrice !== undefined) {
     const n = Number(row.discountedPrice);
     doc.discountedPrice = Number.isFinite(n) && n > 0 ? n : null;
   }
-  if (row.stock !== undefined && row.stock !== '') {
+
+  if (row.stock === '' || row.stock === null) {
+    unset.stock = '';
+  } else if (row.stock !== undefined) {
     const n = Number(row.stock);
     doc.stock = Number.isFinite(n) && n >= 0 ? n : 0;
   }
 
-  // Booleans (accept TRUE/FALSE/1/0/yes/no)
+  if (row.order === '' || row.order === null) {
+    unset.order = '';
+  } else if (row.order !== undefined) {
+    const n = Number(row.order);
+    doc.order = Number.isFinite(n) ? n : 999;
+  }
+
   doc.active = truthy(row.active, true);
   doc.featured = truthy(row.featured, false);
 
-  // Images — accept a pipe-separated list in a single cell
   if (row.images !== undefined && row.images !== null && String(row.images).trim() !== '') {
     const list = String(row.images)
       .split('|')
@@ -493,7 +441,6 @@ function buildProductDocFromRow(row, now) {
     doc.images = [doc.image];
   }
 
-  // Recompute numericPrice from whatever price/discountedPrice we ended up with
   const priceInfo = parsePrice(
     doc.discountedPrice !== undefined && doc.discountedPrice !== null
       ? doc.discountedPrice
@@ -501,7 +448,7 @@ function buildProductDocFromRow(row, now) {
   );
   doc.numericPrice = priceInfo.invalid ? 0 : priceInfo.min;
 
-  return doc;
+  return { doc, unset };
 }
 
 function truthy(v, fallback) {
@@ -518,7 +465,13 @@ function truthy(v, fallback) {
 const REVIEWS_COLLECTION = 'reviews';
 
 async function handleReviews(req, res) {
-  const segments = getPathSegments(req, 'reviews');
+  let segments = getPathSegments(req, 'reviews');
+  if (segments.length === 0 && req.query?.__module === 'reviews') {
+    const p = req.query.path;
+    if (Array.isArray(p)) segments = p.filter(Boolean);
+    else if (typeof p === 'string' && p) segments = p.split('/').filter(Boolean);
+  }
+
   const id = segments[0];
   const method = req.method;
   const reviews = await getCollection(REVIEWS_COLLECTION);
@@ -529,7 +482,6 @@ async function handleReviews(req, res) {
     )}`
   );
 
-  // ---- GET /api/reviews?productId=xxx ----  (public)
   if (!id && method === 'GET') {
     const { productId, limit = '50' } = req.query;
     if (!productId) return fail(res, 'productId is required');
@@ -560,7 +512,6 @@ async function handleReviews(req, res) {
     });
   }
 
-  // ---- POST /api/reviews ----  (auth required)
   if (!id && method === 'POST') {
     const user = await requireAuth(req, res);
     if (!user) return;
@@ -607,7 +558,6 @@ async function handleReviews(req, res) {
     return ok(res, { _id: result.insertedId, ...doc }, 201);
   }
 
-  // ---- DELETE /api/reviews/:id ----  (auth: owner or admin)
   if (id && method === 'DELETE') {
     const user = await requireAuth(req, res);
     if (!user) return;

@@ -9,7 +9,7 @@ import {
   parseBody,
   getPathSegments,
 } from './_lib/middleware.js';
-import { getCollection, COLLECTIONS } from './_lib/mongodb.js';
+import { getCollection, getDb, COLLECTIONS } from './_lib/mongodb.js';
 import { ObjectId } from 'mongodb';
 
 const VALID_STATUSES = [
@@ -22,16 +22,102 @@ const VALID_STATUSES = [
   'cancelled',
 ];
 
-/**
- * Find a product by either Mongo _id or the custom string `id`.
- */
-async function findProductById(productsCol, productId) {
+async function findProductById(productsCol, productId, opts = {}) {
   if (!productId) return null;
   if (ObjectId.isValid(productId)) {
-    const byOid = await productsCol.findOne({ _id: new ObjectId(productId) });
+    const byOid = await productsCol.findOne(
+      { _id: new ObjectId(productId) },
+      opts
+    );
     if (byOid) return byOid;
   }
-  return productsCol.findOne({ id: productId });
+  return productsCol.findOne({ id: productId }, opts);
+}
+
+/**
+ * Validate that every product has enough stock.
+ * Returns null on success, or an error string on failure.
+ */
+async function validateStock(productsCol, items) {
+  for (const item of items) {
+    const p = await findProductById(productsCol, item.productId);
+    if (p && typeof p.stock === 'number' && p.stock < item.qty) {
+      return `Insufficient stock for ${p.brand || ''} ${p.model || ''}. Available: ${p.stock}`;
+    }
+  }
+  return null;
+}
+
+/**
+ * Decrement stock for every item. Uses a MongoDB transaction when the
+ * driver supports it (Atlas replica sets), otherwise falls back to the
+ * best-effort rollback path.
+ *
+ * Returns null on success, or an error string on failure.
+ */
+async function decrementStock(client, productsCol, items) {
+  let session = null;
+  try {
+    session = client.startSession();
+    session.startTransaction();
+  } catch {
+    // Standalone Mongo (no replica set) — transactions not supported.
+    // Fall back to the rollback approach.
+    if (session) {
+      try { await session.endSession(); } catch { /* ignore */ }
+    }
+    session = null;
+  }
+
+  const applied = [];
+
+  try {
+    for (const item of items) {
+      const p = await findProductById(productsCol, item.productId, session ? { session } : {});
+      if (!p || typeof p.stock !== 'number') continue; // stock not tracked
+
+      const r = await productsCol.updateOne(
+        { _id: p._id, stock: { $gte: item.qty } },
+        { $inc: { stock: -item.qty } },
+        session ? { session } : {}
+      );
+
+      if (r.modifiedCount !== 1) {
+        throw new Error(
+          `Stock ran out for ${p.brand || ''} ${p.model || ''}. Please retry.`
+        );
+      }
+      applied.push({ _id: p._id, qty: item.qty });
+    }
+
+    if (session) {
+      await session.commitTransaction();
+    }
+    return null;
+  } catch (err) {
+    if (session) {
+      try { await session.abortTransaction(); } catch { /* ignore */ }
+      return err.message;
+    }
+
+    // Fallback path: manual rollback of whatever we already decremented.
+    for (const d of applied) {
+      try {
+        await productsCol.updateOne({ _id: d._id }, { $inc: { stock: d.qty } });
+      } catch (rollbackErr) {
+        console.error(
+          '[orders] stock rollback failed for',
+          d._id,
+          rollbackErr.message
+        );
+      }
+    }
+    return err.message;
+  } finally {
+    if (session) {
+      try { await session.endSession(); } catch { /* ignore */ }
+    }
+  }
 }
 
 export default async function handler(req, res) {
@@ -64,8 +150,9 @@ export default async function handler(req, res) {
       const update = {};
       if (user.isAdmin) {
         if (body.status) {
-          if (!VALID_STATUSES.includes(body.status))
+          if (!VALID_STATUSES.includes(body.status)) {
             return fail(res, 'Invalid status');
+          }
           update.status = body.status;
         }
         if (body.paymentStatus) update.paymentStatus = body.paymentStatus;
@@ -75,11 +162,9 @@ export default async function handler(req, res) {
         if (body.status === 'cancelled') {
           const existing = await orders.findOne({ _id, uid: user.uid });
           if (!existing) return fail(res, 'Order not found', 404);
-          if (!['placed', 'pending_payment'].includes(existing.status))
-            return fail(
-              res,
-              'Only placed or pending-payment orders can be cancelled'
-            );
+          if (!['placed', 'pending_payment'].includes(existing.status)) {
+            return fail(res, 'Only placed or pending-payment orders can be cancelled');
+          }
           update.status = 'cancelled';
         } else {
           return fail(res, 'Unauthorized update', 403);
@@ -89,8 +174,9 @@ export default async function handler(req, res) {
       const result = await orders.findOneAndUpdate(
         { _id },
         { $set: update },
-        { returnDocument: 'after' }
+        { returnDocument: 'after', includeResultMetadata: false }
       );
+      if (!result) return fail(res, 'Order not found', 404);
       return ok(res, result);
     }
 
@@ -99,8 +185,6 @@ export default async function handler(req, res) {
 
   // ---- /api/orders (root) ----
   if (method === 'GET') {
-    // Admins see ALL orders by default so the admin panel works.
-    // Customers see only their own orders.
     const query = user.isAdmin ? {} : { uid: user.uid };
     const items = await orders
       .find(query)
@@ -121,15 +205,9 @@ export default async function handler(req, res) {
 
     const productsCol = await getCollection(COLLECTIONS.PRODUCTS);
 
-    for (const item of items) {
-      const p = await findProductById(productsCol, item.productId);
-      if (p && typeof p.stock === 'number' && p.stock < item.qty) {
-        return fail(
-          res,
-          `Insufficient stock for ${p.brand || ''} ${p.model || ''}. Available: ${p.stock}`
-        );
-      }
-    }
+    // 1) Validate stock for every item BEFORE touching anything
+    const validationError = await validateStock(productsCol, items);
+    if (validationError) return fail(res, validationError, 409);
 
     const doc = {
       uid: user.uid,
@@ -140,21 +218,27 @@ export default async function handler(req, res) {
       paymentMethod,
       paymentStatus: 'pending',
       status: paymentMethod === 'cod' ? 'placed' : 'pending_payment',
+      stockDecremented: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
     const result = await orders.insertOne(doc);
 
-    for (const item of items) {
-      const p = await findProductById(productsCol, item.productId);
-      if (p && typeof p.stock === 'number') {
-        await productsCol.updateOne(
-          { _id: p._id, stock: { $gte: item.qty } },
-          { $inc: { stock: -item.qty } }
-        );
-      }
+    // 2) Decrement stock AFTER the insert. Uses a Mongo transaction when
+    //    the driver supports it, otherwise a best-effort rollback.
+    const { client } = await getDb();
+    const stockError = await decrementStock(client, productsCol, items);
+    if (stockError) {
+      await orders.deleteOne({ _id: result.insertedId });
+      return fail(res, stockError, 409);
     }
+
+    // 3) Mark the order as stock-decremented so the webhook won't double-decrement
+    await orders.updateOne(
+      { _id: result.insertedId },
+      { $set: { stockDecremented: true } }
+    );
 
     return ok(res, { _id: result.insertedId, ...doc }, 201);
   }
